@@ -34,9 +34,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 namespace {
   using ABGR = std::uint32_t;
   const char sixel_base = 63;
+  const std::size_t desired__width  = 640;
+  const std::size_t desired__height = 400;
 
-  int viewport__width ;
-  int viewport__height;
+  std::size_t viewport__width   = desired__width ;
+  std::size_t viewport__height  = desired__height;
   std::string const sixel__prelude  = "\x1B[H\x1B[12t\x1BP7;1;q";
   std::string const sixel__epilogue = "\x1B\\";
 
@@ -328,30 +330,36 @@ int main() {
   , hInstance
   , LoadIcon(nullptr, IDI_APPLICATION)
   , LoadCursor(nullptr, IDC_ARROW)
-  , (HBRUSH)(COLOR_WINDOW + 1)
+  , reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1)
   , nullptr
-  , L"ImGuiOpenGLWindowClass"
+  , L"ImGui.Test"
   , nullptr
   };
+
+  auto dwStyle = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
 
   if (!RegisterClassEx(&wcex)) {
     MessageBox(nullptr, L"Window Registration Failed", L"Error", MB_OK);
     return 1;
   }
 
+  RECT windowRect = { 0, 0, desired__width, desired__height };
+  auto rect__result = AdjustWindowRect(&windowRect, dwStyle, 0);
+  assert(rect__result);
+
   auto hWnd = CreateWindowEx(
-    0                               // Extended style
-  , L"ImGuiOpenGLWindowClass"       // Window class name
-  , L"ImGui OpenGL Integration"     // Window title
-  , WS_OVERLAPPEDWINDOW             // Window style
-  , CW_USEDEFAULT                   // StartPosition X
-  , CW_USEDEFAULT                   // StartPosition Y
-  , 640                             // Width
-  , 480                             // Height
-  , nullptr                         // Parent
-  , nullptr                         // Menu
-  , hInstance                       // Instance
-  , nullptr                         // additional params
+    0                                   // Extended style
+  , L"ImGui.Test"                       // Window class name
+  , L"ImGui.Test"                       // Window title
+  , dwStyle                             // Window style
+  , CW_USEDEFAULT                       // StartPosition X
+  , CW_USEDEFAULT                       // StartPosition Y
+  , windowRect.right-windowRect.left    // Width
+  , windowRect.bottom-windowRect.top    // Height
+  , nullptr                             // Parent
+  , nullptr                             // Menu
+  , hInstance                           // Instance
+  , nullptr                             // additional params
   );
 
   if (!hWnd) {
@@ -448,8 +456,8 @@ int main() {
       glReadPixels(
           0
         , 0
-        , viewport__width
-        , viewport__height
+        , static_cast<GLsizei>(viewport__width )
+        , static_cast<GLsizei>(viewport__height)
         , GL_RGBA
         , GL_UNSIGNED_BYTE
         , pixels__ptr
