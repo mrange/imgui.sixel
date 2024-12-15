@@ -22,6 +22,7 @@
 #include <format>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #pragma comment(lib, "opengl32.lib")
@@ -31,15 +32,57 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+#define CHECK(expr, ret, message)                                   \
+  if (!(expr)) {                                                    \
+    MessageBox(nullptr, message, "Error from ImGui.Test", MB_OK);   \
+    return ret;                                                     \
+  }
+
 namespace {
+  template<typename TOnExit>
+  struct on_exit__impl {
+    on_exit__impl ()                                = delete;
+    on_exit__impl (on_exit__impl const &)           = delete;
+    on_exit__impl& operator=(on_exit__impl const &) = delete;
+
+    on_exit__impl (TOnExit && on_exit)
+      : suppress (false)
+      , on_exit  (std::move(on_exit)) {
+    }
+
+    on_exit__impl (on_exit__impl && impl)
+      : suppress (impl.suppress)
+      , on_exit  (std::move(impl.on_exit)) {
+      impl.suppress = true;
+    }
+
+    ~on_exit__impl() {
+      if(!suppress) {
+        suppress = true;
+        on_exit();
+      }
+    }
+
+    bool suppress;
+  private:
+    TOnExit on_exit;
+  };
+
+  template<typename TOnExit>
+  auto on_exit(TOnExit && on_exit) {
+    return on_exit__impl<std::decay_t<TOnExit>>(std::move(on_exit));
+  }
+
   using ABGR = std::uint32_t;
-  const char sixel_base = 63;
-  const std::size_t desired__width  = 640;
-  const std::size_t desired__height = 400;
+
+  char const        sixel_base      = 63;
+  std::size_t const desired__width  = 640;
+  std::size_t const desired__height = 400;
+  char const windows_class_name[]   = "ImGui.Test";
 
   std::size_t viewport__width   = desired__width ;
   std::size_t viewport__height  = desired__height;
-  std::string const sixel__prelude  = "\x1B[H\x1B[12t\x1BP7;1;q";
+  std::string const sixel__prelude  = "\x1B[?25l\x1B[H\x1B[12t\x1BP7;1;q";
   std::string const sixel__epilogue = "\x1B\\";
 
   std::array<std::string, 256> generate_col_selectors() {
@@ -237,89 +280,79 @@ namespace {
     }
   }
 
+  HGLRC CreateOpenGLContext(HDC hdc) {
+    PIXELFORMATDESCRIPTOR pfd = {
+      sizeof(PIXELFORMATDESCRIPTOR)
+    , 1
+    , PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
+    , PFD_TYPE_RGBA
+    , 32
+    , 0
+    , 0
+    , 0
+    , 0
+    , 0
+    , 0
+    , 8
+    , 0
+    , 0
+    , 0
+    , 0
+    , 0
+    , 0
+    , 24
+    , 8
+    , 0
+    , PFD_MAIN_PLANE
+    , 0
+    , 0
+    , 0
+    , 0
+    };
 
-}
+    auto pixel_format = ChoosePixelFormat(hdc, &pfd);
+    CHECK(pixel_format, nullptr, "ChoosePixelFormat Failed");
 
-HGLRC CreateOpenGLContext(HDC hDC) {
-  PIXELFORMATDESCRIPTOR pfd = {
-    sizeof(PIXELFORMATDESCRIPTOR)
-  , 1
-  , PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
-  , PFD_TYPE_RGBA
-  , 32
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 8
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 0
-  , 24
-  , 8
-  , 0
-  , PFD_MAIN_PLANE
-  , 0
-  , 0
-  , 0
-  , 0
-  };
+    auto set_pixel__result = SetPixelFormat(hdc, pixel_format, &pfd);
+    CHECK(set_pixel__result, nullptr, "SetPixelFormat Failed");
 
-  auto pixelFormat = ChoosePixelFormat(hDC, &pfd);
-  if (!pixelFormat) {
-    MessageBox(nullptr, L"ChoosePixelFormat Failed", L"Error", MB_OK);
-    return nullptr;
+    auto hrc = wglCreateContext(hdc);
+    CHECK(hrc, nullptr, "wglCreateContext Failed");
+
+    return hrc;
   }
 
-  if (!SetPixelFormat(hDC, pixelFormat, &pfd)) {
-    MessageBox(nullptr, L"SetPixelFormat Failed", L"Error", MB_OK);
-    return nullptr;
+  LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+      return true;
+
+    switch (uMsg) {
+    case WM_SIZE: {
+      int width = LOWORD(lParam);
+      int height = HIWORD(lParam);
+
+      glViewport(0, 0, width, height);
+
+      viewport__width   = width;
+      viewport__height  = height;
+
+      return 0;
+    }
+    case WM_CLOSE:
+      ::PostQuitMessage(0);
+      return 0;
+    }
+
+    return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
   }
-
-  auto hRC = wglCreateContext(hDC);
-  if (!hRC) {
-    MessageBox(nullptr, L"wglCreateContext Failed", L"Error", MB_OK);
-    return nullptr;
-  }
-
-  return hRC;
-}
-
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-  if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
-    return true;
-
-  switch (uMsg) {
-  case WM_SIZE: {
-    int width = LOWORD(lParam);
-    int height = HIWORD(lParam);
-
-    glViewport(0, 0, width, height);
-
-    viewport__width   = width;
-    viewport__height  = height;
-
-    return 0;
-  }
-  case WM_CLOSE:
-    ::PostQuitMessage(0);
-    return 0;
-  }
-
-  return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
 int main() {
   auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-  assert(hstdout != INVALID_HANDLE_VALUE);
+  CHECK(hstdout != INVALID_HANDLE_VALUE, 1, "GetStdHandle Failed");
   
   auto hInstance = GetModuleHandle(0);
-  assert(hInstance);
+  CHECK(hInstance, 1, "GetModuleHandle Failed");
 
   WNDCLASSEX wcex = {
     sizeof(WNDCLASSEX)
@@ -332,25 +365,25 @@ int main() {
   , LoadCursor(nullptr, IDC_ARROW)
   , reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1)
   , nullptr
-  , L"ImGui.Test"
+  , windows_class_name
   , nullptr
   };
 
   auto dwStyle = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
 
-  if (!RegisterClassEx(&wcex)) {
-    MessageBox(nullptr, L"Window Registration Failed", L"Error", MB_OK);
-    return 1;
-  }
+  auto register_class__result = RegisterClassEx(&wcex);
+  CHECK(register_class__result, 1, "Window Registration Failed");
+
+  auto unregister_class__on_exit = on_exit([hInstance]{ UnregisterClass(windows_class_name, hInstance); });
 
   RECT windowRect = { 0, 0, desired__width, desired__height };
   auto rect__result = AdjustWindowRect(&windowRect, dwStyle, 0);
-  assert(rect__result);
+  CHECK(rect__result, 1, "AdjustWindowRect Failed");
 
-  auto hWnd = CreateWindowEx(
+  auto hwnd = CreateWindowEx(
     0                                   // Extended style
-  , L"ImGui.Test"                       // Window class name
-  , L"ImGui.Test"                       // Window title
+  , windows_class_name                  // Window class name
+  , windows_class_name                  // Window title
   , dwStyle                             // Window style
   , CW_USEDEFAULT                       // StartPosition X
   , CW_USEDEFAULT                       // StartPosition Y
@@ -362,38 +395,44 @@ int main() {
   , nullptr                             // additional params
   );
 
-  if (!hWnd) {
-    MessageBox(nullptr, L"Window Creation Failed", L"Error", MB_OK);
-    return 1;
-  }
+  CHECK(hwnd, 1, "Window Creation Failed");
+  auto destroy_window__on_exit = on_exit([hwnd]{ DestroyWindow(hwnd); });
 
   // Intentionally ignore return value
-  ShowWindow(hWnd, SW_SHOWNORMAL);
-  auto update_window__result = UpdateWindow(hWnd);
+  ShowWindow(hwnd, SW_SHOWNORMAL);
+  auto update_window__result = UpdateWindow(hwnd);
   assert(update_window__result);
 
-  auto hDC = GetDC(hWnd);
+  auto hdc = GetDC(hwnd);
+  auto release_dc__on_exit = on_exit([hwnd, hdc]{ ReleaseDC(hwnd, hdc); });
 
-  auto hRC = CreateOpenGLContext(hDC);
-
-  if (hRC) {
-    auto make_current__result = wglMakeCurrent(hDC, hRC);
-    assert(make_current__result);
+  auto hrc = CreateOpenGLContext(hdc);
+  if (!hrc) {
+    // Already shown the reason
+    return 1;
   }
+  auto delete_context__on_exit = on_exit([hrc]{ wglDeleteContext(hrc); });
+
+  auto make_current__result = wglMakeCurrent(hdc, hrc);
+  CHECK(make_current__result, 1, "wglMakeCurrent Failed");
+  auto make_current__on_exit = on_exit([]{ wglMakeCurrent(nullptr, nullptr); });
 
   IMGUI_CHECKVERSION();
   auto imgui__context = ImGui::CreateContext();
-  assert(imgui__context);
+  CHECK(imgui__context, 1, "ImGui::CreateContext Failed");
+  auto destroy_imgui_context__on_exit = on_exit([]{ ImGui::DestroyContext(); });
 
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  ImGuiIO& io = ImGui::GetIO();
 
-  auto imgui__win32_init = ImGui_ImplWin32_Init(hWnd);
-  assert(imgui__win32_init);
+  auto imgui__win32_init = ImGui_ImplWin32_Init(hwnd);
+  CHECK(imgui__win32_init, 1, "ImGui_ImplWin32_Init Failed");
+  auto shutdown_imgui_win32__on_exit = on_exit([]{ ImGui_ImplWin32_Shutdown(); });
 
   auto imgui__opengl_init = ImGui_ImplOpenGL2_Init();
-  assert(imgui__opengl_init);
+  CHECK(imgui__opengl_init, 1, "ImGui_ImplOpenGL2_Init Failed");
+  auto shutdown_imgui_opengl__on_exit = on_exit([]{ ImGui_ImplOpenGL2_Shutdown(); });
 
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
   glEnable(GL_DEPTH_TEST);
 
   float clearColor[3] = {0.2F,0.1F,0.3F};
@@ -442,7 +481,7 @@ int main() {
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
     // END: Intentionally ignore return values from ImGui
 
-    auto swap_buffers__result = SwapBuffers(hDC);
+    auto swap_buffers__result = SwapBuffers(hdc);
     assert(swap_buffers__result);
 
     glReadBuffer(GL_FRONT);
@@ -474,21 +513,6 @@ int main() {
     }
   }
 
-  ImGui_ImplOpenGL2_Shutdown();
-  ImGui_ImplWin32_Shutdown();
-  ImGui::DestroyContext();
-
-  if (hRC) {
-    auto make_current__result = wglMakeCurrent(nullptr, nullptr);
-    assert(make_current__result);
-    auto delete_context__result = wglDeleteContext(hRC);
-    assert(delete_context__result);
-  }
-
-  if (hDC) {
-    auto release_dc__result = ReleaseDC(hWnd, hDC);
-    assert(release_dc__result);
-  }
 
   return 0;
 }
