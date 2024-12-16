@@ -7,7 +7,7 @@
 
 #include <windows.h>
 #include <gl/GL.h>
-#include <gl/GLU.h>
+#include "glext.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
@@ -24,6 +24,8 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+
+#include "shader_sources.h"
 
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
@@ -80,8 +82,8 @@ namespace {
   std::size_t const desired__height = 600;
   char const windows_class_name[]   = "ImGui.Test";
 
-  std::size_t viewport__width   = desired__width ;
-  std::size_t viewport__height  = desired__height;
+  std::size_t viewport__width       = desired__width ;
+  std::size_t viewport__height      = desired__height;
   std::string const sixel__prelude  = "\x1B[?25l\x1B[H\x1B[12t\x1BP7;1;q";
   std::string const sixel__epilogue = "\x1B\\";
 
@@ -278,6 +280,86 @@ namespace {
       auto err = GetLastError();
       assert(writeOk);
     }
+
+  }
+
+#ifdef _DEBUG
+  // Callback function for OpenGL to report errors
+  void APIENTRY debug__callback(
+      GLenum source           // Where the error came from
+    , GLenum type             // The type of error
+    , GLuint id               // Error ID
+    , GLenum severity         // How serious the error is
+    , GLsizei length          // Length of the error message
+    , GLchar const* message   // The error message itself
+    , void const* userParam   // User-provided data (unused)
+    ) {
+      std::printf(message);
+      std::printf("\n");
+  }
+    
+  // Buffer for debug messages
+  char debug__log[0xFFFF];  // 65535 characters
+#endif
+
+  GLuint shader__program;
+  GLint shader__program__time;
+  GLint shader__program__resolution;
+
+  void init_effect() {
+    auto fp__glCreateShaderProgramv = (PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv");
+    auto fp__glGetUniformLocation   = (PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation");
+    assert(fp__glCreateShaderProgramv);
+    assert(fp__glGetUniformLocation);
+
+    GLchar const* fragment_shaders[] = { fragment_shader_source };
+    shader__program = fp__glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, fragment_shaders);
+    assert(shader__program > 0);
+
+    shader__program__time       = fp__glGetUniformLocation(shader__program, "time");
+    assert(shader__program__time > -1);
+
+    shader__program__resolution = fp__glGetUniformLocation(shader__program, "resolution");
+    assert(shader__program__resolution > -1);
+
+#ifdef _DEBUG
+    // Retrieve the compilation log for `shaderProgram` and print it
+    auto glGetProgramInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
+    glGetProgramInfoLog(shader__program, sizeof(debug__log), NULL, debug__log);
+    printf(debug__log);
+#endif
+  }
+
+  void deinit_effect() {
+  }
+
+  void draw_effect(GLfloat time) {
+    auto fp__glUniform1f  = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
+    auto fp__glUniform3f  = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
+    auto fp__glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
+    assert(fp__glUniform1f);
+    assert(fp__glUniform1f);
+    assert(fp__glUseProgram);
+
+    GLint currentProgram = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+
+    fp__glUseProgram(shader__program);
+
+    assert(shader__program__time > -1);
+    fp__glUniform1f(shader__program__time, time);
+
+    assert(shader__program__resolution > -1);
+    fp__glUniform3f(
+      shader__program__resolution
+    , static_cast<GLfloat>(viewport__width)
+    , static_cast<GLfloat>(viewport__height)
+    , 1.0f
+    );
+
+    glRects(-1, -1, 1, 1);
+
+    fp__glUseProgram(currentProgram);
   }
 
   LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -361,14 +443,14 @@ int main() {
   wnd_class_ex.hInstance = hinstance;
   auto dw_style = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
 
-  auto register_class__result = RegisterClassEx(&wnd_class_ex);
-  CHECK(register_class__result, 1, "Window Registration Failed");
+  auto result__register_class = RegisterClassEx(&wnd_class_ex);
+  CHECK(result__register_class, 1, "Window Registration Failed");
 
-  auto unregister_class__on_exit = on_exit([hinstance]{ UnregisterClass(windows_class_name, hinstance); });
+  auto on_exit__unregister_class = on_exit([hinstance]{ UnregisterClass(windows_class_name, hinstance); });
 
   RECT window_rect = { 0, 0, desired__width, desired__height };
-  auto rect__result = AdjustWindowRect(&window_rect, dw_style, 0);
-  CHECK(rect__result, 1, "AdjustWindowRect Failed");
+  auto result__rect= AdjustWindowRect(&window_rect, dw_style, 0);
+  CHECK(result__rect, 1, "AdjustWindowRect Failed");
 
   auto hwnd = CreateWindowEx(
     0                                   // Extended style
@@ -386,47 +468,67 @@ int main() {
   );
 
   CHECK(hwnd, 1, "Window Creation Failed");
-  auto destroy_window__on_exit = on_exit([hwnd]{ DestroyWindow(hwnd); });
+  auto on_exit__destroy_window = on_exit([hwnd]{ DestroyWindow(hwnd); });
 
   // Intentionally ignore return value
   ShowWindow(hwnd, SW_SHOWNORMAL);
-  auto update_window__result = UpdateWindow(hwnd);
-  assert(update_window__result);
+  auto result__update_window = UpdateWindow(hwnd);
+  assert(result__update_window);
 
   auto hdc = GetDC(hwnd);
-  auto release_dc__on_exit = on_exit([hwnd, hdc]{ ReleaseDC(hwnd, hdc); });
+  auto on_exit__release_dc = on_exit([hwnd, hdc]{ ReleaseDC(hwnd, hdc); });
 
   auto pixel_format = ChoosePixelFormat(hdc, &pixel_format_descriptor);
   CHECK(pixel_format, 1, "ChoosePixelFormat Failed");
 
-  auto set_pixel__result = SetPixelFormat(hdc, pixel_format, &pixel_format_descriptor);
-  CHECK(set_pixel__result, 1, "SetPixelFormat Failed");
+  auto result__set_pixel = SetPixelFormat(hdc, pixel_format, &pixel_format_descriptor);
+  CHECK(result__set_pixel, 1, "SetPixelFormat Failed");
 
   auto hrc = wglCreateContext(hdc);
   CHECK(hrc, 1, "wglCreateContext Failed");
-  auto delete_context__on_exit = on_exit([hrc]{ wglDeleteContext(hrc); });
+  auto on_exit__delete_context = on_exit([hrc]{ wglDeleteContext(hrc); });
 
-  auto make_current__result = wglMakeCurrent(hdc, hrc);
-  CHECK(make_current__result, 1, "wglMakeCurrent Failed");
-  auto make_current__on_exit = on_exit([]{ wglMakeCurrent(nullptr, nullptr); });
+  auto result__make_current = wglMakeCurrent(hdc, hrc);
+  CHECK(result__make_current, 1, "wglMakeCurrent Failed");
+  auto on_exit__make_current = on_exit([]{ wglMakeCurrent(nullptr, nullptr); });
+
+#ifdef _DEBUG
+  // Enable OpenGL debug output in debug builds
+  glEnable(GL_DEBUG_OUTPUT);
+
+  // Retrieve a pointer to the OpenGL function `glDebugMessageCallback` using `wglGetProcAddress`.
+  // OpenGL functions like this one are often not directly accessible, as they may be specific 
+  // to certain OpenGL versions or extensions. By looking them up at runtime, we ensure compatibility
+  // with different graphics drivers and hardware setups.
+  auto glDebugMessageCallback = (PFNGLDEBUGMESSAGECALLBACKPROC)wglGetProcAddress("glDebugMessageCallback");
+
+  // Set up a debug callback function (`debugCallback`) to handle messages from the OpenGL driver,
+  // like errors or performance warnings. This helps with diagnosing issues during development.
+  glDebugMessageCallback(debug__callback, 0);
+#endif
+  init_effect();
 
   IMGUI_CHECKVERSION();
   auto imgui__context = ImGui::CreateContext();
   CHECK(imgui__context, 1, "ImGui::CreateContext Failed");
-  auto destroy_imgui_context__on_exit = on_exit([]{ ImGui::DestroyContext(); });
+  auto on_exit__destroy_imgui_context = on_exit([]{ ImGui::DestroyContext(); });
 
   ImGuiIO& io = ImGui::GetIO();
 
   auto imgui__win32_init = ImGui_ImplWin32_Init(hwnd);
   CHECK(imgui__win32_init, 1, "ImGui_ImplWin32_Init Failed");
-  auto shutdown_imgui_win32__on_exit = on_exit([]{ ImGui_ImplWin32_Shutdown(); });
+  auto on_exit__shutdown_imgui_win32 = on_exit([]{ ImGui_ImplWin32_Shutdown(); });
 
   auto imgui__opengl_init = ImGui_ImplOpenGL2_Init();
   CHECK(imgui__opengl_init, 1, "ImGui_ImplOpenGL2_Init Failed");
-  auto shutdown_imgui_opengl__on_exit = on_exit([]{ ImGui_ImplOpenGL2_Shutdown(); });
-
+  auto on_exit__shutdown_imgui_opengl = on_exit([]{ ImGui_ImplOpenGL2_Shutdown(); });
 
   glEnable(GL_DEPTH_TEST);
+#ifdef _DEBUG
+  // Final setup is complete, so disable debug output
+  glDisable(GL_DEBUG_OUTPUT);
+#endif
+
 
   float clear_color[3]    = {0.2F,0.1F,0.3F};
   int   rotation_angle    = 0;
@@ -439,15 +541,23 @@ int main() {
   // Reserve 1MiB
   buffer.reserve(1<<20);
 
+  auto before = GetTickCount64();
+  auto done = false;
   MSG msg = {};
-  while (GetMessage(&msg, nullptr, 0, 0) > 0) {
-    // Intentionally ignore return value
-    TranslateMessage(&msg);
-    // Intentionally ignore return value
-    DispatchMessage(&msg);
+  while (!done) {
+    while (PeekMessageA(&msg, 0, 0, 0, PM_REMOVE)) {
+      if (msg.message == WM_QUIT) done = true;
+      TranslateMessage(&msg);
+      DispatchMessageA(&msg);
+    }
 
     glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    auto now  = GetTickCount64();
+    auto time = (now - before) / 1000.0f;
+
+    draw_effect(time);
 
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplOpenGL2_NewFrame();
@@ -474,8 +584,8 @@ int main() {
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
     // END: Intentionally ignore return values from ImGui
 
-    auto swap_buffers__result = SwapBuffers(hdc);
-    assert(swap_buffers__result);
+    auto result__swap_buffers = SwapBuffers(hdc);
+    assert(result__swap_buffers);
 
     glReadBuffer(GL_FRONT);
     if (viewport__width > 0 && viewport__height > 0) {
@@ -483,7 +593,7 @@ int main() {
       sixel_pixels.resize(total_size);
       pixels.resize(total_size);
 
-      auto pixels__ptr = &pixels.front();
+      auto ptr__pixels = &pixels.front();
 
       glReadPixels(
           0
@@ -492,7 +602,7 @@ int main() {
         , static_cast<GLsizei>(viewport__height)
         , GL_RGBA
         , GL_UNSIGNED_BYTE
-        , pixels__ptr
+        , ptr__pixels
         );
     
       write_pixel_as_sixels(
