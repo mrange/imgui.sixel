@@ -7,7 +7,21 @@ namespace {
 precision highp float;
 
 uniform float time;
-uniform vec3 resolution;
+uniform vec2 resolution;
+
+#ifdef USE_UNIFORMS
+uniform float fixed_radius2;
+uniform float min_radius2;
+uniform float folding_limit;
+uniform float scale;
+
+#else
+const float fixed_radius2 = 1.9;
+const float min_radius2 = 0.1;
+const float folding_limit = 1.0;
+const float scale = -2.5;
+#endif
+
 
 out vec4 fragColor;
 
@@ -120,11 +134,6 @@ mat3 rotationFromQuaternion(vec4 q) {
 
 // -------------------------------------------------
 // Mandelbox - https://www.shadertoy.com/view/XdlSD4
-
-const float fixed_radius2 = 1.9;
-const float min_radius2 = 0.1;
-const float folding_limit = 1.0;
-const float scale = -2.5;
 
 
 void sphere_fold(inout vec3 z, inout float dz) {

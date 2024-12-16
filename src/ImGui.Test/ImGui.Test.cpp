@@ -335,7 +335,7 @@ namespace {
 
   void draw_effect(GLfloat time) {
     auto fp__glUniform1f  = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
-    auto fp__glUniform3f  = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
+    auto fp__glUniform2f  = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
     auto fp__glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
     assert(fp__glUniform1f);
     assert(fp__glUniform1f);
@@ -350,11 +350,10 @@ namespace {
     fp__glUniform1f(shader__program__time, time);
 
     assert(shader__program__resolution > -1);
-    fp__glUniform3f(
+    fp__glUniform2f(
       shader__program__resolution
     , static_cast<GLfloat>(viewport__width)
     , static_cast<GLfloat>(viewport__height)
-    , 1.0f
     );
 
     glRects(-1, -1, 1, 1);
@@ -529,10 +528,6 @@ int main() {
   glDisable(GL_DEBUG_OUTPUT);
 #endif
 
-
-  float clear_color[3]    = {0.2F,0.1F,0.3F};
-  int   rotation_angle    = 0;
-  bool  wireframe_mode    = false;
   bool  show_demo_window  = false;
 
   std::vector<ABGR>     pixels      ;
@@ -551,7 +546,7 @@ int main() {
       DispatchMessageA(&msg);
     }
 
-    glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
+    glClearColor(0,0,0,1.0F);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     auto now  = GetTickCount64();
@@ -566,12 +561,6 @@ int main() {
     ImGui::NewFrame();
 
     ImGui::Begin("Control Panel");
-
-    ImGui::SliderInt("Rotation Angle", &rotation_angle, 0, 360);
-
-    ImGui::Checkbox("Wireframe Mode", &wireframe_mode);
-
-    ImGui::ColorEdit3("Clear Color", clear_color);
 
     ImGui::Checkbox("Show Demo Window", &show_demo_window);
     if (show_demo_window) {
