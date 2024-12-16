@@ -76,8 +76,8 @@ namespace {
   using ABGR = std::uint32_t;
 
   char const        sixel_base      = 63;
-  std::size_t const desired__width  = 640;
-  std::size_t const desired__height = 400;
+  std::size_t const desired__width  = 800;
+  std::size_t const desired__height = 600;
   char const windows_class_name[]   = "ImGui.Test";
 
   std::size_t viewport__width   = desired__width ;
@@ -280,48 +280,6 @@ namespace {
     }
   }
 
-  HGLRC CreateOpenGLContext(HDC hdc) {
-    PIXELFORMATDESCRIPTOR pfd = {
-      sizeof(PIXELFORMATDESCRIPTOR)
-    , 1
-    , PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
-    , PFD_TYPE_RGBA
-    , 32
-    , 0
-    , 0
-    , 0
-    , 0
-    , 0
-    , 0
-    , 8
-    , 0
-    , 0
-    , 0
-    , 0
-    , 0
-    , 0
-    , 24
-    , 8
-    , 0
-    , PFD_MAIN_PLANE
-    , 0
-    , 0
-    , 0
-    , 0
-    };
-
-    auto pixel_format = ChoosePixelFormat(hdc, &pfd);
-    CHECK(pixel_format, nullptr, "ChoosePixelFormat Failed");
-
-    auto set_pixel__result = SetPixelFormat(hdc, pixel_format, &pfd);
-    CHECK(set_pixel__result, nullptr, "SetPixelFormat Failed");
-
-    auto hrc = wglCreateContext(hdc);
-    CHECK(hrc, nullptr, "wglCreateContext Failed");
-
-    return hrc;
-  }
-
   LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
       return true;
@@ -345,22 +303,43 @@ namespace {
 
     return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
   }
-}
 
-int main() {
-  auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-  CHECK(hstdout != INVALID_HANDLE_VALUE, 1, "GetStdHandle Failed");
-  
-  auto hInstance = GetModuleHandle(0);
-  CHECK(hInstance, 1, "GetModuleHandle Failed");
+  PIXELFORMATDESCRIPTOR pixel_format_descriptor = {
+    sizeof(PIXELFORMATDESCRIPTOR)
+  , 1
+  , PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
+  , PFD_TYPE_RGBA
+  , 32
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 8
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 24
+  , 8
+  , 0
+  , PFD_MAIN_PLANE
+  , 0
+  , 0
+  , 0
+  , 0
+  };
 
-  WNDCLASSEX wcex = {
+  WNDCLASSEX wnd_class_ex = {
     sizeof(WNDCLASSEX)
   , CS_HREDRAW | CS_VREDRAW | CS_OWNDC
   , WindowProc
   , 0
   , 0
-  , hInstance
+  , 0
   , LoadIcon(nullptr, IDI_APPLICATION)
   , LoadCursor(nullptr, IDC_ARROW)
   , reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1)
@@ -369,12 +348,24 @@ int main() {
   , nullptr
   };
 
+
+}
+
+int main() {
+  //SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+  auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+  CHECK(hstdout != INVALID_HANDLE_VALUE, 1, "GetStdHandle Failed");
+  
+  auto hinstance = GetModuleHandle(0);
+  CHECK(hinstance, 1, "GetModuleHandle Failed");
+
+  wnd_class_ex.hInstance = hinstance;
   auto dwStyle = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
 
-  auto register_class__result = RegisterClassEx(&wcex);
+  auto register_class__result = RegisterClassEx(&wnd_class_ex);
   CHECK(register_class__result, 1, "Window Registration Failed");
 
-  auto unregister_class__on_exit = on_exit([hInstance]{ UnregisterClass(windows_class_name, hInstance); });
+  auto unregister_class__on_exit = on_exit([hinstance]{ UnregisterClass(windows_class_name, hinstance); });
 
   RECT windowRect = { 0, 0, desired__width, desired__height };
   auto rect__result = AdjustWindowRect(&windowRect, dwStyle, 0);
@@ -391,7 +382,7 @@ int main() {
   , windowRect.bottom-windowRect.top    // Height
   , nullptr                             // Parent
   , nullptr                             // Menu
-  , hInstance                           // Instance
+  , hinstance                           // Instance
   , nullptr                             // additional params
   );
 
@@ -406,11 +397,14 @@ int main() {
   auto hdc = GetDC(hwnd);
   auto release_dc__on_exit = on_exit([hwnd, hdc]{ ReleaseDC(hwnd, hdc); });
 
-  auto hrc = CreateOpenGLContext(hdc);
-  if (!hrc) {
-    // Already shown the reason
-    return 1;
-  }
+  auto pixel_format = ChoosePixelFormat(hdc, &pixel_format_descriptor);
+  CHECK(pixel_format, 1, "ChoosePixelFormat Failed");
+
+  auto set_pixel__result = SetPixelFormat(hdc, pixel_format, &pixel_format_descriptor);
+  CHECK(set_pixel__result, 1, "SetPixelFormat Failed");
+
+  auto hrc = wglCreateContext(hdc);
+  CHECK(hrc, 1, "wglCreateContext Failed");
   auto delete_context__on_exit = on_exit([hrc]{ wglDeleteContext(hrc); });
 
   auto make_current__result = wglMakeCurrent(hdc, hrc);
