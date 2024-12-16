@@ -348,7 +348,6 @@ namespace {
   , nullptr
   };
 
-
 }
 
 int main() {
@@ -360,26 +359,26 @@ int main() {
   CHECK(hinstance, 1, "GetModuleHandle Failed");
 
   wnd_class_ex.hInstance = hinstance;
-  auto dwStyle = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
+  auto dw_style = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
 
   auto register_class__result = RegisterClassEx(&wnd_class_ex);
   CHECK(register_class__result, 1, "Window Registration Failed");
 
   auto unregister_class__on_exit = on_exit([hinstance]{ UnregisterClass(windows_class_name, hinstance); });
 
-  RECT windowRect = { 0, 0, desired__width, desired__height };
-  auto rect__result = AdjustWindowRect(&windowRect, dwStyle, 0);
+  RECT window_rect = { 0, 0, desired__width, desired__height };
+  auto rect__result = AdjustWindowRect(&window_rect, dw_style, 0);
   CHECK(rect__result, 1, "AdjustWindowRect Failed");
 
   auto hwnd = CreateWindowEx(
     0                                   // Extended style
   , windows_class_name                  // Window class name
   , windows_class_name                  // Window title
-  , dwStyle                             // Window style
+  , dw_style                            // Window style
   , CW_USEDEFAULT                       // StartPosition X
   , CW_USEDEFAULT                       // StartPosition Y
-  , windowRect.right-windowRect.left    // Width
-  , windowRect.bottom-windowRect.top    // Height
+  , window_rect.right-window_rect.left  // Width
+  , window_rect.bottom-window_rect.top  // Height
   , nullptr                             // Parent
   , nullptr                             // Menu
   , hinstance                           // Instance
@@ -429,10 +428,10 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 
-  float clearColor[3] = {0.2F,0.1F,0.3F};
-  int rotationAngle   = 0;
-  bool wireframeMode  = false;
-  bool showDemoWindow = false;
+  float clear_color[3]    = {0.2F,0.1F,0.3F};
+  int   rotation_angle    = 0;
+  bool  wireframe_mode    = false;
+  bool  show_demo_window  = false;
 
   std::vector<ABGR>     pixels      ;
   std::vector<GLubyte>  sixel_pixels;
@@ -447,7 +446,7 @@ int main() {
     // Intentionally ignore return value
     DispatchMessage(&msg);
 
-    glClearColor(clearColor[0], clearColor[1], clearColor[2],1.0f);
+    glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     ImGui_ImplWin32_NewFrame();
@@ -458,15 +457,15 @@ int main() {
 
     ImGui::Begin("Control Panel");
 
-    ImGui::SliderInt("Rotation Angle", &rotationAngle, 0, 360);
+    ImGui::SliderInt("Rotation Angle", &rotation_angle, 0, 360);
 
-    ImGui::Checkbox("Wireframe Mode", &wireframeMode);
+    ImGui::Checkbox("Wireframe Mode", &wireframe_mode);
 
-    ImGui::ColorEdit3("Clear Color", clearColor);
+    ImGui::ColorEdit3("Clear Color", clear_color);
 
-    ImGui::Checkbox("Show Demo Window", &showDemoWindow);
-    if (showDemoWindow) {
-      ImGui::ShowDemoWindow(&showDemoWindow);
+    ImGui::Checkbox("Show Demo Window", &show_demo_window);
+    if (show_demo_window) {
+      ImGui::ShowDemoWindow(&show_demo_window);
     }
 
     ImGui::End();
