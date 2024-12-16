@@ -302,9 +302,18 @@ namespace {
   char debug__log[0xFFFF];  // 65535 characters
 #endif
 
-  GLuint shader__program;
-  GLint shader__program__time;
-  GLint shader__program__resolution;
+  struct t_shader {
+    GLuint  program           ;
+    GLint   loc__time         ;
+    GLint   loc__resolution   ;
+    GLint   loc__fixed_radius2;
+    GLint   loc__min_radius2  ;
+    GLint   loc__folding_limit;
+    GLint   loc__scale        ;
+  };
+
+  t_shader shader;
+
 
   void init_effect() {
     auto fp__glCreateShaderProgramv = (PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv");
@@ -313,19 +322,27 @@ namespace {
     assert(fp__glGetUniformLocation);
 
     GLchar const* fragment_shaders[] = { fragment_shader_source };
-    shader__program = fp__glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, fragment_shaders);
-    assert(shader__program > 0);
+    shader.program = fp__glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, fragment_shaders);
+    assert(shader.program > 0);
 
-    shader__program__time       = fp__glGetUniformLocation(shader__program, "time");
-    assert(shader__program__time > -1);
+    shader.loc__time          = fp__glGetUniformLocation(shader.program, "time");
+    shader.loc__resolution    = fp__glGetUniformLocation(shader.program, "resolution");
+    shader.loc__fixed_radius2 = fp__glGetUniformLocation(shader.program, "fixed_radius2");
+    shader.loc__min_radius2   = fp__glGetUniformLocation(shader.program, "min_radius2");
+    shader.loc__folding_limit = fp__glGetUniformLocation(shader.program, "folding_limit");
+    shader.loc__scale         = fp__glGetUniformLocation(shader.program, "scale");
+    assert(shader.loc__time > -1);
+    assert(shader.loc__resolution > -1);
+    assert(shader.loc__fixed_radius2 > -1);
+    assert(shader.loc__min_radius2 > -1);
+    assert(shader.loc__folding_limit > -1);
+    assert(shader.loc__scale > -1);
 
-    shader__program__resolution = fp__glGetUniformLocation(shader__program, "resolution");
-    assert(shader__program__resolution > -1);
 
 #ifdef _DEBUG
     // Retrieve the compilation log for `shaderProgram` and print it
     auto glGetProgramInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
-    glGetProgramInfoLog(shader__program, sizeof(debug__log), NULL, debug__log);
+    glGetProgramInfoLog(shader.program, sizeof(debug__log), NULL, debug__log);
     printf(debug__log);
 #endif
   }
@@ -333,7 +350,13 @@ namespace {
   void deinit_effect() {
   }
 
-  void draw_effect(GLfloat time) {
+  void draw_effect(
+      GLfloat time
+    , GLfloat fixed_radius2
+    , GLfloat min_radius2
+    , GLfloat folding_limit
+    , GLfloat scale
+    ) {
     auto fp__glUniform1f  = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
     auto fp__glUniform2f  = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
     auto fp__glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
@@ -344,17 +367,21 @@ namespace {
     GLint currentProgram = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
 
-    fp__glUseProgram(shader__program);
+    fp__glUseProgram(shader.program);
 
-    assert(shader__program__time > -1);
-    fp__glUniform1f(shader__program__time, time);
+    assert(shader.loc__time > -1);
+    assert(shader.loc__resolution > -1);
 
-    assert(shader__program__resolution > -1);
+    fp__glUniform1f(shader.loc__time, time);
     fp__glUniform2f(
-      shader__program__resolution
+      shader.loc__resolution
     , static_cast<GLfloat>(viewport__width)
     , static_cast<GLfloat>(viewport__height)
     );
+    fp__glUniform1f(shader.loc__fixed_radius2 , fixed_radius2);
+    fp__glUniform1f(shader.loc__min_radius2   , min_radius2);
+    fp__glUniform1f(shader.loc__folding_limit , folding_limit);
+    fp__glUniform1f(shader.loc__scale         , scale);
 
     glRects(-1, -1, 1, 1);
 
@@ -528,7 +555,12 @@ int main() {
   glDisable(GL_DEBUG_OUTPUT);
 #endif
 
+  float fixed_radius2     = 1.9F;
+  float min_radius2       = 0.1F;
+  float folding_limit     = 1.0F;
+  float scale             = 2.5F;
   bool  show_demo_window  = false;
+
 
   std::vector<ABGR>     pixels      ;
   std::vector<GLubyte>  sixel_pixels;
@@ -552,7 +584,13 @@ int main() {
     auto now  = GetTickCount64();
     auto time = (now - before) / 1000.0f;
 
-    draw_effect(time);
+    draw_effect(
+        time
+      , fixed_radius2
+      , min_radius2
+      , folding_limit
+      , -scale
+      );
 
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplOpenGL2_NewFrame();
@@ -561,6 +599,11 @@ int main() {
     ImGui::NewFrame();
 
     ImGui::Begin("Control Panel");
+
+    ImGui::SliderFloat("Fixed Radius" , &fixed_radius2, 0, 3);
+    ImGui::SliderFloat("Min Radius"   , &min_radius2  , 0, 3);
+    ImGui::SliderFloat("Folding Limit", &folding_limit, 0, 3);
+    ImGui::SliderFloat("Scale"        , &scale        , 1, 4);
 
     ImGui::Checkbox("Show Demo Window", &show_demo_window);
     if (show_demo_window) {

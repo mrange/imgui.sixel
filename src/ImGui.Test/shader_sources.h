@@ -9,6 +9,7 @@ precision highp float;
 uniform float time;
 uniform vec2 resolution;
 
+#define USE_UNIFORMS
 #ifdef USE_UNIFORMS
 uniform float fixed_radius2;
 uniform float min_radius2;
@@ -296,8 +297,9 @@ vec3 effect(vec2 p) {
   const float rdd = 2.0;
   vec3 rd = normalize(-p.x*uu + p.y*vv + rdd*ww);
 
-  //vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*time),sin(0.707*time))), time);
-  vec4 q = createQuaternion(normalize(cam.zxy), time);
+  float a = 0.25*time;
+  vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*a),sin(0.707*a))), a);
+  //vec4 q = createQuaternion(normalize(cam.zxy), time);
   g_rot = rotationFromQuaternion(q);
   vec3 col = render(ro, rd);
   return col;
