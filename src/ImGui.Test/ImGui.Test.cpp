@@ -154,12 +154,40 @@ namespace {
   std::string const sixel__palette = generate_palette();
 
   struct ticks__write_pixel_as_sixels {
-    DWORD64 total       ;
-    DWORD64 sixel_pixel ;
-    DWORD64 sixel_buffer;
-    DWORD64 used_colors ;
-    DWORD64 write_file  ;
+    DWORD64 total           ;
+    DWORD64 sixel_pixel     ;
+    DWORD64 sixel_buffer    ;
+    DWORD64 used_colors     ;
+    DWORD64 buffer_append   ;
+    DWORD64 buffer_append_n ;
+    DWORD64 write_file      ;
+
+    DWORD64 called__buffer_append   ;
+    DWORD64 called__buffer_append_n ;
+
   };
+
+
+  inline void append(
+      std::vector<char>             & buffer
+    , std::string const             & v
+    , ticks__write_pixel_as_sixels  & ticks
+    ) {
+    ticks__timer time__append(&ticks.buffer_append);
+    ++ticks.called__buffer_append;
+    buffer.insert(buffer.end(), v.begin(), v.end());
+  }
+
+  inline void append_n(
+      std::vector<char> &             buffer
+    , std::size_t                     n
+    , char                            v
+    , ticks__write_pixel_as_sixels  & ticks
+    ) {
+    ticks__timer time__append(&ticks.buffer_append_n);
+    ++ticks.called__buffer_append_n;
+    buffer.insert(buffer.end(), n ,v);
+  }
 
   void write_pixel_as_sixels(
       HANDLE                        hstdout
@@ -167,7 +195,7 @@ namespace {
     , std::size_t                   height
     , std::vector<ABGR> const &     pixels
     , std::vector<GLubyte> &        sixel_pixels
-    , std::string &                 buffer
+    , std::vector<char> &           buffer
     , ticks__write_pixel_as_sixels &ticks
     ) {
     ticks__timer time__total(&ticks.total);
@@ -210,9 +238,9 @@ namespace {
 
     buffer.clear();
 
-    buffer.append(sixel__prelude);
+    append(buffer,sixel__prelude, ticks);
 
-    buffer.append(sixel__palette);
+    append(buffer,sixel__palette, ticks);
 
     {
       ticks__timer time__sixel_pixel(&ticks.sixel_buffer);
@@ -243,7 +271,7 @@ namespace {
               continue;
             }
 
-            buffer.append(sixel__col_selectors[current_col]);
+            append(buffer, sixel__col_selectors[current_col], ticks);
 
             auto repeated_sixel     = sixel_base;
             std::size_t sixel_reps  = 0;
@@ -268,11 +296,11 @@ namespace {
                 if (sixel_reps > 3) {
                   // Use RLE for runs longer than 3
 
-                  buffer.append(sixel__reps[sixel_reps]);
+                  append(buffer, sixel__reps[sixel_reps], ticks);
                   buffer.push_back(repeated_sixel);
                 } else {
                   // Direct output for short runs
-                  buffer.append(sixel_reps, repeated_sixel);
+                  append_n(buffer, sixel_reps, repeated_sixel, ticks);
                 }
 
                 repeated_sixel  = sixel_char;
@@ -286,11 +314,11 @@ namespace {
               if (sixel_reps > 3) {
                 // Use RLE for runs longer than 3
 
-                buffer.append(sixel__reps[sixel_reps]);
+                append(buffer, sixel__reps[sixel_reps], ticks);
                 buffer.push_back(repeated_sixel);
               } else {
                 // Direct output for short runs
-                buffer.append(sixel_reps, repeated_sixel);
+                append_n(buffer, sixel_reps, repeated_sixel, ticks);
               }
             }
 
@@ -302,7 +330,7 @@ namespace {
       }
     }
 
-    buffer.append(sixel__epilogue);
+    append(buffer, sixel__epilogue, ticks);
 
     if (buffer.size() > 0) {
       ticks__timer time__sixel_pixel(&ticks.write_file);
@@ -583,11 +611,11 @@ int main() {
   float scale             = 2.5F;
   bool  show_demo_window  = false;
 
-  ticks__write_pixel_as_sixels ticks;
+  ticks__write_pixel_as_sixels ticks = {};
 
   std::vector<ABGR>     pixels      ;
   std::vector<GLubyte>  sixel_pixels;
-  std::string           buffer      ;
+  std::vector<char>     buffer      ;
   // Reserve 1MiB
   buffer.reserve(1<<20);
 
@@ -623,10 +651,14 @@ int main() {
 
     ImGui::Begin("Timing Info");
 
-    ImGui::LabelText("Sixel Pixel" , "%0.2f" , (1.0*ticks.sixel_pixel)/ticks.total);
-    ImGui::LabelText("Sixel Buffer", "%0.2f"  , (1.0*ticks.sixel_buffer)/ticks.total);
-    ImGui::LabelText("Used Colors" , "%0.2f"  , (1.0*ticks.used_colors)/ticks.total);
-    ImGui::LabelText("Write File"  , "%0.2f"  , (1.0*ticks.write_file)/ticks.total);
+    ImGui::LabelText("%Sixel Pixel"    , "%0.2f"  , (1.0*ticks.sixel_pixel)    /ticks.total);
+    ImGui::LabelText("%Sixel Buffer"   , "%0.2f"  , (1.0*ticks.sixel_buffer)   /ticks.total);
+    ImGui::LabelText("%Used Colors"    , "%0.2f"  , (1.0*ticks.used_colors)    /ticks.total);
+    ImGui::LabelText("%Buffer Append"  , "%0.2f"  , (1.0*ticks.buffer_append)  /ticks.total);
+    ImGui::LabelText("#Buffer Append"  , "%d"     , ticks.called__buffer_append            );
+    ImGui::LabelText("%Buffer Append N", "%0.2f"  , (1.0*ticks.buffer_append_n)/ticks.total);
+    ImGui::LabelText("#Buffer Append N", "%d"     , ticks.called__buffer_append_n          );
+    ImGui::LabelText("%Write File"     , "%0.2f"  , (1.0*ticks.write_file)     /ticks.total);
 
     ImGui::End();
 /*
