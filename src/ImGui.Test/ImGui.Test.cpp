@@ -83,7 +83,7 @@ namespace {
 
     inline ~ticks__timer() noexcept {
       if (p) {
-        *p = __rdtsc()-b;
+        *p += __rdtsc()-b;
       }
     }
   private:
@@ -157,6 +157,7 @@ namespace {
     DWORD64 total       ;
     DWORD64 sixel_pixel ;
     DWORD64 sixel_buffer;
+    DWORD64 used_colors ;
     DWORD64 write_file  ;
   };
 
@@ -179,8 +180,8 @@ namespace {
     assert(hstdout != INVALID_HANDLE_VALUE);
     assert(pixels.size() > 0);
     assert(pixels.size() == total_size);
-    assert(sixel_pixels.size() > 0);
-    assert(sixel_pixels.size() == total_size);
+
+    sixel_pixels.resize(total_size);
 
 
     {
@@ -220,6 +221,7 @@ namespace {
         auto y6_off = y6*width;
         auto rem = std::min<std::size_t>(6, height - y6);
         {
+          ticks__timer time__used_colors(&ticks.used_colors);
           // Find colors used in this group of 6 lines
           memset(used_colors, 0, sizeof(used_colors));
           for (std::size_t x = 0; x < width; ++x) {
@@ -317,7 +319,6 @@ namespace {
   }
 
 #ifdef _DEBUG
-  // Callback function for OpenGL to report errors
   void APIENTRY debug__callback(
       GLenum source           // Where the error came from
     , GLenum type             // The type of error
@@ -330,8 +331,6 @@ namespace {
       std::printf(message);
       std::printf("\n");
   }
-    
-  // Buffer for debug messages
   char debug__log[0xFFFF];  // 65535 characters
 #endif
 
@@ -373,7 +372,6 @@ namespace {
 
 
 #ifdef _DEBUG
-    // Retrieve the compilation log for `shaderProgram` and print it
     auto glGetProgramInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
     glGetProgramInfoLog(shader.program, sizeof(debug__log), NULL, debug__log);
     printf(debug__log);
@@ -552,19 +550,11 @@ int main() {
   auto on_exit__make_current = on_exit([]{ wglMakeCurrent(nullptr, nullptr); });
 
 #ifdef _DEBUG
-  // Enable OpenGL debug output in debug builds
   glEnable(GL_DEBUG_OUTPUT);
-
-  // Retrieve a pointer to the OpenGL function `glDebugMessageCallback` using `wglGetProcAddress`.
-  // OpenGL functions like this one are often not directly accessible, as they may be specific 
-  // to certain OpenGL versions or extensions. By looking them up at runtime, we ensure compatibility
-  // with different graphics drivers and hardware setups.
   auto glDebugMessageCallback = (PFNGLDEBUGMESSAGECALLBACKPROC)wglGetProcAddress("glDebugMessageCallback");
-
-  // Set up a debug callback function (`debugCallback`) to handle messages from the OpenGL driver,
-  // like errors or performance warnings. This helps with diagnosing issues during development.
   glDebugMessageCallback(debug__callback, 0);
 #endif
+
   init_effect();
 
   IMGUI_CHECKVERSION();
@@ -584,7 +574,6 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 #ifdef _DEBUG
-  // Final setup is complete, so disable debug output
   glDisable(GL_DEBUG_OUTPUT);
 #endif
 
@@ -594,7 +583,7 @@ int main() {
   float scale             = 2.5F;
   bool  show_demo_window  = false;
 
-  ticks__write_pixel_as_sixels ticks = {};
+  ticks__write_pixel_as_sixels ticks;
 
   std::vector<ABGR>     pixels      ;
   std::vector<GLubyte>  sixel_pixels;
@@ -636,10 +625,11 @@ int main() {
 
     ImGui::LabelText("Sixel Pixel" , "%0.2f" , (1.0*ticks.sixel_pixel)/ticks.total);
     ImGui::LabelText("Sixel Buffer", "%0.2f"  , (1.0*ticks.sixel_buffer)/ticks.total);
+    ImGui::LabelText("Used Colors" , "%0.2f"  , (1.0*ticks.used_colors)/ticks.total);
     ImGui::LabelText("Write File"  , "%0.2f"  , (1.0*ticks.write_file)/ticks.total);
 
     ImGui::End();
-
+/*
     ImGui::Begin("Control Panel");
 
     ImGui::SliderFloat("Fixed Radius" , &fixed_radius2, 0, 3);
@@ -653,7 +643,7 @@ int main() {
     }
 
     ImGui::End();
-
+*/
     ImGui::Render();
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
     // END: Intentionally ignore return values from ImGui
@@ -664,7 +654,6 @@ int main() {
     glReadBuffer(GL_FRONT);
     if (viewport__width > 0 && viewport__height > 0) {
       auto total_size = viewport__width*viewport__height;
-      sixel_pixels.resize(total_size);
       pixels.resize(total_size);
 
       auto ptr__pixels = &pixels.front();
@@ -679,6 +668,8 @@ int main() {
         , ptr__pixels
         );
     
+      memset(&ticks, 0, sizeof(ticks));
+
       write_pixel_as_sixels(
           hstdout
         , viewport__width
