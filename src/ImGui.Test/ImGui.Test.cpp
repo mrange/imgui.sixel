@@ -58,7 +58,7 @@ namespace {
       impl.suppress = true;
     }
 
-    ~on_exit__impl() {
+    ~on_exit__impl() noexcept {
       if(!suppress) {
         suppress = true;
         on_exit();
@@ -74,6 +74,22 @@ namespace {
   auto on_exit(TOnExit && on_exit) {
     return on_exit__impl<std::decay_t<TOnExit>>(std::move(on_exit));
   }
+
+  struct ticks__timer {
+    inline ticks__timer(DWORD64 * p) noexcept 
+      : p(p)
+      , b(__rdtsc()) {
+    }
+
+    inline ~ticks__timer() noexcept {
+      if (p) {
+        *p = __rdtsc()-b;
+      }
+    }
+  private:
+    DWORD64 * p;
+    DWORD64   b;
+  };
 
   using ABGR = std::uint32_t;
 
@@ -137,18 +153,28 @@ namespace {
   }
   std::string const sixel__palette = generate_palette();
 
+  struct ticks__write_pixel_as_sixels {
+    DWORD64 total       ;
+    DWORD64 sixel_pixel ;
+    DWORD64 sixel_buffer;
+    DWORD64 write_file  ;
+  };
 
   void write_pixel_as_sixels(
-      HANDLE                    hstdout
-    , std::size_t               width
-    , std::size_t               height
-    , std::vector<ABGR> const & pixels
-    , std::vector<GLubyte> &    sixel_pixels
-    , std::string &             buffer
+      HANDLE                        hstdout
+    , std::size_t                   width
+    , std::size_t                   height
+    , std::vector<ABGR> const &     pixels
+    , std::vector<GLubyte> &        sixel_pixels
+    , std::string &                 buffer
+    , ticks__write_pixel_as_sixels &ticks
     ) {
+    ticks__timer time__total(&ticks.total);
+
     if (width > sixel__reps.size()) {
       return;
     }
+
     auto total_size = width*height;
     assert(hstdout != INVALID_HANDLE_VALUE);
     assert(pixels.size() > 0);
@@ -156,7 +182,9 @@ namespace {
     assert(sixel_pixels.size() > 0);
     assert(sixel_pixels.size() == total_size);
 
+
     {
+      ticks__timer time__sixel_pixel(&ticks.sixel_pixel);
       // Convert from ABGR to sixel pixels
       for (std::size_t y = 0; y < height; ++y) {
         // Flip y axis
@@ -178,59 +206,81 @@ namespace {
       }
     }
   
+
     buffer.clear();
 
     buffer.append(sixel__prelude);
 
     buffer.append(sixel__palette);
 
-    bool used_colors[256];
-    for (std::size_t y6 = 0; y6 < height; y6 += 6) {
-      auto y6_off = y6*width;
-      auto rem = std::min<std::size_t>(6, height - y6);
-      {
-        // Find colors used in this group of 6 lines
-        memset(used_colors, 0, sizeof(used_colors));
-        for (std::size_t x = 0; x < width; ++x) {
-          // TODO: This would be more effective loop more over y then x rather
-          //  than x then y
-          auto y_off = y6_off;
-          for (std::size_t i = 0; i < rem; ++i) {
-            auto sixel_pixel = sixel_pixels[x + y_off];
-            used_colors[sixel_pixel] = true;
-            y_off += width;
-          }
-        }
-      }
-      {
-        // Convert colors in use to sixels
-        for (std::size_t current_col = 0; current_col < 256; ++current_col) {
-          if (!used_colors[current_col]) {
-            continue;
-          }
-
-          buffer.append(sixel__col_selectors[current_col]);
-
-          auto repeated_sixel     = sixel_base;
-          std::size_t sixel_reps  = 0;
-
+    {
+      ticks__timer time__sixel_pixel(&ticks.sixel_buffer);
+      bool used_colors[256];
+      for (std::size_t y6 = 0; y6 < height; y6 += 6) {
+        auto y6_off = y6*width;
+        auto rem = std::min<std::size_t>(6, height - y6);
+        {
+          // Find colors used in this group of 6 lines
+          memset(used_colors, 0, sizeof(used_colors));
           for (std::size_t x = 0; x < width; ++x) {
-            GLubyte sixel = 0;
+            // TODO: This would be more effective loop more over y then x rather
+            //  than x then y
             auto y_off = y6_off;
             for (std::size_t i = 0; i < rem; ++i) {
               auto sixel_pixel = sixel_pixels[x + y_off];
-              if (current_col == sixel_pixel) {
-                sixel |= 1U << i;
-              }
+              used_colors[sixel_pixel] = true;
               y_off += width;
             }
-            char sixel_char = sixel_base + sixel;
+          }
+        }
 
-            // Handle run-length encoding
-            if (repeated_sixel == sixel_char) {
-              ++sixel_reps;
-            } else {
-              // Output previous run
+        {
+          // Convert colors in use to sixels
+          for (std::size_t current_col = 0; current_col < 256; ++current_col) {
+            if (!used_colors[current_col]) {
+              continue;
+            }
+
+            buffer.append(sixel__col_selectors[current_col]);
+
+            auto repeated_sixel     = sixel_base;
+            std::size_t sixel_reps  = 0;
+
+            for (std::size_t x = 0; x < width; ++x) {
+              GLubyte sixel = 0;
+              auto y_off = y6_off;
+              for (std::size_t i = 0; i < rem; ++i) {
+                auto sixel_pixel = sixel_pixels[x + y_off];
+                if (current_col == sixel_pixel) {
+                  sixel |= 1U << i;
+                }
+                y_off += width;
+              }
+              char sixel_char = sixel_base + sixel;
+
+              // Handle run-length encoding
+              if (repeated_sixel == sixel_char) {
+                ++sixel_reps;
+              } else {
+                // Output previous run
+                if (sixel_reps > 3) {
+                  // Use RLE for runs longer than 3
+
+                  buffer.append(sixel__reps[sixel_reps]);
+                  buffer.push_back(repeated_sixel);
+                } else {
+                  // Direct output for short runs
+                  buffer.append(sixel_reps, repeated_sixel);
+                }
+
+                repeated_sixel  = sixel_char;
+                sixel_reps      = 1;
+              }
+
+            }
+
+            // Output final run if not empty
+            if (repeated_sixel != sixel_base) {
               if (sixel_reps > 3) {
                 // Use RLE for runs longer than 3
 
@@ -240,36 +290,20 @@ namespace {
                 // Direct output for short runs
                 buffer.append(sixel_reps, repeated_sixel);
               }
-
-              repeated_sixel  = sixel_char;
-              sixel_reps      = 1;
             }
 
+            buffer.push_back('$');  // Return to start of line
           }
-
-          // Output final run if not empty
-          if (repeated_sixel != sixel_base) {
-            if (sixel_reps > 3) {
-              // Use RLE for runs longer than 3
-
-              buffer.append(sixel__reps[sixel_reps]);
-              buffer.push_back(repeated_sixel);
-            } else {
-              // Direct output for short runs
-              buffer.append(sixel_reps, repeated_sixel);
-            }
-          }
-
-          buffer.push_back('$');  // Return to start of line
+          buffer.push_back('-');  // Move to next row
         }
-        buffer.push_back('-');  // Move to next row
-      }
 
+      }
     }
 
     buffer.append(sixel__epilogue);
 
     if (buffer.size() > 0) {
+      ticks__timer time__sixel_pixel(&ticks.write_file);
       auto writeOk = WriteFile(
         hstdout
       , &buffer.front()
@@ -280,7 +314,6 @@ namespace {
       auto err = GetLastError();
       assert(writeOk);
     }
-
   }
 
 #ifdef _DEBUG
@@ -561,6 +594,7 @@ int main() {
   float scale             = 2.5F;
   bool  show_demo_window  = false;
 
+  ticks__write_pixel_as_sixels ticks = {};
 
   std::vector<ABGR>     pixels      ;
   std::vector<GLubyte>  sixel_pixels;
@@ -597,6 +631,14 @@ int main() {
 
     // BEGIN: Intentionally ignore return values from ImGui
     ImGui::NewFrame();
+
+    ImGui::Begin("Timing Info");
+
+    ImGui::LabelText("Sixel Pixel" , "%0.2f" , (1.0*ticks.sixel_pixel)/ticks.total);
+    ImGui::LabelText("Sixel Buffer", "%0.2f"  , (1.0*ticks.sixel_buffer)/ticks.total);
+    ImGui::LabelText("Write File"  , "%0.2f"  , (1.0*ticks.write_file)/ticks.total);
+
+    ImGui::End();
 
     ImGui::Begin("Control Panel");
 
@@ -644,6 +686,7 @@ int main() {
         , pixels
         , sixel_pixels
         , buffer
+        , ticks
         );
     }
   }
