@@ -209,9 +209,43 @@ namespace {
     assert(pixels.size() > 0);
     assert(pixels.size() == total_size);
 
-    sixel_pixels.resize(total_size);
+    std::size_t sixel_height  = ((height+5)/6)*6;
+    auto sixel_size           = width*sixel_height;
+    assert(sixel_height%6 == 0);
 
+    sixel_pixels.resize(sixel_size);
 
+    {
+      // Does a few things
+      //  Groups 6 pixels under each other sequentially
+      //  Converts to from 32 bit ABGR to 8 bit BGR
+      auto ptr__output = &sixel_pixels.front();
+      for (std::size_t y6 = 0; y6 < height; y6 += 6) {
+        auto y6_off = y6*width;
+        auto rem = std::min<std::size_t>(6, height - y6);
+        for (std::size_t x = 0; x < width; ++x) {
+          auto y_off = y6_off;
+          for (std::size_t i = 0; i < rem; ++i) {
+            auto from_i = x+y_off;
+            auto abgr = pixels[from_i];
+            // 3 bits for red
+            // 3 bits for green
+            // 2 bits for blue
+            auto red          = (abgr           )&(0x7<<5);
+            auto green        = (abgr >> (8+5-2))&(0x7<<2);
+            auto blue         = (abgr >> (8+8+6))&(0x3   );
+            auto sixel_pixel  = red|green|blue;
+            *ptr__output      = sixel_pixel;
+
+            ++ptr__output;
+            y_off += width;
+          }
+        }
+      }
+      assert(ptr__output == &sixel_pixels.front()+total_size);
+    }
+
+#ifdef OLD
     {
       ticks__timer time__sixel_pixel(&ticks.sixel_pixel);
       // Convert from ABGR to sixel pixels
@@ -234,7 +268,7 @@ namespace {
         }
       }
     }
-  
+#endif  
 
     buffer.clear();
 
@@ -245,22 +279,17 @@ namespace {
     {
       ticks__timer time__sixel_pixel(&ticks.sixel_buffer);
       bool used_colors[256];
-      for (std::size_t y6 = 0; y6 < height; y6 += 6) {
+      for (std::size_t y6 = 0; y6 < sixel_height; y6 += 6) {
         auto y6_off = y6*width;
-        auto rem = std::min<std::size_t>(6, height - y6);
         {
           ticks__timer time__used_colors(&ticks.used_colors);
           // Find colors used in this group of 6 lines
           memset(used_colors, 0, sizeof(used_colors));
-          for (std::size_t x = 0; x < width; ++x) {
-            // TODO: This would be more effective loop more over y then x rather
-            //  than x then y
-            auto y_off = y6_off;
-            for (std::size_t i = 0; i < rem; ++i) {
-              auto sixel_pixel = sixel_pixels[x + y_off];
-              used_colors[sixel_pixel] = true;
-              y_off += width;
-            }
+          auto ptr__input = &sixel_pixels.front() + y6_off;
+          for (std::size_t x = 0; x < 6*width; ++x) {
+            auto sixel_pixel = *ptr__input;
+            used_colors[sixel_pixel] = true;
+            ++ptr__input;
           }
         }
 
@@ -276,15 +305,15 @@ namespace {
             auto repeated_sixel     = sixel_base;
             std::size_t sixel_reps  = 0;
 
+            auto ptr__input = &sixel_pixels.front() + y6_off;
             for (std::size_t x = 0; x < width; ++x) {
               GLubyte sixel = 0;
-              auto y_off = y6_off;
-              for (std::size_t i = 0; i < rem; ++i) {
-                auto sixel_pixel = sixel_pixels[x + y_off];
+              for (std::size_t i = 0; i < 6; ++i) {
+                auto sixel_pixel = *ptr__input;
                 if (current_col == sixel_pixel) {
                   sixel |= 1U << i;
                 }
-                y_off += width;
+                ++ptr__input;
               }
               char sixel_char = sixel_base + sixel;
 
@@ -381,7 +410,7 @@ namespace {
     assert(fp__glCreateShaderProgramv);
     assert(fp__glGetUniformLocation);
 
-    GLchar const* fragment_shaders[] = { fragment_shader_source };
+    GLchar const* fragment_shaders[] = { fragment_shader__source };
     shader.program = fp__glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, fragment_shaders);
     assert(shader.program > 0);
 
