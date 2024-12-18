@@ -204,28 +204,26 @@ namespace {
       return;
     }
 
+    // We can only handle number of rows divisible by 6
+    assert(height%6 == 0);
+
     auto total_size = width*height;
     assert(hstdout != INVALID_HANDLE_VALUE);
     assert(pixels.size() > 0);
     assert(pixels.size() == total_size);
 
-    std::size_t sixel_height  = ((height+5)/6)*6;
-    auto sixel_size           = width*sixel_height;
-    assert(sixel_height%6 == 0);
-
-    sixel_pixels.resize(sixel_size);
+    sixel_pixels.resize(total_size);
 
     {
       // Does a few things
       //  Groups 6 pixels under each other sequentially
       //  Converts to from 32 bit ABGR to 8 bit BGR
       auto ptr__output = &sixel_pixels.front();
-      for (std::size_t y6 = 0; y6 < height; y6 += 6) {
-        auto y6_off = y6*width;
-        auto rem = std::min<std::size_t>(6, height - y6);
+      for (std::size_t y6 = height; y6 > 0; y6 -= 6) {
+        auto y6_off = (y6-1)*width;
         for (std::size_t x = 0; x < width; ++x) {
           auto y_off = y6_off;
-          for (std::size_t i = 0; i < rem; ++i) {
+          for (std::size_t i = 0; i < 6; ++i) {
             auto from_i = x+y_off;
             auto abgr = pixels[from_i];
             // 3 bits for red
@@ -238,7 +236,7 @@ namespace {
             *ptr__output      = sixel_pixel;
 
             ++ptr__output;
-            y_off += width;
+            y_off -= width;
           }
         }
       }
@@ -279,7 +277,7 @@ namespace {
     {
       ticks__timer time__sixel_pixel(&ticks.sixel_buffer);
       bool used_colors[256];
-      for (std::size_t y6 = 0; y6 < sixel_height; y6 += 6) {
+      for (std::size_t y6 = 0; y6 < height; y6 += 6) {
         auto y6_off = y6*width;
         {
           ticks__timer time__used_colors(&ticks.used_colors);
@@ -714,7 +712,10 @@ int main() {
 
     glReadBuffer(GL_FRONT);
     if (viewport__width > 0 && viewport__height > 0) {
-      auto total_size = viewport__width*viewport__height;
+      // Make sure the number of rows in the buffer is divisible by 6
+      std::size_t buffer_height  = ((viewport__height+5)/6)*6;
+      assert(buffer_height%6 == 0);
+      auto total_size = viewport__width*buffer_height;
       pixels.resize(total_size);
 
       auto ptr__pixels = &pixels.front();
@@ -734,7 +735,7 @@ int main() {
       write_pixel_as_sixels(
           hstdout
         , viewport__width
-        , viewport__height
+        , buffer_height
         , pixels
         , sixel_pixels
         , buffer
