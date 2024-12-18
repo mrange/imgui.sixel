@@ -192,6 +192,27 @@ namespace {
     buffer.insert(buffer.end(), n ,v);
   }
 
+  void write_to_stdout(
+      HANDLE                        hstdout
+    , std::vector<char> &           buffer
+    , ticks__write_pixel_as_sixels  & ticks
+    ) {
+//    auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (buffer.size() > 0) {
+      ticks__timer time__sixel_pixel(&ticks.write_file);
+      // TODO: Use async API to avoid waiting for file write before processing next frame
+      auto writeOk = WriteFile(
+        hstdout
+      , &buffer.front()
+      , static_cast<DWORD>(buffer.size())
+      , nullptr
+      , nullptr
+      );
+      auto err = GetLastError();
+      assert(writeOk);
+    }
+  }
+
   void write_pixel_as_sixels(
       HANDLE                        hstdout
     , std::size_t                   width
@@ -354,19 +375,7 @@ namespace {
 
     append(buffer, sixel__epilogue, ticks);
 
-    if (buffer.size() > 0) {
-      ticks__timer time__sixel_pixel(&ticks.write_file);
-      // TODO: Use async API to avoid waiting for file write before processing next frame
-      auto writeOk = WriteFile(
-        hstdout
-      , &buffer.front()
-      , static_cast<DWORD>(buffer.size())
-      , nullptr
-      , nullptr
-      );
-      auto err = GetLastError();
-      assert(writeOk);
-    }
+    write_to_stdout(hstdout, buffer, ticks);
   }
 
 #ifdef _DEBUG
@@ -636,11 +645,14 @@ int main() {
 
   ticks__write_pixel_as_sixels ticks = {};
 
-  std::vector<ABGR>     pixels      ;
-  std::vector<GLubyte>  sixel_pixels;
-  std::vector<char>     buffer      ;
+  std::vector<ABGR>     pixels          ;
+  std::vector<GLubyte>  sixel_pixels    ;
+  std::vector<char>     buffer0         ;
+  std::vector<char>     buffer1         ;
+  bool                  buffer_selector = false;
   // Reserve 1MiB
-  buffer.reserve(1<<20);
+  buffer0.reserve(1<<20);
+  buffer1.reserve(1<<20);
 
   auto before = GetTickCount64();
   auto done = false;
@@ -734,9 +746,10 @@ int main() {
         , buffer_height
         , pixels
         , sixel_pixels
-        , buffer
+        , buffer_selector ? buffer0 : buffer1
         , ticks
         );
+      buffer_selector = !buffer_selector;
     }
   }
 
