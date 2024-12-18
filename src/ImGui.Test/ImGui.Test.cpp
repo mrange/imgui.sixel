@@ -20,13 +20,17 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <condition_variable>
 #include <cstdint>
 #include <iterator>
 #include <format>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <vector>
+
 
 #include "shader_sources.h"
 
@@ -192,6 +196,75 @@ namespace {
     buffer.insert(buffer.end(), n ,v);
   }
 
+#define USE_BACKGROUND_WRITER_THREAD
+
+#ifdef USE_BACKGROUND_WRITER_THREAD
+  struct background_writer {
+    background_writer() 
+      : done    (false)
+      , pbuffer (nullptr)
+      , thread  ([this]{thread_proc();}){
+    }
+
+    ~background_writer() {
+      done = true;
+      cv.notify_one();
+      thread.join();
+    }
+
+    background_writer(background_writer const &)  = delete;
+    background_writer(background_writer &&)       = delete;
+
+    background_writer& operator=(background_writer const &)  = delete;
+    background_writer& operator=(background_writer &&)       = delete;
+
+    void enqueue(std::vector<char> & buffer) {
+      std::unique_lock<std::mutex> lock(mtx);
+      pbuffer = &buffer;
+      cv.notify_one();
+    }
+
+  private:
+    void thread_proc() {
+      auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+      assert(hstdout != INVALID_HANDLE_VALUE);
+
+      std::unique_lock<std::mutex> lock(mtx);
+
+      while(!done) {
+        cv.wait(lock, [this] { return pbuffer != nullptr||done; });
+
+        auto pb = pbuffer;
+        pbuffer = nullptr;
+        if (pb) {
+          auto & buffer = *pb;
+          auto writeOk = WriteFile(
+            hstdout
+          , &buffer.front()
+          , static_cast<DWORD>(buffer.size())
+          , nullptr
+          , nullptr
+          );
+          assert(writeOk);
+        }
+      }
+    }
+
+    bool                    done    ;
+    std::vector<char> *     pbuffer ;
+    std::mutex              mtx     ;
+    std::condition_variable cv      ;
+    std::thread             thread  ;
+  };
+  background_writer bkg_writer;
+  void write_to_stdout(
+      HANDLE                        hstdout
+    , std::vector<char> &           buffer
+    , ticks__write_pixel_as_sixels  & ticks
+    ) {
+    bkg_writer.enqueue(buffer);
+  }
+#else
   void write_to_stdout(
       HANDLE                        hstdout
     , std::vector<char> &           buffer
@@ -212,6 +285,7 @@ namespace {
       assert(writeOk);
     }
   }
+#endif
 
   void write_pixel_as_sixels(
       HANDLE                        hstdout
