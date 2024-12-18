@@ -9,6 +9,9 @@
 #include <gl/GL.h>
 #include "glext.h"
 
+#include <mmintrin.h>
+#include <xmmintrin.h>
+
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_opengl2.h"
@@ -212,7 +215,8 @@ namespace {
     assert(pixels.size() > 0);
     assert(pixels.size() == total_size);
 
-    sixel_pixels.resize(total_size);
+    // +8 to handle any potential overruns from using AVX or MMX
+    sixel_pixels.resize(total_size+8);
 
     {
       // Does a few things
@@ -243,31 +247,6 @@ namespace {
       assert(ptr__output == &sixel_pixels.front()+total_size);
     }
 
-#ifdef OLD
-    {
-      ticks__timer time__sixel_pixel(&ticks.sixel_pixel);
-      // Convert from ABGR to sixel pixels
-      for (std::size_t y = 0; y < height; ++y) {
-        // Flip y axis
-        auto from_y_off = (height - y - 1)*width;
-        auto to_y_off   = y*width;
-        for (std::size_t x = 0; x < width; ++x) {
-          auto from_i = x+from_y_off;
-          auto to_i   = x+to_y_off;
-          auto abgr = pixels[from_i];
-          // 3 bits for red
-          // 3 bits for green
-          // 2 bits for blue
-          auto red          = (abgr           )&(0x7<<5);
-          auto green        = (abgr >> (8+5-2))&(0x7<<2);
-          auto blue         = (abgr >> (8+8+6))&(0x3   );
-          auto sixel_pixel  = red|green|blue;
-          sixel_pixels[to_i]   = sixel_pixel;
-        }
-      }
-    }
-#endif  
-
     buffer.clear();
 
     append(buffer,sixel__prelude, ticks);
@@ -291,12 +270,17 @@ namespace {
           }
         }
 
+#define USE_MMX
         {
           // Convert colors in use to sixels
           for (std::size_t current_col = 0; current_col < 256; ++current_col) {
             if (!used_colors[current_col]) {
               continue;
             }
+
+#ifdef USE_MMX
+            auto current_col6 = _mm_set1_pi8(static_cast<char>(current_col));
+#endif
 
             append(buffer, sixel__col_selectors[current_col], ticks);
 
@@ -306,6 +290,12 @@ namespace {
             auto ptr__input = &sixel_pixels.front() + y6_off;
             for (std::size_t x = 0; x < width; ++x) {
               GLubyte sixel = 0;
+#ifdef USE_MMX
+              auto sixel_pixel6 = *reinterpret_cast<__m64 const *>(ptr__input);
+              auto cmpeq6 = _mm_cmpeq_pi8(sixel_pixel6, current_col6);
+              sixel = (_mm_movemask_pi8(cmpeq6))&0x3F;
+              ptr__input += 6;
+#else
               for (std::size_t i = 0; i < 6; ++i) {
                 auto sixel_pixel = *ptr__input;
                 if (current_col == sixel_pixel) {
@@ -313,6 +303,7 @@ namespace {
                 }
                 ++ptr__input;
               }
+#endif
               char sixel_char = sixel_base + sixel;
 
               // Handle run-length encoding
@@ -357,10 +348,15 @@ namespace {
       }
     }
 
+#ifdef USE_MMX
+    _mm_empty();
+#endif
+
     append(buffer, sixel__epilogue, ticks);
 
     if (buffer.size() > 0) {
       ticks__timer time__sixel_pixel(&ticks.write_file);
+      // TODO: Use async API to avoid waiting for file write before processing next frame
       auto writeOk = WriteFile(
         hstdout
       , &buffer.front()
