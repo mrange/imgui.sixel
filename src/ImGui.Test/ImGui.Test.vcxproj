@@ -164,6 +164,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Detours\src\detours.cpp" />
+    <ClCompile Include="Detours\src\disasm.cpp" />
+    <ClCompile Include="Detours\src\modules.cpp" />
     <ClCompile Include="ImGui.Test.cpp" />
     <ClCompile Include="ImGui\backends\imgui_impl_opengl2.cpp" />
     <ClCompile Include="ImGui\backends\imgui_impl_win32.cpp" />

@@ -16,12 +16,14 @@
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_opengl2.h"
 
+#include "detours.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <condition_variable>
 #include <cstdint>
+#include <cstdlib>
 #include <iterator>
 #include <format>
 #include <memory>
@@ -51,7 +53,53 @@ namespace {
   static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
   using u8string = std::basic_string<char8_t>;
 
+  using ptr__malloc = void* __cdecl(size_t);
+  using ptr__free   = void __cdecl(void*);
 
+  std::size_t calls__malloc;
+  std::size_t size__malloc ;
+  std::size_t calls__free  ;
+
+  void clear__malloc_free_stats() {
+    calls__malloc   = 0;
+    size__malloc    = 0;
+    calls__free     = 0;
+  }
+
+  ptr__malloc* real__malloc  = nullptr;
+  ptr__free*   real__free    = nullptr;
+  void* __cdecl hooked__malloc(size_t size) {
+    ++calls__malloc;
+    size__malloc += size;
+    return real__malloc(size);
+  }
+
+  void __cdecl hooked__free(void* ptr) {
+    ++calls__free;
+    real__free(ptr);
+  }
+
+  void detour__malloc_free() {
+
+    // Attach Detours
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+    // Get the original malloc and free
+#ifdef _DEBUG
+    real__malloc = reinterpret_cast<ptr__malloc*>(DetourFindFunction("ucrtbased.dll" , "malloc"));
+    real__free   = reinterpret_cast<ptr__free*>(DetourFindFunction("ucrtbased.dll"   , "free"));
+#else
+    real__malloc = reinterpret_cast<ptr__malloc*>(DetourFindFunction("ucrtbase.dll" , "malloc"));
+    real__free   = reinterpret_cast<ptr__free*>(DetourFindFunction("ucrtbase.dll"   , "free"));
+#endif
+
+    // Hook malloc and free
+    DetourAttach(&real__malloc, hooked__malloc);
+    DetourAttach(&real__free  , hooked__free);
+
+    DetourTransactionCommit();
+  }
 
   template<typename TOnExit>
   struct on_exit__impl {
@@ -668,6 +716,8 @@ namespace {
 }
 
 int main() {
+  detour__malloc_free();
+    
   //SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
   auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
   CHECK(hstdout != INVALID_HANDLE_VALUE, 1, "GetStdHandle Failed");
@@ -826,6 +876,10 @@ int main() {
       ImGui::LabelText("Potential FPS" , "%0.1f"  , 1.0/ms);
     }
 
+    ImGui::LabelText("#Malloc calls"   , "%d"      , calls__malloc);
+    ImGui::LabelText("#Malloc bytes"   , "%d"      , size__malloc);
+    ImGui::LabelText("#Free calls"     , "%d"      , calls__free  );
+
     ImGui::LabelText("%Sixel Pixel"    , "%03.0f"  , (100.0*ticks.sixel_pixel)    /ticks.total);
     ImGui::LabelText("%Sixel Buffer"   , "%03.0f"  , (100.0*ticks.sixel_buffer)   /ticks.total);
     ImGui::LabelText("%Used Colors"    , "%03.0f"  , (100.0*ticks.used_colors)    /ticks.total);
@@ -836,6 +890,8 @@ int main() {
     ImGui::LabelText("%Write File"     , "%03.0f"  , (100.0*ticks.write_file)     /ticks.total);
 
     ImGui::End();
+
+    clear__malloc_free_stats();
 /*
     ImGui::Begin("Control Panel");
 
