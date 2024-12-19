@@ -54,12 +54,12 @@ namespace {
     on_exit__impl (on_exit__impl const &)           = delete;
     on_exit__impl& operator=(on_exit__impl const &) = delete;
 
-    on_exit__impl (TOnExit && on_exit)
+    explicit on_exit__impl (TOnExit && on_exit)
       : suppress (false)
       , on_exit  (std::move(on_exit)) {
     }
 
-    on_exit__impl (on_exit__impl && impl)
+    explicit on_exit__impl (on_exit__impl && impl)
       : suppress (impl.suppress)
       , on_exit  (std::move(impl.on_exit)) {
       impl.suppress = true;
@@ -83,7 +83,12 @@ namespace {
   }
 
   struct ticks__timer {
-    inline ticks__timer(DWORD64 * p) noexcept 
+    ticks__timer(ticks__timer const &)              = delete;
+    ticks__timer(ticks__timer &&)                   = delete;
+    ticks__timer& operator=(ticks__timer const &)   = delete;
+    ticks__timer& operator=(ticks__timer &&)        = delete;
+
+    inline explicit ticks__timer(DWORD64 * p) noexcept 
       : p(p)
       , b(__rdtsc()) {
     }
@@ -96,6 +101,29 @@ namespace {
   private:
     DWORD64 * p;
     DWORD64   b;
+  };
+
+  struct hires__timer {
+    hires__timer(hires__timer const &)              = delete;
+    hires__timer(hires__timer &&)                   = delete;
+    hires__timer& operator=(hires__timer const &)   = delete;
+    hires__timer& operator=(hires__timer &&)        = delete;
+
+    inline explicit hires__timer(LONGLONG * p) noexcept 
+      : p(p) {
+      QueryPerformanceCounter(&b);
+    }
+
+    inline ~hires__timer() noexcept {
+      if (p) {
+        LARGE_INTEGER e;
+        QueryPerformanceCounter(&e);
+        *p += (e.QuadPart-b.QuadPart);
+      }
+    }
+  private:
+    LONGLONG      * p ;
+    LARGE_INTEGER b   ;
   };
 
   using ABGR = std::uint32_t;
@@ -161,19 +189,18 @@ namespace {
   std::string const sixel__palette = generate_palette();
 
   struct ticks__write_pixel_as_sixels {
-    DWORD64 total           ;
-    DWORD64 sixel_pixel     ;
-    DWORD64 sixel_buffer    ;
-    DWORD64 used_colors     ;
-    DWORD64 buffer_append   ;
-    DWORD64 buffer_append_n ;
-    DWORD64 write_file      ;
+    LONGLONG      total__hires    ;
+    DWORD64       total           ;
+    DWORD64       sixel_pixel     ;
+    DWORD64       sixel_buffer    ;
+    DWORD64       used_colors     ;
+    DWORD64       buffer_append   ;
+    DWORD64       buffer_append_n ;
+    DWORD64       write_file      ;
 
-    DWORD64 called__buffer_append   ;
-    DWORD64 called__buffer_append_n ;
-
+    DWORD64       called__buffer_append   ;
+    DWORD64       called__buffer_append_n ;
   };
-
 
   inline void append(
       std::vector<char>             & buffer
@@ -296,6 +323,7 @@ namespace {
     , std::vector<char> &           buffer
     , ticks__write_pixel_as_sixels &ticks
     ) {
+    hires__timer hires__total(&ticks.total__hires);
     ticks__timer time__total(&ticks.total);
 
     if (width > sixel__reps.size()) {
@@ -760,14 +788,23 @@ int main() {
 
     ImGui::Begin("Timing Info");
 
-    ImGui::LabelText("%Sixel Pixel"    , "%0.2f"  , (1.0*ticks.sixel_pixel)    /ticks.total);
-    ImGui::LabelText("%Sixel Buffer"   , "%0.2f"  , (1.0*ticks.sixel_buffer)   /ticks.total);
-    ImGui::LabelText("%Used Colors"    , "%0.2f"  , (1.0*ticks.used_colors)    /ticks.total);
-    ImGui::LabelText("%Buffer Append"  , "%0.2f"  , (1.0*ticks.buffer_append)  /ticks.total);
+    ImGui::LabelText("Width in Pixel"   , "%d"  , viewport__width);
+    ImGui::LabelText("Height in Pixel"  , "%d"  , viewport__height);
+
+    LARGE_INTEGER hires_freq;
+    if (QueryPerformanceFrequency(&hires_freq)) {
+      auto ms = (1.0*ticks.total__hires) /hires_freq.QuadPart;
+      ImGui::LabelText("Potential FPS" , "%0.1f"  , 1.0/ms);
+    }
+
+    ImGui::LabelText("%Sixel Pixel"    , "%03.0f"  , (100.0*ticks.sixel_pixel)    /ticks.total);
+    ImGui::LabelText("%Sixel Buffer"   , "%03.0f"  , (100.0*ticks.sixel_buffer)   /ticks.total);
+    ImGui::LabelText("%Used Colors"    , "%03.0f"  , (100.0*ticks.used_colors)    /ticks.total);
+    ImGui::LabelText("%Buffer Append"  , "%03.0f"  , (100.0*ticks.buffer_append)  /ticks.total);
     ImGui::LabelText("#Buffer Append"  , "%d"     , ticks.called__buffer_append            );
-    ImGui::LabelText("%Buffer Append N", "%0.2f"  , (1.0*ticks.buffer_append_n)/ticks.total);
+    ImGui::LabelText("%Buffer Append N", "%03.0f"  , (100.0*ticks.buffer_append_n)/ticks.total);
     ImGui::LabelText("#Buffer Append N", "%d"     , ticks.called__buffer_append_n          );
-    ImGui::LabelText("%Write File"     , "%0.2f"  , (1.0*ticks.write_file)     /ticks.total);
+    ImGui::LabelText("%Write File"     , "%03.0f"  , (100.0*ticks.write_file)     /ticks.total);
 
     ImGui::End();
 /*
