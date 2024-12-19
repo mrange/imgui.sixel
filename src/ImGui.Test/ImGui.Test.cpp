@@ -48,6 +48,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
   }
 
 namespace {
+  static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
+  using u8string = std::basic_string<char8_t>;
+
+
+
   template<typename TOnExit>
   struct on_exit__impl {
     on_exit__impl ()                                = delete;
@@ -135,58 +140,67 @@ namespace {
 
   std::size_t viewport__width       = desired__width ;
   std::size_t viewport__height      = desired__height;
-  std::string const sixel__prelude  = "\x1B[?25l\x1B[H\x1B[12t\x1BP7;1;q";
-  std::string const sixel__epilogue = "\x1B\\";
 
-  std::array<std::string, 256> generate_col_selectors() {
-    std::array<std::string,256> res;
+  // Hide cursor, goto top, start sixel image
+  u8string const sixel__prelude     = u8"\x1B[?25l\x1B[H\x1BP7;1;q";
+  // Sixel image done
+  u8string const sixel__epilogue    = u8"\x1B\\";
+
+  u8string const logo = u8"\x1B[H" u8"Mårten Rånge";
+
+  u8string to_u8string(std::string const & s) {
+    return u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
+  }
+
+  std::array<u8string, 256> generate_col_selectors() {
+    std::array<u8string,256> res;
 
     for (std::size_t i=0; i < res.size(); ++i) {
-      res[i] = std::format(
+      res[i] = to_u8string(std::format(
         "#{}"
-      , i);
+      , i));
     }
 
     return res;
   }
-  std::array<std::string, 256> const sixel__col_selectors = generate_col_selectors();
+  std::array<u8string, 256> const sixel__col_selectors = generate_col_selectors();
 
-  std::array<std::string, 2048> generate_reps() {
-    std::array<std::string,2048> res;
+  std::array<u8string, 2048> generate_reps() {
+    std::array<u8string,2048> res;
 
     for (std::size_t i=0; i < res.size(); ++i) {
-      res[i] = std::format(
+      res[i] = to_u8string(std::format(
         "!{}"
-      , i);
+        , i));
     }
 
     return res;
   }
-  std::array<std::string, 2048> const sixel__reps = generate_reps();
+  std::array<u8string, 2048> const sixel__reps = generate_reps();
 
-  std::string generate_palette() {
+  u8string generate_palette() {
     // 3 bits for red
     // 3 bits for green
     // 2 bits for blue
 
-    std::string palette;
+    std::u8string palette;
     for (auto red = 0; red < 8; ++red) {
       for (auto green = 0; green < 8; ++green) {
         for (auto blue = 0; blue < 4; ++blue) {
           auto idx = (red << 5)|(green<<2)|blue;
-          palette.append(std::format(
+          palette.append(to_u8string(std::format(
             "#{};2;{};{};{}"
           , idx
           , static_cast<int>(std::round(red  *100.0/7.0))
           , static_cast<int>(std::round(green*100.0/7.0))
           , static_cast<int>(std::round(blue *100.0/3.0))
-          ));
+          )));
         }
       }
     }
     return palette;
   }
-  std::string const sixel__palette = generate_palette();
+  u8string const sixel__palette = generate_palette();
 
   struct ticks__write_pixel_as_sixels {
     LONGLONG      total__hires    ;
@@ -203,8 +217,8 @@ namespace {
   };
 
   inline void append(
-      std::vector<char>             & buffer
-    , std::string const             & v
+      std::vector<char8_t>          & buffer
+    , u8string const                & v
     , ticks__write_pixel_as_sixels  & ticks
     ) {
     ticks__timer time__append(&ticks.buffer_append);
@@ -213,9 +227,9 @@ namespace {
   }
 
   inline void append_n(
-      std::vector<char> &             buffer
+      std::vector<char8_t> &          buffer
     , std::size_t                     n
-    , char                            v
+    , char8_t                         v
     , ticks__write_pixel_as_sixels  & ticks
     ) {
     ticks__timer time__append(&ticks.buffer_append_n);
@@ -223,7 +237,7 @@ namespace {
     buffer.insert(buffer.end(), n ,v);
   }
 
-#define USE_BACKGROUND_WRITER_THREAD
+//#define USE_BACKGROUND_WRITER_THREAD
 
 #ifdef USE_BACKGROUND_WRITER_THREAD
   struct background_writer {
@@ -245,7 +259,7 @@ namespace {
     background_writer& operator=(background_writer const &)  = delete;
     background_writer& operator=(background_writer &&)       = delete;
 
-    void enqueue(std::vector<char> & buffer) {
+    void enqueue(std::vector<char8_t> & buffer) {
       std::unique_lock<std::mutex> lock(mtx);
       pbuffer = &buffer;
       cv.notify_one();
@@ -278,7 +292,7 @@ namespace {
     }
 
     bool                    done    ;
-    std::vector<char> *     pbuffer ;
+    std::vector<char8_t> *  pbuffer ;
     std::mutex              mtx     ;
     std::condition_variable cv      ;
     std::thread             thread  ;
@@ -286,7 +300,7 @@ namespace {
   background_writer bkg_writer;
   void write_to_stdout(
       HANDLE                        hstdout
-    , std::vector<char> &           buffer
+    , std::vector<char8_t> &        buffer
     , ticks__write_pixel_as_sixels  & ticks
     ) {
     bkg_writer.enqueue(buffer);
@@ -294,7 +308,7 @@ namespace {
 #else
   void write_to_stdout(
       HANDLE                        hstdout
-    , std::vector<char> &           buffer
+    , std::vector<char8_t> &        buffer
     , ticks__write_pixel_as_sixels  & ticks
     ) {
 //    auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -320,7 +334,7 @@ namespace {
     , std::size_t                   height
     , std::vector<ABGR> const &     pixels
     , std::vector<GLubyte> &        sixel_pixels
-    , std::vector<char> &           buffer
+    , std::vector<char8_t> &        buffer
     , ticks__write_pixel_as_sixels &ticks
     ) {
     hires__timer hires__total(&ticks.total__hires);
@@ -476,6 +490,8 @@ namespace {
 #endif
 
     append(buffer, sixel__epilogue, ticks);
+
+    append(buffer, logo, ticks);
 
     write_to_stdout(hstdout, buffer, ticks);
   }
@@ -656,6 +672,19 @@ int main() {
   auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
   CHECK(hstdout != INVALID_HANDLE_VALUE, 1, "GetStdHandle Failed");
   
+  SetConsoleCP(CP_UTF8);
+  auto result__setUtf8 = SetConsoleOutputCP(CP_UTF8);
+  CHECK(result__setUtf8, 1, "SetConsoleOutputCP Failed");
+
+  DWORD consoleMode;
+  auto result__get_console_mode = GetConsoleMode(hstdout, &consoleMode);
+  CHECK(result__get_console_mode, 1, "GetConsoleMode Failed");
+
+  consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+
+  auto result__set_console_mode = SetConsoleMode(hstdout, consoleMode);
+  CHECK(result__set_console_mode, 1, "SetConsoleMode Failed");
+
   auto hinstance = GetModuleHandle(0);
   CHECK(hinstance, 1, "GetModuleHandle Failed");
 
@@ -749,8 +778,8 @@ int main() {
 
   std::vector<ABGR>     pixels          ;
   std::vector<GLubyte>  sixel_pixels    ;
-  std::vector<char>     buffer0         ;
-  std::vector<char>     buffer1         ;
+  std::vector<char8_t>  buffer0         ;
+  std::vector<char8_t>  buffer1         ;
   bool                  buffer_selector = false;
   // Reserve 1MiB
   buffer0.reserve(1<<20);
