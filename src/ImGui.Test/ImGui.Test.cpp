@@ -1,4 +1,4 @@
-
+﻿
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX             // Avoid conflict with C++ std::min and std::max
 #define STRICT               // Enforce type safety
@@ -189,12 +189,46 @@ namespace {
   std::size_t viewport__width       = desired__width ;
   std::size_t viewport__height      = desired__height;
 
-  // Hide cursor, goto top, start sixel image
-  u8string const sixel__prelude     = u8"\x1B[?25l\x1B[H\x1BP7;1;q";
+  // Hide cursor, clear screen
+  u8string const buffer__prelude    = u8"\x1B[?25l\x1b[2J";
+  // goto top, start sixel image
+  u8string const sixel__prelude     = u8"\x1B[H\x1BP7;1;q";
   // Sixel image done
   u8string const sixel__epilogue    = u8"\x1B\\";
 
-  u8string const logo = u8"\x1B[H" u8"Mårten Rånge";
+  //                                                                    ------->
+  u8string const logo = u8"\x1B[H" u8R"LOGO(
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                                                                              ║
+║         ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌        ║
+║        ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌        ║
+║        ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌        ║
+║        ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒        ║
+║        ░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄         ║
+║        ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒        ║
+║         ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░        ║
+║         ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░        ║
+║         ░         ░               ░         ░  ░      ░     ░  ░ ░           ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║                                                                              ║
+║       ████████ ██                  ██   ███████  ██                  ██      ║
+║      ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██      ║
+║     ░██        ██ ██   ██  █████  ░██  ░██   ░██ ██ ██   ██  █████  ░██      ║
+║     ░█████████░██░░██ ██  ██░░░██ ░██  ░███████ ░██░░██ ██  ██░░░██ ░██      ║
+║     ░░░░░░░░██░██ ░░███  ░███████ ░██  ░██░░░░  ░██ ░░███  ░███████ ░██      ║
+║            ░██░██  ██░██ ░██░░░░  ░██  ░██      ░██  ██░██ ░██░░░░  ░██      ║
+║      ████████ ░██ ██ ░░██░░██████ ███  ░██      ░██ ██ ░░██░░██████ ███      ║
+║     ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░       ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+)LOGO";
+
 
   u8string to_u8string(std::string const & s) {
     return u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
@@ -434,9 +468,13 @@ namespace {
 
     buffer.clear();
 
-    append(buffer,sixel__prelude, ticks);
+    append(buffer, buffer__prelude, ticks);
 
-    append(buffer,sixel__palette, ticks);
+    append(buffer, logo, ticks);
+
+    append(buffer, sixel__prelude, ticks);
+
+    append(buffer, sixel__palette, ticks);
 
     {
       ticks__timer time__sixel_pixel(&ticks.sixel_buffer);
@@ -459,6 +497,8 @@ namespace {
         {
           // Convert colors in use to sixels
           for (std::size_t current_col = 0; current_col < 256; ++current_col) {
+            // Bright green
+            if (current_col == 0x18) continue;
             if (!used_colors[current_col]) {
               continue;
             }
@@ -538,8 +578,6 @@ namespace {
 #endif
 
     append(buffer, sixel__epilogue, ticks);
-
-    append(buffer, logo, ticks);
 
     write_to_stdout(hstdout, buffer, ticks);
   }
