@@ -50,9 +50,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
   }
 
 namespace {
-  static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
-  using u8string = std::basic_string<char8_t>;
-
   using ptr__malloc = void* __cdecl(size_t);
   using ptr__free   = void __cdecl(void*);
 
@@ -190,14 +187,14 @@ namespace {
   std::size_t viewport__height      = desired__height;
 
   // Hide cursor, clear screen
-  u8string const buffer__prelude    = u8"";
+  std::u8string const buffer__prelude    = u8"";
   // goto top, start sixel image
-  u8string const sixel__prelude     = u8"\x1B[H\x1BP7;1;q";
+  std::u8string const sixel__prelude     = u8"\x1B[H\x1BP7;1;q";
   // Sixel image done
-  u8string const sixel__epilogue    = u8"\x1B\\";
+  std::u8string const sixel__epilogue    = u8"\x1B\\";
 
   //                                                                    ------->
-  u8string const logo = u8"\x1B[H" u8R"LOGO(
+  std::u8string const logo = u8"\x1B[H" u8R"LOGO(
 ╔══════════════════════════════════════════════════════════════════════════════╗ 
 ║                                                                              ║ 
 ║                                                                              ║ 
@@ -225,7 +222,7 @@ namespace {
 ║     ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░       ║ 
 ║                                                                              ║ 
 ║     Designed for Cascadia Code font                                          ║ 
-║                                Ensure that the entir  border is visible      ║ 
+║                                Ensure that the entire border is visible      ║ 
 ╚══════════════════════════════════════════════════════════════════════════════╝ 
 )LOGO";
 
@@ -240,12 +237,12 @@ namespace {
     return blue|green|red;
   }
 
-  u8string to_u8string(std::string const & s) {
-    return u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
+  std::u8string to_u8string(std::string const & s) {
+    return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
   }
 
-  std::array<u8string, 256> generate_col_selectors() {
-    std::array<u8string,256> res;
+  std::array<std::u8string, 256> generate_col_selectors() {
+    std::array<std::u8string,256> res;
 
     for (std::size_t i=0; i < res.size(); ++i) {
       res[i] = to_u8string(std::format(
@@ -255,10 +252,10 @@ namespace {
 
     return res;
   }
-  std::array<u8string, 256> const sixel__col_selectors = generate_col_selectors();
+  std::array<std::u8string, 256> const sixel__col_selectors = generate_col_selectors();
 
-  std::array<u8string, 2048> generate_reps() {
-    std::array<u8string,2048> res;
+  std::array<std::u8string, 2048> generate_reps() {
+    std::array<std::u8string,2048> res;
 
     for (std::size_t i=0; i < res.size(); ++i) {
       res[i] = to_u8string(std::format(
@@ -268,9 +265,9 @@ namespace {
 
     return res;
   }
-  std::array<u8string, 2048> const sixel__reps = generate_reps();
+  std::array<std::u8string, 2048> const sixel__reps = generate_reps();
 
-  u8string generate_palette() {
+  std::u8string generate_palette() {
     // 3 bits for red
     // 3 bits for green
     // 2 bits for blue
@@ -292,7 +289,7 @@ namespace {
     }
     return palette;
   }
-  u8string const sixel__palette = generate_palette();
+  std::u8string const sixel__palette = generate_palette();
 
   struct ticks__write_pixel_as_sixels {
     LONGLONG      total__hires    ;
@@ -310,7 +307,7 @@ namespace {
 
   inline void append(
       std::vector<char8_t>          & buffer
-    , u8string const                & v
+    , std::u8string const           & v
     , ticks__write_pixel_as_sixels  & ticks
     ) {
     ticks__timer time__append(&ticks.buffer_append);
@@ -781,7 +778,6 @@ int main() {
   auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
   CHECK(hstdout != INVALID_HANDLE_VALUE, 1, "GetStdHandle Failed");
   
-  SetConsoleCP(CP_UTF8);
   auto result__setUtf8 = SetConsoleOutputCP(CP_UTF8);
   CHECK(result__setUtf8, 1, "SetConsoleOutputCP Failed");
 
@@ -789,7 +785,9 @@ int main() {
   auto result__get_console_mode = GetConsoleMode(hstdout, &consoleMode);
   CHECK(result__get_console_mode, 1, "GetConsoleMode Failed");
 
-  consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+  //consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+  // No flickering with just ENABLE_PROCESSED_OUTPUT?
+  consoleMode = ENABLE_PROCESSED_OUTPUT;
 
   auto result__set_console_mode = SetConsoleMode(hstdout, consoleMode);
   CHECK(result__set_console_mode, 1, "SetConsoleMode Failed");
