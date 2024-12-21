@@ -236,7 +236,7 @@ vec3 render(vec3 ro, vec3 rd) {
   const vec3 lightPos1  = vec3(0.0);
 
   const vec3 scol = HSV2RGB(vec3(0.0, 0.95, 0.005));
-  vec3 skyCol = vec3(0.0, 1.0, 0.0);
+  vec3 skyCol = vec3(0.0, 4.0, 0.0);
   float a = atan(rd.x, rd.z);
 
   int iter = 0;

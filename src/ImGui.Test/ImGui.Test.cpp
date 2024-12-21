@@ -190,7 +190,7 @@ namespace {
   std::size_t viewport__height      = desired__height;
 
   // Hide cursor, clear screen
-  u8string const buffer__prelude    = u8"\x1B[?25l";
+  u8string const buffer__prelude    = u8"";
   // goto top, start sixel image
   u8string const sixel__prelude     = u8"\x1B[H\x1BP7;1;q";
   // Sixel image done
@@ -198,37 +198,47 @@ namespace {
 
   //                                                                    ------->
   u8string const logo = u8"\x1B[H" u8R"LOGO(
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║                                                                              ║
-║         ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌        ║
-║        ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌        ║
-║        ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌        ║
-║        ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒        ║
-║        ░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄         ║
-║        ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒        ║
-║         ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░        ║
-║         ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░        ║
-║         ░         ░               ░         ░  ░      ░     ░  ░ ░           ║
-║                                                                              ║
-║                                                                              ║
-║                                                                              ║
-║                                                                              ║
-║                                                                              ║
-║                                                                              ║
-║                                                                              ║
-║       ████████ ██                  ██   ███████  ██                  ██      ║
-║      ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██      ║
-║     ░██        ██ ██   ██  █████  ░██  ░██   ░██ ██ ██   ██  █████  ░██      ║
-║     ░█████████░██░░██ ██  ██░░░██ ░██  ░███████ ░██░░██ ██  ██░░░██ ░██      ║
-║     ░░░░░░░░██░██ ░░███  ░███████ ░██  ░██░░░░  ░██ ░░███  ░███████ ░██      ║
-║            ░██░██  ██░██ ░██░░░░  ░██  ░██      ░██  ██░██ ░██░░░░  ░██      ║
-║      ████████ ░██ ██ ░░██░░██████ ███  ░██      ░██ ██ ░░██░░██████ ███      ║
-║     ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░       ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════╗ 
+║                                                                              ║ 
+║                                                                              ║ 
+║         ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌        ║ 
+║        ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌        ║ 
+║        ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌        ║ 
+║        ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒        ║ 
+║        ░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄         ║ 
+║        ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒        ║ 
+║         ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░        ║ 
+║         ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░        ║ 
+║         ░         ░               ░         ░  ░      ░     ░  ░ ░           ║ 
+║                                                                              ║ 
+║                                                                              ║ 
+║                               P R E S E N T S                                ║ 
+║                                                                              ║ 
+║                                                                              ║ 
+║       ████████ ██                  ██   ███████  ██                  ██      ║ 
+║      ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██      ║ 
+║     ░██        ██ ██   ██  █████  ░██  ░██   ░██ ██ ██   ██  █████  ░██      ║ 
+║     ░█████████░██░░██ ██  ██░░░██ ░██  ░███████ ░██░░██ ██  ██░░░██ ░██      ║ 
+║     ░░░░░░░░██░██ ░░███  ░███████ ░██  ░██░░░░  ░██ ░░███  ░███████ ░██      ║ 
+║            ░██░██  ██░██ ░██░░░░  ░██  ░██      ░██  ██░██ ░██░░░░  ░██      ║ 
+║      ████████ ░██ ██ ░░██░░██████ ███  ░██      ░██ ██ ░░██░░██████ ███      ║ 
+║     ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░       ║ 
+║                                                                              ║ 
+║     Designed for Cascadia Code font                                          ║ 
+║                                Ensure that the entir  border is visible      ║ 
+╚══════════════════════════════════════════════════════════════════════════════╝ 
 )LOGO";
 
+
+  constexpr GLubyte to_rgb(char r, char g, char b) {
+    // 3 bits for red
+    // 3 bits for green
+    // 2 bits for blue
+    auto red    = (r & 0x7)<<5;
+    auto green  = (g & 0x7)<<2;
+    auto blue   = (b & 0x3);
+    return blue|green|red;
+  }
 
   u8string to_u8string(std::string const & s) {
     return u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
@@ -319,7 +329,7 @@ namespace {
     buffer.insert(buffer.end(), n ,v);
   }
 
-//#define USE_BACKGROUND_WRITER_THREAD
+#define USE_BACKGROUND_WRITER_THREAD
 
 #ifdef USE_BACKGROUND_WRITER_THREAD
   struct background_writer {
@@ -369,6 +379,8 @@ namespace {
           , nullptr
           );
           assert(writeOk);
+          auto flushOk = FlushFileBuffers(hstdout);
+          assert(flushOk);
         }
       }
     }
@@ -404,8 +416,9 @@ namespace {
       , nullptr
       , nullptr
       );
-      auto err = GetLastError();
       assert(writeOk);
+      auto flushOk = FlushFileBuffers(hstdout);
+      assert(flushOk);
     }
   }
 #endif
@@ -498,7 +511,15 @@ namespace {
           // Convert colors in use to sixels
           for (std::size_t current_col = 0; current_col < 256; ++current_col) {
             // Bright green
-            if (current_col == 0x18) continue;
+            //if (current_col == 0x18) continue;
+            switch (current_col) {
+              // Bright greens
+              case to_rgb(0,7,0):
+              case to_rgb(0,7,1):
+              case to_rgb(1,7,0):
+              case to_rgb(1,7,1):
+                continue;
+            }
             if (!used_colors[current_col]) {
               continue;
             }
