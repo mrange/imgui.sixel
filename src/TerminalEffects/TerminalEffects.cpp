@@ -8,42 +8,113 @@
 
 #include <cassert>
 #include <algorithm>
+#include <functional>
 #include <string>
 
 namespace {
   static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
 
+  struct rgb {
+    float red   ;
+    float green ;
+    float blue  ;
+  };
+  using f__line_col = std::function<rgb(int y)>;
+
+  f__line_col line_col__white = [](int y) { return rgb {1.0,1.0,1.0}; };
+  f__line_col line_col__gray  = [](int y) { return rgb {0.5,0.5,0.5}; };
+    
   struct bitmap {
     std::wstring    pixels;
     std::size_t     width ;
     std::size_t     height;
   };
 
+  struct screen {
+    std::wstring    pixels;
+    std::size_t     width ;
+    std::size_t     height;
+
+    void clear() {
+      pixels.reserve((width+1)*height);
+      pixels.clear();
+      for (std::size_t i = 0; i < height; ++i) {
+        pixels.append(width, L' ');
+        pixels.push_back(L'\n');
+      }
+    }
+
+    void draw__bitmap(
+      bitmap const &  bmp
+    , int             x
+    , int             y
+    , f__line_col     line_col
+    ) {
+ 
+      std::size_t from__x = std::clamp<int>(-x, 0, bmp.width - 1);
+      std::size_t from__y = std::clamp<int>(-y, 0, bmp.height- 1);
+
+      std::size_t to__x = std::clamp<int>(x, 0, width);
+      std::size_t to__y = std::clamp<int>(y, 0, height);
+
+      std::size_t effective__width  = std::min(bmp.width  - from__x, width - to__x);
+      std::size_t effective__height = std::min(bmp.height - from__y, height - to__y);
+
+      for (std::size_t yy = 0; yy < effective__height; ++yy) {
+        auto rgb = line_col(yy+from__y);
+        assert(yy + from__y < bmp.height);
+        assert(yy + to__y   < height);
+        auto from__off= (yy+from__y)*bmp.width;
+        auto to__off  = (yy+to__y)*(width+1);
+        for (std::size_t xx = 0; xx < effective__width; ++xx) {
+          assert(xx + from__x < bmp.width);
+          assert(xx + to__x   < width);
+          auto c = bmp.pixels[from__off+xx+from__x];
+          if (c > 32) {
+            pixels[to__off+xx+to__x] = c;
+          }
+        }
+      }
+    }
+  };
+
   void ltrim__inplace(std::wstring & s) {
     auto b = s.begin();
     auto e = s.end();
-    auto f = std::find_if(b, e, [](auto c) { return c > 32; } );
-    if (f == b) {
-      // No leading whitespaces
-    } else if (f == e) {
-      // All whitespaces
-      s.clear();
-    } else {
-      s.erase(b, f);
+
+    for (auto i = b; i != e; ++i) {
+      auto c = *i;
+      if (c == L'\n') {
+        // Found a new line, drop all leading white space chars including the new line
+        ++i;
+        s.erase(b, i);
+        return;
+      } else if (c <= 32) {
+        // Found leading whitespace, continue
+      } else {
+        // Found non whitespace char, assuming entire string should be preserved
+        return;
+      }
     }
   }
 
   void rtrim__inplace(std::wstring & s) {
     auto b = s.rbegin();
     auto e = s.rend();
-    auto f = std::find_if(b, e, [](auto c) { return c > 32; } );
-    if (f == b) {
-      // No leading whitespaces
-    } else if (f == e) {
-      // All whitespaces
-      s.clear();
-    } else {
-      s.erase(f.base(), b.base());
+
+    for (auto i = b; i != e; ++i) {
+      auto c = *i;
+      if (c == L'\n') {
+        // Found a new line, drop all leading white space chars including the new line
+        ++i;
+        s.erase(i.base(), b.base());
+        return;
+      } else if (c <= 32) {
+        // Found leading whitespace, continue
+      } else {
+        // Found non whitespace char, assuming entire string should be preserved
+        return;
+      }
     }
   }
 
@@ -170,6 +241,7 @@ namespace {
 ║                                                                              ║ 
 ║                                                                              ║ 
 ║                                                                              ║ 
+║                                                                              ║ 
 ╚══════════════════════════════════════════════════════════════════════════════╝ 
 )BITMAP");
   std::u8string const prelude = u8"\x1B[H";
@@ -187,6 +259,7 @@ namespace {
 ║         ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░        ║
 ║         ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░        ║
 ║         ░         ░               ░         ░  ░      ░     ░  ░ ░           ║
+║                                                                              ║
 ║                                                                              ║
 ║                                                                              ║
 ║                               P R E S E N T S                                ║
@@ -244,38 +317,6 @@ namespace {
 //    assert(flushOk);
   }
 
-  void draw__bitmap(
-    bitmap const &  bmp
-  , int x
-  , int y
-  , std::wstring &  screen
-  , std::size_t     screen__width
-  , std::size_t     screen__height
-  ) {
-    std::size_t from__x = std::clamp<int>(-x, 0, bmp.width - 1);
-    std::size_t from__y = std::clamp<int>(-y, 0, bmp.height- 1);
-
-    std::size_t to__x = std::clamp<int>(x, 0, screen__width);
-    std::size_t to__y = std::clamp<int>(y, 0, screen__height);
-
-    std::size_t effective__width  = std::min(bmp.width  - from__x, screen__width - to__x);
-    std::size_t effective__height = std::min(bmp.height - from__y, screen__height - to__y);
-
-    for (std::size_t yy = 0; yy < effective__height; ++yy) {
-      assert(yy + from__y < bmp.height);
-      assert(yy + to__y   < screen__height);
-      auto from__off= (yy+from__y)*bmp.width;
-      auto to__off  = (yy+to__y)*(screen__width+1);
-      for (std::size_t xx = 0; xx < effective__width; ++xx) {
-        assert(xx + from__x < bmp.width);
-        assert(xx + to__x   < screen__width);
-        auto c = bmp.pixels[from__off+xx+from__x];
-        if (c > 32) {
-          screen[to__off+xx+to__x] = c;
-        }
-      }
-    }
-  }
 }
 
 int main() {
@@ -301,10 +342,11 @@ int main() {
   output.reserve(16384);
 
 
-  std::size_t screen__width  = 80;
-  std::size_t screen__height = 30;
-  std::wstring screen;
-  screen.reserve((screen__width+1)*screen__height);
+  screen screen = {
+    L""
+  , 80
+  , 30
+  };
 
   auto before = GetTickCount64();
   while(true) {
@@ -313,19 +355,16 @@ int main() {
     auto time = (now - before) / 1000.0f;
 
     screen.clear();
-    for (std::size_t i = 0; i < screen__height; ++i) {
-      screen.append(screen__width, L' ');
-      screen.push_back(L'\n');
-    }
 
-    auto xx = roundf(5+sinf(time+100)*10);
-    auto yy = roundf(5+sinf(0.707f*(time+100))*10);
+    auto xx = roundf(8+sinf(time+100)*16);
+    auto yy = roundf(8+sinf(0.707f*(time+100))*16);
 
-    draw__bitmap(impulse, xx,yy , screen, screen__width, screen__height);
-    draw__bitmap(border , 0,0   , screen, screen__width, screen__height);
+    screen.draw__bitmap(impulse    , xx,yy, line_col__gray);
+    screen.draw__bitmap(sixel_pixel, yy,xx, line_col__gray);
+    screen.draw__bitmap(border     ,  0, 0, line_col__white);
 
     output.append(prelude);
-    write(hstdout, output, screen);
+    write(hstdout, output, screen.pixels);
   
     Sleep(20);  // 50 FPS
   }
