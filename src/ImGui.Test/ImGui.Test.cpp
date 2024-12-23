@@ -187,7 +187,8 @@ namespace {
   std::size_t viewport__height      = desired__height;
 
   // Hide cursor, clear screen
-  std::u8string const buffer__prelude    = u8"";
+  //std::u8string const buffer__prelude    = u8"\x1B[2J\x1B[?25l";
+  std::u8string const buffer__prelude    = u8"\x1B[?25l";
   // goto top, start sixel image
   std::u8string const sixel__prelude     = u8"\x1B[H\x1BP7;1;q";
   // Sixel image done
