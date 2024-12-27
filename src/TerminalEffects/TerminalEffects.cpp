@@ -440,6 +440,7 @@ int main() {
     screen.draw__bitmap(sixel_pixel, yy,xx);
     screen.draw__bitmap(border     ,  0, 0);
 
+    output.clear();
     output.append(prelude);
     write(hstdout, output, screen);
   
