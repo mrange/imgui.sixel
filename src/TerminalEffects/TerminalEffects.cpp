@@ -8,47 +8,65 @@
 
 #include <cassert>
 #include <algorithm>
+#include <array>
+#include <format>
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace {
   static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
+
+  std::u8string to_u8string(std::string const & s) {
+    return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
+  }
+
+  std::u8string const prelude              = u8"\x1B[?25l\x1B[H";
+  std::u8string const reset__colors        = u8"\x1B[0m";
+  std::u8string const prelude__foreground  = u8"\x1B[38;2";
+  std::u8string const prelude__background  = u8"\x1B[48;2";
+  
+  std::array<std::u8string, 256> generate__color_values() {
+    std::array<std::u8string, 256> res;
+    for (std::size_t i = 0; i < 256; ++i) {
+      res[i] = to_u8string(std::format(";{}", i));
+    }
+    return res;
+  }
+  std::array<std::u8string, 256> color_values = generate__color_values();
 
   struct rgb {
     float red   ;
     float green ;
     float blue  ;
   };
-  using f__line_col = std::function<rgb(int y)>;
-
-  f__line_col line_col__white = [](int y) { return rgb {1.0,1.0,1.0}; };
-  f__line_col line_col__gray  = [](int y) { return rgb {0.5,0.5,0.5}; };
     
   struct bitmap {
-    std::wstring    pixels;
-    std::size_t     width ;
-    std::size_t     height;
+    std::wstring          shapes;
+    std::size_t           width ;
+    std::size_t           height;
   };
 
   struct screen {
-    std::wstring    pixels;
-    std::size_t     width ;
-    std::size_t     height;
+    std::vector<wchar_t>  shapes      ;
+    std::vector<rgb>      foreground  ;
+    std::vector<rgb>      background  ;
+    std::size_t           width       ;
+    std::size_t           height      ;
 
     void clear() {
-      pixels.reserve((width+1)*height);
-      pixels.clear();
-      for (std::size_t i = 0; i < height; ++i) {
-        pixels.append(width, L' ');
-        pixels.push_back(L'\n');
-      }
+      shapes.clear();
+      foreground.clear();
+      background.clear();
+      shapes.resize(width*height, L' ');
+      foreground.resize(width*height  , {1,1,1});
+      background.resize(width*height  , {0,0,0});
     }
 
     void draw__bitmap(
       bitmap const &  bmp
     , int             x
     , int             y
-    , f__line_col     line_col
     ) {
  
       std::size_t from__x = std::clamp<int>(-x, 0, bmp.width - 1);
@@ -61,17 +79,16 @@ namespace {
       std::size_t effective__height = std::min(bmp.height - from__y, height - to__y);
 
       for (std::size_t yy = 0; yy < effective__height; ++yy) {
-        auto rgb = line_col(yy+from__y);
         assert(yy + from__y < bmp.height);
         assert(yy + to__y   < height);
         auto from__off= (yy+from__y)*bmp.width;
-        auto to__off  = (yy+to__y)*(width+1);
+        auto to__off  = (yy+to__y)*width;
         for (std::size_t xx = 0; xx < effective__width; ++xx) {
           assert(xx + from__x < bmp.width);
           assert(xx + to__x   < width);
-          auto c = bmp.pixels[from__off+xx+from__x];
+          auto c = bmp.shapes[from__off+xx+from__x];
           if (c > 32) {
-            pixels[to__off+xx+to__x] = c;
+            shapes[to__off+xx+to__x] = c;
           }
         }
       }
@@ -244,7 +261,6 @@ namespace {
 ║                                                                              ║ 
 ╚══════════════════════════════════════════════════════════════════════════════╝ 
 )BITMAP");
-  std::u8string const prelude = u8"\x1B[H";
 
   std::wstring const setup = L"\x1B[H" LR"LOGO(
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -279,31 +295,91 @@ namespace {
 ╚══════════════════════════════════════════════════════════════════════════════╝
 )LOGO";
 
-
-  void wchar_to_utf8(std::u8string & output, const std::wstring& input) {
-      for (wchar_t wc : input) {
-          uint32_t codepoint = wc; // Assume UTF-32
-          if (codepoint <= 0x7F) {
-              output.push_back(static_cast<char8_t>(codepoint));
-          } else if (codepoint <= 0x7FF) {
-              output.push_back(static_cast<char8_t>(0xC0 | ((codepoint >> 6) & 0x1F)));
-              output.push_back(static_cast<char8_t>(0x80 | (codepoint & 0x3F)));
-          } else if (codepoint <= 0xFFFF) {
-              output.push_back(static_cast<char8_t>(0xE0 | ((codepoint >> 12) & 0x0F)));
-              output.push_back(static_cast<char8_t>(0x80 | ((codepoint >> 6) & 0x3F)));
-              output.push_back(static_cast<char8_t>(0x80 | (codepoint & 0x3F)));
-          } else if (codepoint <= 0x10FFFF) {
-              output.push_back(static_cast<char8_t>(0xF0 | ((codepoint >> 18) & 0x07)));
-              output.push_back(static_cast<char8_t>(0x80 | ((codepoint >> 12) & 0x3F)));
-              output.push_back(static_cast<char8_t>(0x80 | ((codepoint >> 6) & 0x3F)));
-              output.push_back(static_cast<char8_t>(0x80 | (codepoint & 0x3F)));
-          }
-      }
+  void wchar_to_utf8(std::u8string & output, wchar_t wc) {
+    uint32_t codepoint = wc; // Assume UTF-32
+    if (codepoint <= 0x7F) {
+      output.push_back(static_cast<char8_t>(codepoint));
+    } else if (codepoint <= 0x7FF) {
+      output.push_back(static_cast<char8_t>(0xC0 | ((codepoint >> 6) & 0x1F)));
+      output.push_back(static_cast<char8_t>(0x80 | (codepoint & 0x3F)));
+    } else if (codepoint <= 0xFFFF) {
+      output.push_back(static_cast<char8_t>(0xE0 | ((codepoint >> 12) & 0x0F)));
+      output.push_back(static_cast<char8_t>(0x80 | ((codepoint >> 6) & 0x3F)));
+      output.push_back(static_cast<char8_t>(0x80 | (codepoint & 0x3F)));
+    } else if (codepoint <= 0x10FFFF) {
+      output.push_back(static_cast<char8_t>(0xF0 | ((codepoint >> 18) & 0x07)));
+      output.push_back(static_cast<char8_t>(0x80 | ((codepoint >> 12) & 0x3F)));
+      output.push_back(static_cast<char8_t>(0x80 | ((codepoint >> 6) & 0x3F)));
+      output.push_back(static_cast<char8_t>(0x80 | (codepoint & 0x3F)));
+    }
+  }
+  void wchars_to_utf8(std::u8string & output, std::wstring const & wcs) {
+    for (auto wc : wcs) {
+      wchar_to_utf8(output, wc);
+    }
   }
 
-  void write(HANDLE hstdout, std::u8string output, std::wstring const & input) {
+  void write__color(
+      std::u8string &       output
+    , std::u8string const & prelude
+    , rgb const &           color
+    ) {
+    output.append(prelude);
+    auto to_i = [](float v) {
+      return static_cast<std::size_t>(std::clamp<float>(std::round(v*255), 0, 255));
+    };
+    output.append(color_values[to_i(color.red)]);
+    output.append(color_values[to_i(color.green)]);
+    output.append(color_values[to_i(color.blue)]);
+    output.push_back(u8'm');
+  }
 
-    wchar_to_utf8(output, input);
+  void write__reset_color(
+      std::u8string &       output
+    ) {
+    output.append(reset__colors);
+  }
+
+  void write(
+      HANDLE          hstdout
+    , std::u8string & output
+    , screen const &  screen
+    ) {
+
+    auto w = screen.width;
+    auto h = screen.height;
+    assert(w*h == screen.shapes.size());
+    assert(w*h == screen.foreground.size());
+    assert(w*h == screen.background.size());
+
+    rgb foreground = {1,1,1};
+    rgb background = {0,0,0};
+    write__color(output, prelude__foreground, foreground);
+    write__color(output, prelude__background, background);
+
+    for (std::size_t y = 0; y < h; ++y) {
+      auto y__off = y*w;
+      for (std::size_t x = 0; x < w; ++x) {
+        auto wc = screen.shapes[y__off+x];
+        auto new_foreground = screen.foreground[y__off+x];
+        auto new_background = screen.background[y__off+x];
+
+        if (memcmp(&new_foreground, &foreground, sizeof(foreground)) != 0) {
+          foreground = new_foreground;
+          write__color(output, prelude__foreground, foreground);
+        }
+
+        if (memcmp(&new_background, &background, sizeof(background)) != 0) {
+          background = new_background;
+          write__color(output, prelude__background, background);
+        }
+
+        wchar_to_utf8(output, wc);
+      }
+      wchar_to_utf8(output, L'\n');
+    }
+
+    write__reset_color(output);
 
     auto writeOk = WriteFile(
       hstdout
@@ -341,9 +417,10 @@ int main() {
   std::u8string output;
   output.reserve(16384);
 
-
   screen screen = {
-    L""
+    {}
+  , {}
+  , {}
   , 80
   , 30
   };
@@ -359,12 +436,12 @@ int main() {
     auto xx = roundf(8+sinf(time+100)*16);
     auto yy = roundf(8+sinf(0.707f*(time+100))*16);
 
-    screen.draw__bitmap(impulse    , xx,yy, line_col__gray);
-    screen.draw__bitmap(sixel_pixel, yy,xx, line_col__gray);
-    screen.draw__bitmap(border     ,  0, 0, line_col__white);
+    screen.draw__bitmap(impulse    , xx,yy);
+    screen.draw__bitmap(sixel_pixel, yy,xx);
+    screen.draw__bitmap(border     ,  0, 0);
 
     output.append(prelude);
-    write(hstdout, output, screen.pixels);
+    write(hstdout, output, screen);
   
     Sleep(20);  // 50 FPS
   }
