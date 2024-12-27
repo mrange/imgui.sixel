@@ -40,11 +40,23 @@ namespace {
     float green ;
     float blue  ;
   };
-    
+
+  using f__generate_color = std::function<rgb (float time, std::size_t x, std::size_t y)>;
+
+
+  f__generate_color const col__white = [](float time, std::size_t x, std::size_t y) -> rgb { return {1,1,1}; };
+  f__generate_color const col__black = [](float time, std::size_t x, std::size_t y) -> rgb { return {0,0,0}; };
+  f__generate_color const col__gray  = [](float time, std::size_t x, std::size_t y) -> rgb { return {0.5,0.5,0.5}; };
+  f__generate_color const col__graybar  = [](float time, std::size_t x, std::size_t y) -> rgb { 
+    auto c = std::clamp<float>(1-y/10.0F, 0, 1);
+    return {c,c,c}; 
+  };
   struct bitmap {
     std::wstring          shapes;
     std::size_t           width ;
     std::size_t           height;
+    f__generate_color     f__foreground;
+    f__generate_color     f__background;
   };
 
   struct screen {
@@ -65,10 +77,12 @@ namespace {
 
     void draw__bitmap(
       bitmap const &  bmp
+    , float           time
     , int             x
     , int             y
     ) {
- 
+      assert(bmp.f__foreground);
+      assert(bmp.f__background);
       std::size_t from__x = std::clamp<int>(-x, 0, bmp.width - 1);
       std::size_t from__y = std::clamp<int>(-y, 0, bmp.height- 1);
 
@@ -89,6 +103,8 @@ namespace {
           auto c = bmp.shapes[from__off+xx+from__x];
           if (c > 32) {
             shapes[to__off+xx+to__x] = c;
+            foreground[to__off+xx+to__x] = bmp.f__foreground(time, xx+from__x, yy+from__y);
+            background[to__off+xx+to__x] = bmp.f__background(time, xx+from__x, yy+from__y);
           }
         }
       }
@@ -140,7 +156,22 @@ namespace {
     ltrim__inplace(s);
   }
 
-  bitmap make_bitmap(std::wstring && pixels) {
+  screen make_screen(std::size_t w, std::size_t h) {
+    assert(w > 0);
+    assert(h > 0);
+    return {
+      {}
+    , {}
+    , {}
+    , w
+    , h
+    };
+  }
+
+  bitmap make_bitmap(
+      f__generate_color foreground
+    , f__generate_color background
+    , std::wstring      pixels    ) {
     std::size_t max__width      = 0;
     std::size_t max__height     = 0;
 
@@ -203,10 +234,12 @@ namespace {
       std::move(result)
     , max__width
     , max__height
+    , std::move(foreground)
+    , std::move(background)
     };
   }
 
-  bitmap impulse = make_bitmap(LR"BITMAP(
+  bitmap impulse = make_bitmap(col__graybar, col__black, LR"BITMAP(
  ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌
 ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌
 ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌
@@ -218,7 +251,7 @@ namespace {
  ░         ░               ░         ░  ░      ░     ░  ░ ░   
 )BITMAP");
 
-  bitmap sixel_pixel = make_bitmap(LR"BITMAP(
+  bitmap sixel_pixel = make_bitmap(col__white, col__black, LR"BITMAP(
   ████████ ██                  ██   ███████  ██                  ██
  ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██
 ░██        ██ ██   ██  █████  ░██  ░██   ░██ ██ ██   ██  █████  ░██
@@ -229,7 +262,7 @@ namespace {
 ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░ 
 )BITMAP");
 
-  bitmap border = make_bitmap(LR"BITMAP(
+  bitmap border = make_bitmap(col__white, col__black, LR"BITMAP(
 ╔══════════════════════════════════════════════════════════════════════════════╗ 
 ║                                                                              ║ 
 ║                                                                              ║ 
@@ -417,13 +450,7 @@ int main() {
   std::u8string output;
   output.reserve(16384);
 
-  screen screen = {
-    {}
-  , {}
-  , {}
-  , 80
-  , 30
-  };
+  screen screen = make_screen(80, 30);
 
   auto before = GetTickCount64();
   while(true) {
@@ -436,9 +463,9 @@ int main() {
     auto xx = roundf(8+sinf(time+100)*16);
     auto yy = roundf(8+sinf(0.707f*(time+100))*16);
 
-    screen.draw__bitmap(impulse    , xx,yy);
-    screen.draw__bitmap(sixel_pixel, yy,xx);
-    screen.draw__bitmap(border     ,  0, 0);
+    screen.draw__bitmap(impulse    , time, xx, yy);
+    screen.draw__bitmap(sixel_pixel, time, yy, xx);
+    screen.draw__bitmap(border     , time,  0,  0);
 
     output.clear();
     output.append(prelude);
