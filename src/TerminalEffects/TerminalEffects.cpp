@@ -42,6 +42,28 @@ namespace {
     float green ;
     float blue  ;
   };
+
+  // License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
+  rgb aces_approx(rgb v) {
+    auto f = [](float v) {
+      const float a = 2.51;
+      const float b = 0.03;
+      const float c = 2.43;
+      const float d = 0.59;
+      const float e = 0.14;
+
+      v = std::max(v, 0.0F);
+      v *= 0.6F;
+      return std::clamp<float>((v*(a*v+b))/(v*(c*v+d)+e), 0, 1);
+    };
+
+    return {
+      f(v.red)
+    , f(v.green)
+    , f(v.blue)
+    };
+  }
+
   // License: Unknown, author: XorDev, found: https://x.com/XorDev/status/1808902860677001297
   rgb hsv2rgb_approx(float h, float s, float v) {
     float r  = (std::cosf(h*tau+0)*s+2-s)*v*0.5F;
@@ -90,7 +112,7 @@ namespace {
   };
 
   f__generate_color const col__rainbow  = [](float time, std::size_t x, std::size_t y) -> rgb { 
-    return palette(time-(x+2.0*y)/20.F);
+    return palette(time-(x+2.0F*y)/20.F);
   };
 
   f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t y) -> rgb { 
@@ -119,6 +141,26 @@ namespace {
       shapes.resize(width*height, L' ');
       foreground.resize(width*height  , {1,1,1});
       background.resize(width*height  , {0,0,0});
+    }
+
+    void draw__pixel(
+      wchar_t s
+    , rgb     f
+    , rgb     b
+    , int     x
+    , int     y
+    ) {
+      assert(width*height == shapes.size());
+      assert(width*height == foreground.size());
+      assert(width*height == background.size());
+      if (x >= 0 && x < width) {
+        if (y >= 0 && y < height) {
+          auto off = x + y*width;
+          shapes[off]     = s;
+          foreground[off] = f;
+          background[off] = b;
+        }
+      }
     }
 
     void draw__bitmap(
@@ -308,7 +350,7 @@ namespace {
 ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░ 
 )BITMAP");
 
-  bitmap border = make_bitmap(col__white, col__black, LR"BITMAP(
+  bitmap border = make_bitmap(col__rainbow, col__black, LR"BITMAP(
 ╔══════════════════════════════════════════════════════════════════════════════╗ 
 ║                                                                              ║ 
 ║                                                                              ║ 
@@ -404,7 +446,7 @@ namespace {
     , rgb const &           color
     ) {
     output.append(prelude);
-    auto to_i = [](float v) -> float {
+    auto to_i = [](float v) -> std::size_t {
       return static_cast<std::size_t>(std::roundf(std::sqrtf(std::clamp<float>(v, 0, 1))*255));
     };
     output.append(color_values[to_i(color.red)]);
@@ -472,6 +514,79 @@ namespace {
 //    assert(flushOk);
   }
 
+  void effect0(float time, screen & screen) {
+    int xx = std::roundf(8+std::sinf(time+100)*8);
+    int yy = std::roundf(8+std::sinf(0.707f*(time+100))*8);
+
+    screen.draw__bitmap(impulse    , time, xx, yy);
+    screen.draw__bitmap(sixel_pixel, time, yy, xx);
+  }
+
+
+  // License: MIT, author: Inigo Quilez, found: https://www.iquilezles.org/www/articles/smin/smin.htm
+  float pmin(float a, float b, float k) {
+    float h = std::clamp<float>(0.5F+0.5F*(b-a)/k, 0.0F, 1.0F);
+    return mix(b, a, h) - k*h*(1.0F-h);
+  }
+
+  // License: CC0, author: Mårten Rånge, found: https://github.com/mrange/glsl-snippets
+  float pmax(float a, float b, float k) {
+    return -pmin(-a, -b, k);
+  }
+
+  float length(float x, float y) {
+    return std::sqrtf(x*x+y*y);
+  }
+
+  void effect1(float time, screen & screen) {
+    auto df = [](float x, float y) -> float {
+      const float m = 0.5;
+      float l = length(x,y);
+      l = std::fmodf(l+(0.5F*m),m)-(0.5F*m);
+      return std::abs(l)-(m*0.25F);
+    };
+
+    for (std::size_t y = 0; y < screen.height; ++y) {
+      auto py = (-1.F*screen.height+2.F*y)/screen.height;
+      for (std::size_t x = 0; x < screen.width; ++x) {
+        auto px = (-1.F*screen.width+2.F*x )/screen.width;
+
+        auto px0 = px;
+        auto py0 = py;
+
+        px0 -= std::sinf(0.707f*(time+100));
+        py0 -= std::sinf((time+100));
+
+        auto px1 = px;
+        auto py1 = py;
+
+        px1 -= std::sinf(0.5F*(time+123));
+        py1 -= std::sinf(0.707F*(time+123));
+        float sm = 0.0666*length(px, py);
+
+        auto d0 = df(px0, py0);
+        auto d1 = df(px1, py1);
+        auto d  = d0;
+        d = pmax(d, d1, sm);
+        float dd = -d0;
+        dd = pmax(dd, -d1, sm);
+        d =  std::min(d, dd);
+
+        auto col0 = palette(d+time+py);
+        auto col1 = palette(d+1.5F+time*0.707F+py);
+        auto col = d < 0.0 ? col0 : col1;
+        screen.draw__pixel(
+            L' '
+          , rgb{0,0,0}
+          , col
+          , x
+          , y
+          );
+      }
+    }
+//    screen.draw__bitmap(sixel_pixel    , time, 10, 10);
+  }
+
 }
 
 int main() {
@@ -506,11 +621,7 @@ int main() {
 
     screen.clear();
 
-    int xx = std::roundf(8+std::sinf(time+100)*8);
-    int yy = std::roundf(8+std::sinf(0.707f*(time+100))*8);
-
-    screen.draw__bitmap(impulse    , time, xx, yy);
-    screen.draw__bitmap(sixel_pixel, time, yy, xx);
+    effect1(time, screen);
     screen.draw__bitmap(border     , time,  0,  0);
 
     output.clear();
