@@ -16,6 +16,8 @@
 
 namespace {
   static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
+  const float pi  = 3.141592654F;
+  const float tau = 2*pi;
 
   std::u8string to_u8string(std::string const & s) {
     return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
@@ -40,16 +42,60 @@ namespace {
     float green ;
     float blue  ;
   };
+  // License: Unknown, author: XorDev, found: https://x.com/XorDev/status/1808902860677001297
+  rgb hsv2rgb_approx(float h, float s, float v) {
+    float r  = (std::cosf(h*tau+0)*s+2-s)*v*0.5F;
+    float g  = (std::cosf(h*tau+4)*s+2-s)*v*0.5F;
+    float b  = (std::cosf(h*tau+2)*s+2-s)*v*0.5F;
+    
+    return {
+      r
+    , g
+    , b
+    };
+  }
+
+  // License: Unknown, author: XorDev, found: https://x.com/XorDev/status/1808902860677001297
+  rgb palette(float a) {
+    float r  = (1+std::sinf(a+0))*0.5F;
+    float g  = (1+std::sinf(a+1))*0.5F;
+    float b  = (1+std::sinf(a+2))*0.5F;
+    
+    return {
+      r
+    , g
+    , b
+    };
+  }
+
+  float mix(float b, float e, float x) {
+    return b+(e-b)*x;
+  }
+
+  float smoothstep(float edge0, float edge1, float x) {
+    float t = std::clamp<float>((x - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return t * t * (3.0F - 2.0F * t);
+  }
 
   using f__generate_color = std::function<rgb (float time, std::size_t x, std::size_t y)>;
 
 
-  f__generate_color const col__white = [](float time, std::size_t x, std::size_t y) -> rgb { return {1,1,1}; };
-  f__generate_color const col__black = [](float time, std::size_t x, std::size_t y) -> rgb { return {0,0,0}; };
-  f__generate_color const col__gray  = [](float time, std::size_t x, std::size_t y) -> rgb { return {0.5,0.5,0.5}; };
+  f__generate_color const col__white    = [](float time, std::size_t x, std::size_t y) -> rgb { return {1,1,1}; };
+  f__generate_color const col__black    = [](float time, std::size_t x, std::size_t y) -> rgb { return {0,0,0}; };
+  f__generate_color const col__gray     = [](float time, std::size_t x, std::size_t y) -> rgb { return {0.5,0.5,0.5}; };
   f__generate_color const col__graybar  = [](float time, std::size_t x, std::size_t y) -> rgb { 
-    auto c = std::clamp<float>(1-y/10.0F, 0, 1);
+    auto c = std::sqrtf(std::clamp<float>(y/10.0F, 0, 1));
+    c = 1-c;
     return {c,c,c}; 
+  };
+
+  f__generate_color const col__rainbow  = [](float time, std::size_t x, std::size_t y) -> rgb { 
+    return palette(time-(x+2.0*y)/20.F);
+  };
+
+  f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t y) -> rgb { 
+    auto c = std::clamp<float>(1-y/10.0F, 0, 1);
+    return hsv2rgb_approx(0.05,0.5F,c); 
   };
   struct bitmap {
     std::wstring          shapes;
@@ -251,7 +297,7 @@ namespace {
  ░         ░               ░         ░  ░      ░     ░  ░ ░   
 )BITMAP");
 
-  bitmap sixel_pixel = make_bitmap(col__white, col__black, LR"BITMAP(
+  bitmap sixel_pixel = make_bitmap(col__rainbow, col__black, LR"BITMAP(
   ████████ ██                  ██   ███████  ██                  ██
  ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██
 ░██        ██ ██   ██  █████  ░██  ░██   ░██ ██ ██   ██  █████  ░██
@@ -358,8 +404,8 @@ namespace {
     , rgb const &           color
     ) {
     output.append(prelude);
-    auto to_i = [](float v) {
-      return static_cast<std::size_t>(std::clamp<float>(std::round(v*255), 0, 255));
+    auto to_i = [](float v) -> float {
+      return static_cast<std::size_t>(std::roundf(std::sqrtf(std::clamp<float>(v, 0, 1))*255));
     };
     output.append(color_values[to_i(color.red)]);
     output.append(color_values[to_i(color.green)]);
@@ -460,8 +506,8 @@ int main() {
 
     screen.clear();
 
-    auto xx = roundf(8+sinf(time+100)*16);
-    auto yy = roundf(8+sinf(0.707f*(time+100))*16);
+    int xx = std::roundf(8+std::sinf(time+100)*8);
+    int yy = std::roundf(8+std::sinf(0.707f*(time+100))*8);
 
     screen.draw__bitmap(impulse    , time, xx, yy);
     screen.draw__bitmap(sixel_pixel, time, yy, xx);
