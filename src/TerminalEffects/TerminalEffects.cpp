@@ -124,7 +124,6 @@ namespace {
     std::size_t           width ;
     std::size_t           height;
     f__generate_color     f__foreground;
-    f__generate_color     f__background;
   };
 
   struct screen {
@@ -170,7 +169,6 @@ namespace {
     , int             y
     ) {
       assert(bmp.f__foreground);
-      assert(bmp.f__background);
       std::size_t from__x = std::clamp<int>(-x, 0, bmp.width - 1);
       std::size_t from__y = std::clamp<int>(-y, 0, bmp.height- 1);
 
@@ -192,7 +190,6 @@ namespace {
           if (c > 32) {
             shapes[to__off+xx+to__x] = c;
             foreground[to__off+xx+to__x] = bmp.f__foreground(time, xx+from__x, yy+from__y);
-            background[to__off+xx+to__x] = bmp.f__background(time, xx+from__x, yy+from__y);
           }
         }
       }
@@ -258,7 +255,6 @@ namespace {
 
   bitmap make_bitmap(
       f__generate_color foreground
-    , f__generate_color background
     , std::wstring      pixels    ) {
     std::size_t max__width      = 0;
     std::size_t max__height     = 0;
@@ -323,11 +319,10 @@ namespace {
     , max__width
     , max__height
     , std::move(foreground)
-    , std::move(background)
     };
   }
 
-  bitmap impulse = make_bitmap(col__graybar, col__black, LR"BITMAP(
+  bitmap impulse = make_bitmap(col__graybar, LR"BITMAP(
  ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌
 ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌
 ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌
@@ -339,7 +334,27 @@ namespace {
  ░         ░               ░         ░  ░      ░     ░  ░ ░   
 )BITMAP");
 
-  bitmap sixel_pixel = make_bitmap(col__rainbow, col__black, LR"BITMAP(
+  bitmap impulse2 = make_bitmap(col__black, LR"BITMAP(
+ ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌
+▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌
+▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌
+░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒
+░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄ 
+░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒
+ ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░
+ ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░
+ ░         ░               ░         ░  ░      ░     ░  ░ ░   
+
+                 ☁ ☁ ☁  G E R P - 2 0 2 5 ☁ ☁ ☁
+                                     ╭─────╮
+               ╭─────────────────────┤▄▀▄▀▄├───────────────╮
+   ┼───────────┼ ▀ G L I M G L A M ▄ │▄▀▄▀▄│ ▄ L A N C E ▀ │
+   │ ▄ J E Z ▀ ┼──────────┼──────────┼─────┼────┼──────────┼
+   ╰───────────┼          │ ▀ L O N G S H O T ▄ │
+                          ╘═════════════════════╛
+)BITMAP");
+
+  bitmap sixel_pixel = make_bitmap(col__rainbow, LR"BITMAP(
   ████████ ██                  ██   ███████  ██                  ██
  ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██
 ░██        ██ ██   ██  █████  ░██  ░██   ░██ ██ ██   ██  █████  ░██
@@ -350,7 +365,7 @@ namespace {
 ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░ 
 )BITMAP");
 
-  bitmap border = make_bitmap(col__rainbow, col__black, LR"BITMAP(
+  bitmap border = make_bitmap(col__rainbow, LR"BITMAP(
 ╔══════════════════════════════════════════════════════════════════════════════╗ 
 ║                                                                              ║ 
 ║                                                                              ║ 
@@ -475,10 +490,10 @@ namespace {
 
     rgb foreground = {1,1,1};
     rgb background = {0,0,0};
-    write__color(output, prelude__foreground, foreground);
-    write__color(output, prelude__background, background);
 
     for (std::size_t y = 0; y < h; ++y) {
+      write__color(output, prelude__foreground, foreground);
+      write__color(output, prelude__background, background);
       auto y__off = y*w;
       for (std::size_t x = 0; x < w; ++x) {
         auto wc = screen.shapes[y__off+x];
@@ -497,6 +512,7 @@ namespace {
 
         wchar_to_utf8(output, wc);
       }
+      write__reset_color(output);
       wchar_to_utf8(output, L'\n');
     }
 
@@ -584,7 +600,7 @@ namespace {
           );
       }
     }
-//    screen.draw__bitmap(sixel_pixel    , time, 10, 10);
+    screen.draw__bitmap(impulse2 , time, 8, 6);
   }
 
 }
