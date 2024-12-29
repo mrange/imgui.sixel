@@ -27,7 +27,7 @@ struct vec<#=maxDim#> {
 
   explicit vec<#=maxDim#>(
 <# for (var dim = 0; dim < maxDim; ++dim) { #>
-    <#=dim == 0 ? " " : ","#> <#=DimName(dim)#>_
+    <#=dim == 0 ? " " : ","#> float <#=DimName(dim)#>_
 <# } #>
     )
 <# for (var dim = 0; dim < maxDim; ++dim) { #>
@@ -37,6 +37,20 @@ struct vec<#=maxDim#> {
   }
 
 <# foreach (var op in operators) { #>
+  vec<#=maxDim#>& operator<#=op#>=(float other) {
+<# for (var dim = 0; dim < maxDim; ++dim) { #>
+    <#=DimName(dim)#> <#=op#>= other;
+<# } #>
+
+    return *this;
+  }
+
+  vec<#=maxDim#> operator<#=op#>(float other) const {
+    vec<#=maxDim#> c = *this;
+    c <#=op#>= other;
+    return c;
+  }
+
   vec<#=maxDim#>& operator<#=op#>=(vec<#=maxDim#> const & other) {
 <# for (var dim = 0; dim < maxDim; ++dim) { #>
     <#=DimName(dim)#> <#=op#>= other.<#=DimName(dim)#>;
@@ -54,7 +68,13 @@ struct vec<#=maxDim#> {
 <# } #>
 
   float dot(vec<#=maxDim#> const & other) const {
-    return x * other.x + y * other.y + z * other.z;
+    float sum = 0.F;
+
+<# for (var dim = 0; dim < maxDim; ++dim) { #>
+    sum += <#=DimName(dim)#>*other.<#=DimName(dim)#>;
+<# } #>
+
+    return sum;
   }
 
 <# if (maxDim == 3) { #>

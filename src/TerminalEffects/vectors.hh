@@ -9,10 +9,22 @@ struct vec1 {
 
 
   explicit vec1(
-      x_
+      float x_
     )
     : x(x_)
   {
+  }
+
+  vec1& operator+=(float other) {
+    x += other;
+
+    return *this;
+  }
+
+  vec1 operator+(float other) const {
+    vec1 c = *this;
+    c += other;
+    return c;
   }
 
   vec1& operator+=(vec1 const & other) {
@@ -24,6 +36,18 @@ struct vec1 {
   vec1 operator+(vec1 const & other) const {
     vec1 c = *this;
     c += other;
+    return c;
+  }
+
+  vec1& operator-=(float other) {
+    x -= other;
+
+    return *this;
+  }
+
+  vec1 operator-(float other) const {
+    vec1 c = *this;
+    c -= other;
     return c;
   }
 
@@ -39,6 +63,18 @@ struct vec1 {
     return c;
   }
 
+  vec1& operator*=(float other) {
+    x *= other;
+
+    return *this;
+  }
+
+  vec1 operator*(float other) const {
+    vec1 c = *this;
+    c *= other;
+    return c;
+  }
+
   vec1& operator*=(vec1 const & other) {
     x *= other.x;
 
@@ -48,6 +84,18 @@ struct vec1 {
   vec1 operator*(vec1 const & other) const {
     vec1 c = *this;
     c *= other;
+    return c;
+  }
+
+  vec1& operator/=(float other) {
+    x /= other;
+
+    return *this;
+  }
+
+  vec1 operator/(float other) const {
+    vec1 c = *this;
+    c /= other;
     return c;
   }
 
@@ -65,7 +113,11 @@ struct vec1 {
 
 
   float dot(vec1 const & other) const {
-    return x * other.x + y * other.y + z * other.z;
+    float sum = 0.F;
+
+    sum += x*other.x;
+
+    return sum;
   }
 
 
@@ -105,12 +157,25 @@ struct vec2 {
   }
 
   explicit vec2(
-      x_
-    , y_
+      float x_
+    , float y_
     )
     : x(x_)
     , y(y_)
   {
+  }
+
+  vec2& operator+=(float other) {
+    x += other;
+    y += other;
+
+    return *this;
+  }
+
+  vec2 operator+(float other) const {
+    vec2 c = *this;
+    c += other;
+    return c;
   }
 
   vec2& operator+=(vec2 const & other) {
@@ -123,6 +188,19 @@ struct vec2 {
   vec2 operator+(vec2 const & other) const {
     vec2 c = *this;
     c += other;
+    return c;
+  }
+
+  vec2& operator-=(float other) {
+    x -= other;
+    y -= other;
+
+    return *this;
+  }
+
+  vec2 operator-(float other) const {
+    vec2 c = *this;
+    c -= other;
     return c;
   }
 
@@ -139,6 +217,19 @@ struct vec2 {
     return c;
   }
 
+  vec2& operator*=(float other) {
+    x *= other;
+    y *= other;
+
+    return *this;
+  }
+
+  vec2 operator*(float other) const {
+    vec2 c = *this;
+    c *= other;
+    return c;
+  }
+
   vec2& operator*=(vec2 const & other) {
     x *= other.x;
     y *= other.y;
@@ -149,6 +240,19 @@ struct vec2 {
   vec2 operator*(vec2 const & other) const {
     vec2 c = *this;
     c *= other;
+    return c;
+  }
+
+  vec2& operator/=(float other) {
+    x /= other;
+    y /= other;
+
+    return *this;
+  }
+
+  vec2 operator/(float other) const {
+    vec2 c = *this;
+    c /= other;
     return c;
   }
 
@@ -167,7 +271,12 @@ struct vec2 {
 
 
   float dot(vec2 const & other) const {
-    return x * other.x + y * other.y + z * other.z;
+    float sum = 0.F;
+
+    sum += x*other.x;
+    sum += y*other.y;
+
+    return sum;
   }
 
 
@@ -210,14 +319,28 @@ struct vec3 {
   }
 
   explicit vec3(
-      x_
-    , y_
-    , z_
+      float x_
+    , float y_
+    , float z_
     )
     : x(x_)
     , y(y_)
     , z(z_)
   {
+  }
+
+  vec3& operator+=(float other) {
+    x += other;
+    y += other;
+    z += other;
+
+    return *this;
+  }
+
+  vec3 operator+(float other) const {
+    vec3 c = *this;
+    c += other;
+    return c;
   }
 
   vec3& operator+=(vec3 const & other) {
@@ -231,6 +354,20 @@ struct vec3 {
   vec3 operator+(vec3 const & other) const {
     vec3 c = *this;
     c += other;
+    return c;
+  }
+
+  vec3& operator-=(float other) {
+    x -= other;
+    y -= other;
+    z -= other;
+
+    return *this;
+  }
+
+  vec3 operator-(float other) const {
+    vec3 c = *this;
+    c -= other;
     return c;
   }
 
@@ -248,6 +385,20 @@ struct vec3 {
     return c;
   }
 
+  vec3& operator*=(float other) {
+    x *= other;
+    y *= other;
+    z *= other;
+
+    return *this;
+  }
+
+  vec3 operator*(float other) const {
+    vec3 c = *this;
+    c *= other;
+    return c;
+  }
+
   vec3& operator*=(vec3 const & other) {
     x *= other.x;
     y *= other.y;
@@ -259,6 +410,20 @@ struct vec3 {
   vec3 operator*(vec3 const & other) const {
     vec3 c = *this;
     c *= other;
+    return c;
+  }
+
+  vec3& operator/=(float other) {
+    x /= other;
+    y /= other;
+    z /= other;
+
+    return *this;
+  }
+
+  vec3 operator/(float other) const {
+    vec3 c = *this;
+    c /= other;
     return c;
   }
 
@@ -278,7 +443,13 @@ struct vec3 {
 
 
   float dot(vec3 const & other) const {
-    return x * other.x + y * other.y + z * other.z;
+    float sum = 0.F;
+
+    sum += x*other.x;
+    sum += y*other.y;
+    sum += z*other.z;
+
+    return sum;
   }
 
   vec3 cross(vec3 const & other) const {
@@ -331,16 +502,31 @@ struct vec4 {
   }
 
   explicit vec4(
-      x_
-    , y_
-    , z_
-    , w_
+      float x_
+    , float y_
+    , float z_
+    , float w_
     )
     : x(x_)
     , y(y_)
     , z(z_)
     , w(w_)
   {
+  }
+
+  vec4& operator+=(float other) {
+    x += other;
+    y += other;
+    z += other;
+    w += other;
+
+    return *this;
+  }
+
+  vec4 operator+(float other) const {
+    vec4 c = *this;
+    c += other;
+    return c;
   }
 
   vec4& operator+=(vec4 const & other) {
@@ -355,6 +541,21 @@ struct vec4 {
   vec4 operator+(vec4 const & other) const {
     vec4 c = *this;
     c += other;
+    return c;
+  }
+
+  vec4& operator-=(float other) {
+    x -= other;
+    y -= other;
+    z -= other;
+    w -= other;
+
+    return *this;
+  }
+
+  vec4 operator-(float other) const {
+    vec4 c = *this;
+    c -= other;
     return c;
   }
 
@@ -373,6 +574,21 @@ struct vec4 {
     return c;
   }
 
+  vec4& operator*=(float other) {
+    x *= other;
+    y *= other;
+    z *= other;
+    w *= other;
+
+    return *this;
+  }
+
+  vec4 operator*(float other) const {
+    vec4 c = *this;
+    c *= other;
+    return c;
+  }
+
   vec4& operator*=(vec4 const & other) {
     x *= other.x;
     y *= other.y;
@@ -385,6 +601,21 @@ struct vec4 {
   vec4 operator*(vec4 const & other) const {
     vec4 c = *this;
     c *= other;
+    return c;
+  }
+
+  vec4& operator/=(float other) {
+    x /= other;
+    y /= other;
+    z /= other;
+    w /= other;
+
+    return *this;
+  }
+
+  vec4 operator/(float other) const {
+    vec4 c = *this;
+    c /= other;
     return c;
   }
 
@@ -405,7 +636,14 @@ struct vec4 {
 
 
   float dot(vec4 const & other) const {
-    return x * other.x + y * other.y + z * other.z;
+    float sum = 0.F;
+
+    sum += x*other.x;
+    sum += y*other.y;
+    sum += z*other.z;
+    sum += w*other.w;
+
+    return sum;
   }
 
 
