@@ -1,3 +1,7 @@
+﻿
+#include <cmath>
+
+namespace vectors {
 
 struct vec1 {
   float x;
@@ -108,6 +112,27 @@ struct vec1 {
   vec1 operator/(vec1 const & other) const {
     vec1 c = *this;
     c /= other;
+    return c;
+  }
+
+
+  void cos__inplace() {
+    x = std::cosf(x);
+  }
+
+  vec1 cos() const {
+    vec1 c = *this;
+    c.cos__inplace();
+    return c;
+  }
+
+  void sin__inplace() {
+    x = std::sinf(x);
+  }
+
+  vec1 sin() const {
+    vec1 c = *this;
+    c.sin__inplace();
     return c;
   }
 
@@ -266,6 +291,29 @@ struct vec2 {
   vec2 operator/(vec2 const & other) const {
     vec2 c = *this;
     c /= other;
+    return c;
+  }
+
+
+  void cos__inplace() {
+    x = std::cosf(x);
+    y = std::cosf(y);
+  }
+
+  vec2 cos() const {
+    vec2 c = *this;
+    c.cos__inplace();
+    return c;
+  }
+
+  void sin__inplace() {
+    x = std::sinf(x);
+    y = std::sinf(y);
+  }
+
+  vec2 sin() const {
+    vec2 c = *this;
+    c.sin__inplace();
     return c;
   }
 
@@ -438,6 +486,31 @@ struct vec3 {
   vec3 operator/(vec3 const & other) const {
     vec3 c = *this;
     c /= other;
+    return c;
+  }
+
+
+  void cos__inplace() {
+    x = std::cosf(x);
+    y = std::cosf(y);
+    z = std::cosf(z);
+  }
+
+  vec3 cos() const {
+    vec3 c = *this;
+    c.cos__inplace();
+    return c;
+  }
+
+  void sin__inplace() {
+    x = std::sinf(x);
+    y = std::sinf(y);
+    z = std::sinf(z);
+  }
+
+  vec3 sin() const {
+    vec3 c = *this;
+    c.sin__inplace();
     return c;
   }
 
@@ -635,6 +708,33 @@ struct vec4 {
   }
 
 
+  void cos__inplace() {
+    x = std::cosf(x);
+    y = std::cosf(y);
+    z = std::cosf(z);
+    w = std::cosf(w);
+  }
+
+  vec4 cos() const {
+    vec4 c = *this;
+    c.cos__inplace();
+    return c;
+  }
+
+  void sin__inplace() {
+    x = std::sinf(x);
+    y = std::sinf(y);
+    z = std::sinf(z);
+    w = std::sinf(w);
+  }
+
+  vec4 sin() const {
+    vec4 c = *this;
+    c.sin__inplace();
+    return c;
+  }
+
+
   float dot(vec4 const & other) const {
     float sum = 0.F;
 
@@ -666,4 +766,6 @@ struct vec4 {
   }
 };
 
+
+}
 

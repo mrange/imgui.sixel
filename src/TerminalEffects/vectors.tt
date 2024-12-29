@@ -1,7 +1,20 @@
 <#@ output extension=".hh"#>
 
+#include <cmath>
+
+namespace vectors {
+
 <#
-  var operators = new [] { "+", "-", "*", "/" };
+  var operators = new string [] {
+    "+"
+  , "-"
+  , "*"
+  , "/"
+  };
+  var functions = new (string Name, string Invoke) [] {
+      ("cos"  , "std::cosf" )
+    , ("sin"  , "std::sinf" )
+  };
 #>
 <# for (var maxDim = 1; maxDim < 5; ++maxDim) { #>
 struct vec<#=maxDim#> {
@@ -67,6 +80,21 @@ struct vec<#=maxDim#> {
 
 <# } #>
 
+<# foreach (var (fun, inv) in functions) { #>
+  void <#=fun#>__inplace() {
+<# for (var dim = 0; dim < maxDim; ++dim) { #>
+    <#=DimName(dim)#> = <#=inv#>(<#=DimName(dim)#>);
+<# } #>
+  }
+
+  vec<#=maxDim#> <#=fun#>() const {
+    vec<#=maxDim#> c = *this;
+    c.<#=fun#>__inplace();
+    return c;
+  }
+
+<# } #>
+
   float dot(vec<#=maxDim#> const & other) const {
     float sum = 0.F;
 
@@ -108,6 +136,8 @@ struct vec<#=maxDim#> {
 
 <# } #>
 
+}
+
 <#+
   string DimName(int dim) {
     switch(dim) {
@@ -116,6 +146,6 @@ struct vec<#=maxDim#> {
       case 2: return "z";
       case 3: return "w";
       default: return "UNKNOWN-" + dim;
-  }
+    }
   }
 #>

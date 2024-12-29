@@ -14,8 +14,11 @@
 #include <string>
 #include <vector>
 
+#include "vectors.hh"
+
+using namespace vectors;
+
 namespace {
-  #include "vectors.hh"
   static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
   const float pi  = 3.141592654F;
   const float tau = 2*pi;
@@ -38,15 +41,8 @@ namespace {
   }
   std::array<std::u8string, 256> color_values = generate__color_values();
 
-
-  struct rgb {
-    float red   ;
-    float green ;
-    float blue  ;
-  };
-
   // License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
-  rgb aces_approx(rgb v) {
+  vec3 aces_approx(vec3 v) {
     auto f = [](float v) {
       const float a = 2.51;
       const float b = 0.03;
@@ -59,20 +55,20 @@ namespace {
       return std::clamp<float>((v*(a*v+b))/(v*(c*v+d)+e), 0, 1);
     };
 
-    return {
-      f(v.red)
-    , f(v.green)
-    , f(v.blue)
+    return vec3 {
+      f(v.x)
+    , f(v.y)
+    , f(v.z)
     };
   }
 
   // License: Unknown, author: XorDev, found: https://x.com/XorDev/status/1808902860677001297
-  rgb hsv2rgb_approx(float h, float s, float v) {
+  vec3 hsv2vec3_approx(float h, float s, float v) {
     float r  = (std::cosf(h*tau+0)*s+2-s)*v*0.5F;
     float g  = (std::cosf(h*tau+4)*s+2-s)*v*0.5F;
     float b  = (std::cosf(h*tau+2)*s+2-s)*v*0.5F;
     
-    return {
+    return vec3 {
       r
     , g
     , b
@@ -80,12 +76,12 @@ namespace {
   }
 
   // License: Unknown, author: XorDev, found: https://x.com/XorDev/status/1808902860677001297
-  rgb palette(float a) {
+  vec3 palette(float a) {
     float r  = (1+std::sinf(a+0))*0.5F;
     float g  = (1+std::sinf(a+1))*0.5F;
     float b  = (1+std::sinf(a+2))*0.5F;
     
-    return {
+    return vec3 {
       r
     , g
     , b
@@ -101,25 +97,25 @@ namespace {
     return t * t * (3.0F - 2.0F * t);
   }
 
-  using f__generate_color = std::function<rgb (float time, std::size_t x, std::size_t y)>;
+  using f__generate_color = std::function<vec3 (float time, std::size_t x, std::size_t y)>;
 
 
-  f__generate_color const col__white    = [](float time, std::size_t x, std::size_t y) -> rgb { return {1,1,1}; };
-  f__generate_color const col__black    = [](float time, std::size_t x, std::size_t y) -> rgb { return {0,0,0}; };
-  f__generate_color const col__gray     = [](float time, std::size_t x, std::size_t y) -> rgb { return {0.5,0.5,0.5}; };
-  f__generate_color const col__graybar  = [](float time, std::size_t x, std::size_t y) -> rgb { 
+  f__generate_color const col__white    = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {1,1,1}; };
+  f__generate_color const col__black    = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {0,0,0}; };
+  f__generate_color const col__gray     = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {0.5,0.5,0.5}; };
+  f__generate_color const col__graybar  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
     auto c = std::sqrtf(std::clamp<float>(y/10.0F, 0, 1));
     c = 1-c;
-    return {c,c,c}; 
+    return vec3 {c,c,c}; 
   };
 
-  f__generate_color const col__rainbow  = [](float time, std::size_t x, std::size_t y) -> rgb { 
+  f__generate_color const col__rainbow  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
     return palette(time-(x+2.0F*y)/20.F);
   };
 
-  f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t y) -> rgb { 
+  f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
     auto c = std::clamp<float>(1-y/10.0F, 0, 1);
-    return hsv2rgb_approx(0.05,0.5F,c); 
+    return hsv2vec3_approx(0.05,0.5F,c); 
   };
   struct bitmap {
     std::wstring          shapes;
@@ -130,8 +126,8 @@ namespace {
 
   struct screen {
     std::vector<wchar_t>  shapes      ;
-    std::vector<rgb>      foreground  ;
-    std::vector<rgb>      background  ;
+    std::vector<vec3>      foreground  ;
+    std::vector<vec3>      background  ;
     std::size_t           width       ;
     std::size_t           height      ;
 
@@ -140,14 +136,14 @@ namespace {
       foreground.clear();
       background.clear();
       shapes.resize(width*height, L' ');
-      foreground.resize(width*height  , {1,1,1});
-      background.resize(width*height  , {0,0,0});
+      foreground.resize(width*height  , vec3 {1,1,1});
+      background.resize(width*height  , vec3 {0,0,0});
     }
 
     void draw__pixel(
       wchar_t s
-    , rgb     f
-    , rgb     b
+    , vec3     f
+    , vec3     b
     , int     x
     , int     y
     ) {
@@ -460,15 +456,15 @@ namespace {
   void write__color(
       std::u8string &       output
     , std::u8string const & prelude
-    , rgb const &           color
+    , vec3 const &           color
     ) {
     output.append(prelude);
     auto to_i = [](float v) -> std::size_t {
       return static_cast<std::size_t>(std::roundf(std::sqrtf(std::clamp<float>(v, 0, 1))*255));
     };
-    output.append(color_values[to_i(color.red)]);
-    output.append(color_values[to_i(color.green)]);
-    output.append(color_values[to_i(color.blue)]);
+    output.append(color_values[to_i(color.x)]);
+    output.append(color_values[to_i(color.y)]);
+    output.append(color_values[to_i(color.z)]);
     output.push_back(u8'm');
   }
 
@@ -490,8 +486,8 @@ namespace {
     assert(w*h == screen.foreground.size());
     assert(w*h == screen.background.size());
 
-    rgb foreground = {1,1,1};
-    rgb background = {0,0,0};
+    vec3 foreground = vec3 {1,1,1};
+    vec3 background = vec3 {0,0,0};
 
     for (std::size_t y = 0; y < h; ++y) {
       write__color(output, prelude__foreground, foreground);
@@ -595,7 +591,7 @@ namespace {
         auto col = d < 0.0 ? col0 : col1;
         screen.draw__pixel(
             L' '
-          , rgb{0,0,0}
+          , vec3{0,0,0}
           , col
           , x
           , y
