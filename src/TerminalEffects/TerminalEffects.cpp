@@ -41,6 +41,16 @@ namespace {
   }
   std::array<std::u8string, 256> color_values = generate__color_values();
 
+  // License: Unknown, author: Unknown, found: don't remember
+  float hash(float co) {
+    return fractf(sinf(co*12.9898F) * 13758.5453F);
+  }
+
+  // License: Unknown, author: Unknown, found: don't remember
+  float hash(vec2 const & co) {
+    return fractf(sin(co.dot(vec2(12.9898,58.233F))) * 13758.5453F);
+  }
+
   // License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
   vec3 aces_approx(vec3 v) {
     auto f = [](float v) {
@@ -88,17 +98,7 @@ namespace {
     };
   }
 
-  float mix(float b, float e, float x) {
-    return b+(e-b)*x;
-  }
-
-  float smoothstep(float edge0, float edge1, float x) {
-    float t = std::clamp<float>((x - edge0) / (edge1 - edge0), 0.0F, 1.0F);
-    return t * t * (3.0F - 2.0F * t);
-  }
-
   using f__generate_color = std::function<vec3 (float time, std::size_t x, std::size_t y)>;
-
 
   f__generate_color const col__white    = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {1,1,1}; };
   f__generate_color const col__black    = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {0,0,0}; };
@@ -110,7 +110,7 @@ namespace {
   };
 
   f__generate_color const col__rainbow  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
-    return palette(time-(x+2.0F*y)/20.F);
+    return palette(time-(x+2.0F*y)/20.F).sqrt();
   };
 
   f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
@@ -350,6 +350,33 @@ namespace {
    ╰───────────┼          │ ▀ L O N G S H O T ▄ │
                           ╘═════════════════════╛
 )BITMAP");
+
+  bitmap lance = make_bitmap(col__rainbow, LR"BITMAP(
+                    ___           ___           ___           ___     
+                   ╱╲  ╲         ╱╲  ╲         ╱╲__╲         ╱╲__╲    
+                  ╱  ╲  ╲        ╲ ╲  ╲       ╱ ╱  ╱        ╱ ╱ _╱_   
+                 ╱ ╱╲ ╲  ╲        ╲ ╲  ╲     ╱ ╱  ╱        ╱ ╱ ╱╲__╲  
+  ___     ___   ╱ ╱ ╱  ╲  ╲   _____╲ ╲  ╲   ╱ ╱  ╱  ___   ╱ ╱ ╱ ╱ _╱_ 
+ ╱╲  ╲   ╱╲__╲ ╱ ╱_╱ ╱╲ ╲__╲ ╱        ╲__╲ ╱ ╱__╱  ╱╲__╲ ╱ ╱_╱ ╱ ╱╲__╲
+ ╲ ╲  ╲ ╱ ╱  ╱ ╲ ╲╱ ╱  ╲╱__╱ ╲ ╲__╲__╲╱__╱ ╲ ╲  ╲ ╱ ╱  ╱ ╲ ╲╱ ╱ ╱ ╱  ╱
+  ╲ ╲  ╱ ╱  ╱   ╲  ╱__╱       ╲ ╲  ╲        ╲ ╲  ╱ ╱  ╱   ╲  ╱_╱ ╱  ╱ 
+   ╲ ╲╱ ╱  ╱     ╲ ╲  ╲        ╲ ╲  ╲        ╲ ╲╱ ╱  ╱     ╲ ╲╱ ╱  ╱  
+    ╲  ╱  ╱       ╲ ╲__╲        ╲ ╲__╲        ╲  ╱  ╱       ╲  ╱  ╱   
+     ╲╱__╱         ╲╱__╱         ╲╱__╱         ╲╱__╱         ╲╱__╱    
+)BITMAP");
+
+/*
+        if (h0 > 0.5) {
+          shape = L'╱'; 
+        } else {
+          shape = L'╲';
+        }
+*/
+/*
+          shape = L'╱'; 
+        } else if (h0 > 0.10) {
+          shape = L'╲';
+*/
 
   bitmap gerp = make_bitmap(col__black, LR"BITMAP(
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -638,43 +665,29 @@ namespace {
     for (std::size_t y = 0; y < screen.height; ++y) {
       auto py = (-1.F*screen.height+2.F*y)/screen.height;
       for (std::size_t x = 0; x < screen.width; ++x) {
-        auto px = (-1.F*screen.width+2.F*x )/screen.width;
+        auto px = (-1.F*screen.width+2.F*x)/screen.width;
 
-        auto px0 = px;
-        auto py0 = py;
+        auto p = vec2 {px, py};
+        auto h0 = hash(p);
 
-        px0 -= std::sinf(0.707f*(time+100));
-        py0 -= std::sinf((time+100));
-
-        auto px1 = px;
-        auto py1 = py;
-
-        px1 -= std::sinf(0.5F*(time+123));
-        py1 -= std::sinf(0.707F*(time+123));
-        float sm = 0.125F*length(px, py);
-
-        auto d0 = df(px0, py0);
-        auto d1 = df(px1, py1);
-        auto d  = d0;
-        d = pmax(d, d1, sm);
-        float dd = -d0;
-        dd = pmax(dd, -d1, sm);
-        d =  std::min(d, dd);
-
-        auto col0 = palette(d+time+py);
-        auto col1 = palette(d+1.5F+time*0.707F+py);
-        auto col = d < 0.0 ? col0 : col1;
-        col *= smoothstep(-0.5F, 0.5F, std::sinf(time-py-0.5F*px*px));
+        auto shape = L'╳';
+        if (h0 > 0.55) {
+          shape = L'╱'; 
+        } else if (h0 > 0.1) {
+          shape = L'╲';
+        } else {
+          shape = L'_';
+        }
         screen.draw__pixel(
-            L' '
-          , vec3{0,0,0}
-          , col
+            shape
+          , (vec3 {1,1,1})*smoothstep(0,1,py*py)
+          , vec3 {0,0,0}
           , x
           , y
           );
       }
     }
-    screen.draw__bitmap(impulse2 , time, 8, 6);
+    screen.draw__bitmap(lance , time, 4, 8);
   }
 
 }
@@ -711,7 +724,7 @@ int main() {
 
     screen.clear();
 
-    effect1(time, screen);
+    effect2(time, screen);
     screen.draw__bitmap(border     , time,  0,  0);
 
     output.clear();

@@ -1,9 +1,25 @@
-﻿
+
 #include <cmath>
 
 namespace vectors {
+  float fractf(float x) {
+    return x-std::floorf(x);
+  }
 
-struct vec1 {
+  float roundf(float x) {
+    return std::floorf(x+0.5F);
+  }
+
+  float mix(float b, float e, float x) {
+    return b+(e-b)*x;
+  }
+
+  float smoothstep(float edge0, float edge1, float x) {
+    float t = std::clamp<float>((x - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return t * t * (3.0F - 2.0F * t);
+  }
+
+ struct vec1 {
   float x;
 
   explicit vec1()
@@ -136,6 +152,46 @@ struct vec1 {
     return c;
   }
 
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+  }
+
+  vec1 sqrt() const {
+    vec1 c = *this;
+    c.sqrt__inplace();
+    return c;
+  }
+
+  void floor__inplace() {
+    x = std::floorf(x);
+  }
+
+  vec1 floor() const {
+    vec1 c = *this;
+    c.floor__inplace();
+    return c;
+  }
+
+  void fract__inplace() {
+    x = fractf(x);
+  }
+
+  vec1 fract() const {
+    vec1 c = *this;
+    c.fract__inplace();
+    return c;
+  }
+
+  void round__inplace() {
+    x = roundf(x);
+  }
+
+  vec1 round() const {
+    vec1 c = *this;
+    c.round__inplace();
+    return c;
+  }
+
 
   float dot(vec1 const & other) const {
     float sum = 0.F;
@@ -164,6 +220,22 @@ struct vec1 {
     return (*this - other).length();
   }
 };
+
+vec1 mix(vec1 const & b, vec1 const & e, float x) {
+  vec1 c;
+
+  c.x = mix(b.x, e.x, x);
+
+  return c;
+}
+
+vec1 smoothstep(vec1 const & edge0, vec1 const & edge1, vec1 const & x) {
+  vec1 c;
+
+  c.x = smoothstep(edge0.x, edge1.x, x.x);
+
+  return c;
+}
 
 struct vec2 {
   float x;
@@ -317,6 +389,50 @@ struct vec2 {
     return c;
   }
 
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+    y = std::sqrtf(y);
+  }
+
+  vec2 sqrt() const {
+    vec2 c = *this;
+    c.sqrt__inplace();
+    return c;
+  }
+
+  void floor__inplace() {
+    x = std::floorf(x);
+    y = std::floorf(y);
+  }
+
+  vec2 floor() const {
+    vec2 c = *this;
+    c.floor__inplace();
+    return c;
+  }
+
+  void fract__inplace() {
+    x = fractf(x);
+    y = fractf(y);
+  }
+
+  vec2 fract() const {
+    vec2 c = *this;
+    c.fract__inplace();
+    return c;
+  }
+
+  void round__inplace() {
+    x = roundf(x);
+    y = roundf(y);
+  }
+
+  vec2 round() const {
+    vec2 c = *this;
+    c.round__inplace();
+    return c;
+  }
+
 
   float dot(vec2 const & other) const {
     float sum = 0.F;
@@ -346,6 +462,24 @@ struct vec2 {
     return (*this - other).length();
   }
 };
+
+vec2 mix(vec2 const & b, vec2 const & e, float x) {
+  vec2 c;
+
+  c.x = mix(b.x, e.x, x);
+  c.y = mix(b.y, e.y, x);
+
+  return c;
+}
+
+vec2 smoothstep(vec2 const & edge0, vec2 const & edge1, vec2 const & x) {
+  vec2 c;
+
+  c.x = smoothstep(edge0.x, edge1.x, x.x);
+  c.y = smoothstep(edge0.y, edge1.y, x.y);
+
+  return c;
+}
 
 struct vec3 {
   float x;
@@ -514,6 +648,54 @@ struct vec3 {
     return c;
   }
 
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+    y = std::sqrtf(y);
+    z = std::sqrtf(z);
+  }
+
+  vec3 sqrt() const {
+    vec3 c = *this;
+    c.sqrt__inplace();
+    return c;
+  }
+
+  void floor__inplace() {
+    x = std::floorf(x);
+    y = std::floorf(y);
+    z = std::floorf(z);
+  }
+
+  vec3 floor() const {
+    vec3 c = *this;
+    c.floor__inplace();
+    return c;
+  }
+
+  void fract__inplace() {
+    x = fractf(x);
+    y = fractf(y);
+    z = fractf(z);
+  }
+
+  vec3 fract() const {
+    vec3 c = *this;
+    c.fract__inplace();
+    return c;
+  }
+
+  void round__inplace() {
+    x = roundf(x);
+    y = roundf(y);
+    z = roundf(z);
+  }
+
+  vec3 round() const {
+    vec3 c = *this;
+    c.round__inplace();
+    return c;
+  }
+
 
   float dot(vec3 const & other) const {
     float sum = 0.F;
@@ -551,6 +733,26 @@ struct vec3 {
     return (*this - other).length();
   }
 };
+
+vec3 mix(vec3 const & b, vec3 const & e, float x) {
+  vec3 c;
+
+  c.x = mix(b.x, e.x, x);
+  c.y = mix(b.y, e.y, x);
+  c.z = mix(b.z, e.z, x);
+
+  return c;
+}
+
+vec3 smoothstep(vec3 const & edge0, vec3 const & edge1, vec3 const & x) {
+  vec3 c;
+
+  c.x = smoothstep(edge0.x, edge1.x, x.x);
+  c.y = smoothstep(edge0.y, edge1.y, x.y);
+  c.z = smoothstep(edge0.z, edge1.z, x.z);
+
+  return c;
+}
 
 struct vec4 {
   float x;
@@ -734,6 +936,58 @@ struct vec4 {
     return c;
   }
 
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+    y = std::sqrtf(y);
+    z = std::sqrtf(z);
+    w = std::sqrtf(w);
+  }
+
+  vec4 sqrt() const {
+    vec4 c = *this;
+    c.sqrt__inplace();
+    return c;
+  }
+
+  void floor__inplace() {
+    x = std::floorf(x);
+    y = std::floorf(y);
+    z = std::floorf(z);
+    w = std::floorf(w);
+  }
+
+  vec4 floor() const {
+    vec4 c = *this;
+    c.floor__inplace();
+    return c;
+  }
+
+  void fract__inplace() {
+    x = fractf(x);
+    y = fractf(y);
+    z = fractf(z);
+    w = fractf(w);
+  }
+
+  vec4 fract() const {
+    vec4 c = *this;
+    c.fract__inplace();
+    return c;
+  }
+
+  void round__inplace() {
+    x = roundf(x);
+    y = roundf(y);
+    z = roundf(z);
+    w = roundf(w);
+  }
+
+  vec4 round() const {
+    vec4 c = *this;
+    c.round__inplace();
+    return c;
+  }
+
 
   float dot(vec4 const & other) const {
     float sum = 0.F;
@@ -765,6 +1019,28 @@ struct vec4 {
     return (*this - other).length();
   }
 };
+
+vec4 mix(vec4 const & b, vec4 const & e, float x) {
+  vec4 c;
+
+  c.x = mix(b.x, e.x, x);
+  c.y = mix(b.y, e.y, x);
+  c.z = mix(b.z, e.z, x);
+  c.w = mix(b.w, e.w, x);
+
+  return c;
+}
+
+vec4 smoothstep(vec4 const & edge0, vec4 const & edge1, vec4 const & x) {
+  vec4 c;
+
+  c.x = smoothstep(edge0.x, edge1.x, x.x);
+  c.y = smoothstep(edge0.y, edge1.y, x.y);
+  c.z = smoothstep(edge0.z, edge1.z, x.z);
+  c.w = smoothstep(edge0.w, edge1.w, x.w);
+
+  return c;
+}
 
 
 }
