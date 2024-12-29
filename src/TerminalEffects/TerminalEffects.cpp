@@ -37,6 +37,107 @@ namespace {
   }
   std::array<std::u8string, 256> color_values = generate__color_values();
 
+
+  struct vec3 {
+    float x;
+    float y;
+    float z;
+
+    explicit vec3() : x(0), y(0), z(0) {}
+    explicit vec3(float c) : x(c), y(c), z(c) {}
+    explicit vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+
+    vec3& operator+=(vec3 const & other) {
+      x += other.x;
+      y += other.y;
+      z += other.z;
+      return *this;
+    }
+
+    vec3& operator-=(vec3 const & other) {
+      x -= other.x;
+      y -= other.y;
+      z -= other.z;
+      return *this;
+    }
+
+    vec3& operator*=(float scalar) {
+      x *= scalar;
+      y *= scalar;
+      z *= scalar;
+      return *this;
+    }
+
+    vec3& operator/=(float scalar) {
+      float inv = 1.0f / scalar;
+      x *= inv;
+      y *= inv;
+      z *= inv;
+      return *this;
+    }
+
+    vec3 operator+(vec3 const & other) const {
+      vec3 c = *this;
+      c += other;
+      return c;
+    }
+
+    vec3 operator-(vec3 const & other) const {
+      vec3 c = *this;
+      c -= other;
+      return c;
+    }
+
+    vec3 operator*(float other) const {
+      vec3 c = *this;
+      c *= other;
+      return c;
+    }
+
+    vec3 operator/(float other) const {
+      vec3 c = *this;
+      c /= other;
+      return c;
+    }
+
+    float dot(vec3 const & other) const {
+      return x * other.x + y * other.y + z * other.z;
+    }
+
+    vec3 cross(vec3 const & other) const {
+      return vec3(
+          y * other.z - z * other.y,
+          z * other.x - x * other.z,
+          x * other.y - y * other.x
+      );
+    }
+
+    float length() const {
+      return std::sqrt(dot(*this));
+    }
+
+    // Normalize vector (make unit length)
+    vec3 normalized() const {
+      vec3 c = *this;
+      c.normalize__inplace();
+      return c;
+    }
+
+    void normalize__inplace() {
+      float len = length();
+      *this /= len;
+    }
+
+    float distance(vec3 const & other) const {
+      return (*this - other).length();
+    }
+  };
+
+  // Non-member operator for scalar * vector
+  inline vec3 operator*(float scalar, vec3 const & v) {
+      return v * scalar;
+  }
+
   struct rgb {
     float red   ;
     float green ;
@@ -578,7 +679,7 @@ namespace {
 
         px1 -= std::sinf(0.5F*(time+123));
         py1 -= std::sinf(0.707F*(time+123));
-        float sm = 0.0666*length(px, py);
+        float sm = 0.125F*length(px, py);
 
         auto d0 = df(px0, py0);
         auto d1 = df(px1, py1);
