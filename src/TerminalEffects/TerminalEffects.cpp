@@ -722,34 +722,36 @@ _________            .___       ___.
   , { L'╩', 0b0000 , 0b1110}
   , { L'╬', 0b0000 , 0b1111}
 
-  , { L'╒', 0b0000 , 0b0000}
-  , { L'╓', 0b0000 , 0b0000}
-  , { L'╕', 0b0000 , 0b0000}
-  , { L'╖', 0b0000 , 0b0000}
-  , { L'╘', 0b0000 , 0b0000}
-  , { L'╙', 0b0000 , 0b0000}
-  , { L'╛', 0b0000 , 0b0000}
-  , { L'╜', 0b0000 , 0b0000}
-  , { L'╞', 0b0000 , 0b0000}
-  , { L'╟', 0b0000 , 0b0000}
-  , { L'╡', 0b0000 , 0b0000}
-  , { L'╢', 0b0000 , 0b0000}
-  , { L'╤', 0b0000 , 0b0000}
-  , { L'╥', 0b0000 , 0b0000}
-  , { L'╧', 0b0000 , 0b0000}
-  , { L'╨', 0b0000 , 0b0000}
-  , { L'╪', 0b0000 , 0b0000}
-  , { L'╫', 0b0000 , 0b0000}
+  , { L'╒', 0b0001 , 0b0010}
+  , { L'╓', 0b0010 , 0b0001}
+  , { L'╕', 0b0001 , 0b1000}
+  , { L'╖', 0b1000 , 0b0001}
+  , { L'╘', 0b0100 , 0b0010}
+  , { L'╙', 0b0010 , 0b0100}
+  , { L'╛', 0b0100 , 0b1000}
+  , { L'╜', 0b1000 , 0b0100}
+  , { L'╞', 0b0101 , 0b0010}
+  , { L'╟', 0b0010 , 0b0101}
+  , { L'╡', 0b0101 , 0b1000}
+  , { L'╢', 0b1000 , 0b0101}
+  , { L'╤', 0b0001 , 0b1010}
+  , { L'╥', 0b1010 , 0b0001}
+  , { L'╧', 0b0100 , 0b1010}
+  , { L'╨', 0b1010 , 0b0100}
+  , { L'╪', 0b0101 , 0b1010}
+  , { L'╫', 0b1010 , 0b0101}
 
   , { L'╴', 0b1000 , 0b0000}
   , { L'╵', 0b0100 , 0b0000}
   , { L'╶', 0b0010 , 0b0000}
   , { L'╷', 0b0001 , 0b0000}
 
-  , { L'╭', 0b1000 , 0b0000}
-  , { L'╯', 0b0100 , 0b0000}
-  , { L'╮', 0b0010 , 0b0000}
-  , { L'╰', 0b0001 , 0b0000}
+  , { L'╭', 0b0011 , 0b0000}
+  , { L'╯', 0b1100 , 0b0000}
+  , { L'╮', 0b1001 , 0b0000}
+  , { L'╰', 0b0110 , 0b0000}
+
+
   };
 
   std::map<wchar_t, cell> create__lookup__cell() {
@@ -788,6 +790,30 @@ _________            .___       ___.
 
   using qcs = std::array<qc, screen__width*screen__height>;
 
+  void reduce__freedom(
+      qcs &       res
+    , qc const &  sel
+    , int         delta__x
+    , int         delta__y
+    ) {
+    int x = sel.x + delta__x;
+    int y = sel.y + delta__y;
+
+    if (x < 0 || x >= screen__width) {
+      return;
+    }
+
+    if (y < 0 || y >= screen__height) {
+      return;
+    }
+
+    auto & update = res[x+y*screen__width];
+
+    if (update.freedom > 0) {
+      --update.freedom;
+    }
+  }
+
   connection determine__connection(
       qcs const & res
     , qc const &  sel
@@ -795,8 +821,19 @@ _________            .___       ___.
     , int         delta__x
     , int         delta__y
     ) {
+    int x = sel.x + delta__x;
+    int y = sel.y + delta__y;
+
+    if (x < 0 || x >= screen__width) {
+      return free;
+    }
+
+    if (y < 0 || y >= screen__height) {
+      return free;
+    }
+
     auto conn = undecided;
-    auto neighbour  = res[(sel.x+delta__x)+(sel.y+delta__y)*screen__width];
+    auto neighbour  = res[x+y*screen__width];
     auto shape      = neighbour.shape;
     if (shape == 0) {
       return free;
@@ -894,29 +931,14 @@ _________            .___       ___.
       auto  right   = undecided;
       auto  bottom  = undecided;
 
-      if (sel.x == 0) {
-        left = free;
-      } else {
-        left = determine__connection(res, sel, 0b0010, -1, 0);
+      if (sel.x == 35 && sel.y == 2) {
+        printf("Hello\n");
       }
 
-      if (sel.x >= screen__width - 1) {
-        right = free;
-      } else {
-        right = determine__connection(res, sel, 0b1000, 1, 0);
-      }
-
-      if (sel.y == 0) {
-        top = free;
-      } else {
-        top = determine__connection(res, sel, 0b0001, 0, -1);
-      }
-
-      if (sel.y >= screen__height - 1) {
-        bottom = free;
-      } else {
-        bottom = determine__connection(res, sel, 0b0100, 0, 1);
-      }
+      left    = determine__connection(res, sel, 0b0010, -1, 0);
+      right   = determine__connection(res, sel, 0b1000, 1, 0);
+      top     = determine__connection(res, sel, 0b0001, 0, -1);
+      bottom  = determine__connection(res, sel, 0b0100, 0, 1);
 
       assert(left   != undecided);
       assert(top    != undecided);
@@ -949,6 +971,10 @@ _________            .___       ___.
         update.freedom = 0;
       }
 
+      reduce__freedom(res, sel,-1, 0);
+      reduce__freedom(res, sel, 1, 0);
+      reduce__freedom(res, sel, 0,-1);
+      reduce__freedom(res, sel, 0, 1);
     }
 
     return res;
