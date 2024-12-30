@@ -1093,7 +1093,6 @@ _________            .___       ___.
 
     switch (sel.type) {
     case qc__grid:
-    case qc__fade:
       sel.type        = qc__flash;
       sel.type__begin = time;
       sel.type__end   = time+0.175;
@@ -1178,11 +1177,15 @@ _________            .___       ___.
             case qc__grid:
               break;
             case qc__fade:
-              if (c.type__begin + 1 < time) {
+              return;
+              /*
+              * TODO: Not working as expected
+              if (c.type__begin + 0.175*2 < time) {
                 break;
               } else {
                 return;
               }
+              */
             case qc__logo:
               has__logo = true;
               return;
