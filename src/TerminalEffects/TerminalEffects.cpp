@@ -7,11 +7,14 @@
 #include <windows.h>
 
 #include <cassert>
+
 #include <algorithm>
 #include <array>
 #include <format>
 #include <functional>
+#include <map>
 #include <string>
+#include <random>
 #include <vector>
 
 #include "vectors.hh"
@@ -20,8 +23,12 @@ using namespace vectors;
 
 namespace {
   static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
-  const float pi  = 3.141592654F;
-  const float tau = 2*pi;
+  const float pi                    = 3.141592654F;
+  const float tau                   = 2*pi;
+  const std::size_t screen__width   = 80;
+  const std::size_t screen__height  = 30;
+
+  std::mt19937        random__generator (19740531);
 
   std::u8string to_u8string(std::string const & s) {
     return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
@@ -678,9 +685,9 @@ _________            .___       ___.
   }
 
   struct cell {
-    wchar_t             shape               ;
-    char                connection__single  ;
-    char                connection__double  ;
+    wchar_t shape               ;
+    char    connection__single  ;
+    char    connection__double  ;
   };
 
   cell cells[] {
@@ -737,8 +744,213 @@ _________            .___       ___.
   , { L'╯', 0b0100 , 0b0000}
   , { L'╮', 0b0010 , 0b0000}
   , { L'╰', 0b0001 , 0b0000}
-
   };
+
+  std::map<wchar_t, cell> create__lookup__cell() {
+    std::map<wchar_t, cell> res;
+
+    for (auto & c : cells) {
+      auto [_, success] = res.insert(std::make_pair(c.shape, c));
+      assert(success);
+    }
+
+    return res;
+  }
+  std::map<wchar_t, cell> lookup__cell = create__lookup__cell();
+
+  enum connection {
+    undecided
+  , free
+  , no_connection
+  , connected_to_single
+  , connected_to_double
+  };
+
+  struct qc {
+    std::size_t freedom ;
+    wchar_t     shape   ;
+    std::size_t x       ;
+    std::size_t y       ;
+
+    qc() 
+      : freedom (4)
+      , shape   (0)
+      , x       (0)
+      , y       (0) {
+    }
+  };
+
+  using qcs = std::array<qc, screen__width*screen__height>;
+
+  connection determine__connection(
+      qcs const & res
+    , qc const &  sel
+    , char        test
+    , int         delta__x
+    , int         delta__y
+    ) {
+    auto conn = undecided;
+    auto neighbour  = res[(sel.x+delta__x)+(sel.y+delta__y)*screen__width];
+    auto shape      = neighbour.shape;
+    if (shape == 0) {
+      return free;
+    } else {
+      auto f = lookup__cell.find(shape);
+      if (f == lookup__cell.end()) {
+        return free;
+      }
+      auto connection__single = f->second.connection__single;
+      auto connection__double = f->second.connection__double;
+      assert((connection__single&connection__double) == 0);
+
+      auto has__single = (test & connection__single) != 0;
+      auto has__double = (test & connection__double) != 0;
+      assert(!(has__single&&has__double));
+
+      if (has__single) {
+        return connected_to_single;
+      } else if (has__double) {
+        return connected_to_double;
+      } else {
+        return no_connection;
+      }
+    }
+  }
+
+  bool check__candidate(
+    cell const &  c
+  , connection    conn
+  , char          test
+  )
+  {
+    assert((c.connection__single&c.connection__double) == 0);
+    switch(conn) {
+    case free               :
+      return true;
+    case no_connection      :
+      return (test & c.connection__single) == 0 && (test & c.connection__double) == 0;
+    case connected_to_single:
+      return (test & c.connection__single) != 0;
+    case connected_to_double:
+      return (test & c.connection__double) != 0;
+    default:
+      assert(false);
+      return false;
+    }
+  }
+
+  qcs create__board() {
+    qcs res;
+
+    for (std::size_t y = 0; y < screen__height; ++y) {
+      auto y__off = y*screen__width;
+      for (std::size_t x = 0; x < screen__width; ++x) {
+        auto & qc = res[y__off+x];
+        qc.x = x;
+        qc.y = y;
+      }
+    }
+
+    std::vector<qc>   candidates__qc;
+    std::vector<cell> candidates__cell;
+    candidates__qc.reserve(res.size());
+    candidates__cell.reserve(128);
+
+    while(true) {
+      std::size_t min   = 1000;
+      std::size_t open  = 0   ;
+      for (std::size_t i = 0; i < res.size(); ++i) {
+        auto & qc = res[i];
+        if (qc.shape == 0) {
+          min = std::min(min, qc.freedom);
+          ++open;
+        }
+      }
+
+      if (open == 0) {
+        break;
+      }
+
+      candidates__qc.clear();
+      for (std::size_t i = 0; i < res.size(); ++i) {
+        auto & qc = res[i];
+        if (qc.freedom == min && qc.shape == 0) {
+          candidates__qc.push_back(qc);
+        }
+      }
+
+      assert(candidates__qc.size() > 0);
+      std::shuffle(candidates__qc.begin(), candidates__qc.end(), random__generator);
+
+      auto sel = candidates__qc.front();
+      assert(sel.shape == 0);
+
+      auto  left    = undecided;
+      auto  top     = undecided;
+      auto  right   = undecided;
+      auto  bottom  = undecided;
+
+      if (sel.x == 0) {
+        left = free;
+      } else {
+        left = determine__connection(res, sel, 0b0010, -1, 0);
+      }
+
+      if (sel.x >= screen__width - 1) {
+        right = free;
+      } else {
+        right = determine__connection(res, sel, 0b1000, 1, 0);
+      }
+
+      if (sel.y == 0) {
+        top = free;
+      } else {
+        top = determine__connection(res, sel, 0b0001, 0, -1);
+      }
+
+      if (sel.y >= screen__height - 1) {
+        bottom = free;
+      } else {
+        bottom = determine__connection(res, sel, 0b0100, 0, 1);
+      }
+
+      assert(left   != undecided);
+      assert(top    != undecided);
+      assert(right  != undecided);
+      assert(bottom != undecided);
+
+      candidates__cell.clear();
+      for (auto & c : cells) {
+        auto candidate = true;
+
+        candidate &= check__candidate(c, left   , 0b1000);
+        candidate &= check__candidate(c, top    , 0b0100);
+        candidate &= check__candidate(c, right  , 0b0010);
+        candidate &= check__candidate(c, bottom , 0b0001);
+
+        if (candidate) {
+          candidates__cell.push_back(c);
+        }
+      }
+
+      auto & update = res[sel.x+sel.y*screen__width];
+
+      // assert(candidates__cell.size() > 0);
+      if (candidates__cell.size() == 0) {
+        update.shape   = L'*';
+        update.freedom = 0;
+      } else {
+        std::shuffle(candidates__cell.begin(), candidates__cell.end(), random__generator);
+        auto c = candidates__cell.front();
+        update.shape = c.shape;
+        update.freedom = 0;
+      }
+
+    }
+
+    return res;
+  }
+  qcs const board = create__board();
 
   void effect3(float time, screen & screen) {
 
@@ -783,12 +995,16 @@ _________            .___       ___.
   */
 
     for (std::size_t y = 0; y < screen.height; ++y) {
-      auto py = (-1.F*screen.height+2.F*y)/screen.height;
+      auto y__off = y*screen__width;
       for (std::size_t x = 0; x < screen.width; ++x) {
-        auto px = (-1.F*screen.width+2.F*x)/screen.width;
-
-        auto p = vec2 {px, py};
-        auto h0 = hash(p+std::floorf(-0.25*time+py*py+0.33*hash(p)));
+        auto & qc = board[x+y__off];
+        screen.draw__pixel(
+            qc.shape
+          , vec3 {1,1,1}
+          , vec3 {0,0,0}
+          , x
+          , y
+          );
       }
     }
   }
@@ -817,7 +1033,7 @@ int main() {
   std::u8string output;
   output.reserve(16384);
 
-  screen screen = make_screen(80, 30);
+  screen screen = make_screen(screen__width, screen__height);
 
   auto before = GetTickCount64();
   while(true) {
@@ -827,7 +1043,7 @@ int main() {
 
     screen.clear();
 
-    effect2(time, screen);
+    effect3(time, screen);
     screen.draw__bitmap(border     , time,  0,  0);
 
     output.clear();
