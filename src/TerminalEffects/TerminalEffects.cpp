@@ -28,7 +28,13 @@ namespace {
   const std::size_t screen__width   = 80;
   const std::size_t screen__height  = 30;
 
-  std::mt19937        random__generator (19740531);
+  std::mt19937      random__generator { 19740531 };
+
+  std::size_t pick_a_number(std::size_t min, std::size_t max) {
+    assert(max >= min);
+    std::uniform_int_distribution<std::size_t> dist(min, max);
+    return dist(random__generator);
+  }
 
   std::u8string to_u8string(std::string const & s) {
     return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
@@ -880,9 +886,7 @@ _________            .___       ___.
       }
 
       assert(candidates__qc.size() > 0);
-      std::shuffle(candidates__qc.begin(), candidates__qc.end(), random__generator);
-
-      auto sel = candidates__qc.front();
+      auto sel = candidates__qc[pick_a_number(0, candidates__qc.size()-1)];
       assert(sel.shape == 0);
 
       auto  left    = undecided;
@@ -940,8 +944,7 @@ _________            .___       ___.
         update.shape   = L'*';
         update.freedom = 0;
       } else {
-        std::shuffle(candidates__cell.begin(), candidates__cell.end(), random__generator);
-        auto c = candidates__cell.front();
+        auto c = candidates__cell[pick_a_number(0, candidates__cell.size() - 1)];
         update.shape = c.shape;
         update.freedom = 0;
       }
