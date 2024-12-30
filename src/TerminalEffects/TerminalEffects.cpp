@@ -23,10 +23,11 @@ using namespace vectors;
 
 namespace {
   static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
-  const float pi                    = 3.141592654F;
-  const float tau                   = 2*pi;
-  const std::size_t screen__width   = 80;
-  const std::size_t screen__height  = 30;
+  float       const pi              = 3.141592654F;
+  float       const tau             = 2*pi;
+  std::size_t const screen__width   = 80;
+  std::size_t const screen__height  = 30;
+  float       const end__time       = 1E6;
 
   std::mt19937      random__generator { 19740531 };
 
@@ -793,23 +794,32 @@ _________            .___       ___.
   };
 
   enum qc__type {
-    qc__grid  = 0
-  , qc__logo  = 1
+    qc__null  = 0
+  , qc__grid  = 1
+  , qc__logo  = 2
+  , qc__flash = 3
+  , qc__fade  = 4
   };
 
   struct qc {
-    std::size_t freedom ;
-    wchar_t     shape   ;
-    std::size_t x       ;
-    std::size_t y       ;
-    qc__type    type    ;
+    std::size_t freedom     ;
+    wchar_t     shape       ;
+    std::size_t x           ;
+    std::size_t y           ;
+    qc__type    type        ;
+
+    float       type__begin ;
+    float       type__end   ;
 
     qc() 
-      : freedom (4)
-      , shape   (0)
-      , x       (0)
-      , y       (0)
-      , type    (qc__grid) {
+      : freedom     (0)
+      , shape       (0)
+      , x           (0)
+      , y           (0)
+      , type        (qc__null)
+      , type__begin (end__time)
+      , type__end   (end__time) 
+    {
     }
   };
 
@@ -934,6 +944,16 @@ _________            .___       ___.
   qcs create__board() {
     qcs res;
 
+    for (std::size_t y = 0; y < screen__height; ++y) {
+      auto y__off = y*screen__width;
+      for (std::size_t x = 0; x < screen__width; ++x) {
+        auto & qc = res[y__off+x];
+        qc.type = qc__grid;
+        qc.x    = x;
+        qc.y    = y;
+      }
+    }
+
     auto & logo = qc__impulse_1;
 
     for (std::size_t from__y = 0; from__y < logo.height; ++from__y) {
@@ -949,15 +969,6 @@ _________            .___       ___.
           qc.shape    = shape;
           qc.freedom  = 0;
         }
-      }
-    }
-
-    for (std::size_t y = 0; y < screen__height; ++y) {
-      auto y__off = y*screen__width;
-      for (std::size_t x = 0; x < screen__width; ++x) {
-        auto & qc = res[y__off+x];
-        qc.x = x;
-        qc.y = y;
       }
     }
 
@@ -1066,7 +1077,32 @@ _________            .___       ___.
 
     return res;
   }
-  qcs const board = create__board();
+
+  qcs board = create__board();
+
+  void flash(float time, int x, int y) {
+    if (x < 0 || x > screen__width - 1) {
+      return;
+    }
+
+    if (y < 0 || y > screen__height - 1) {
+      return;
+    }
+
+    auto & sel = board[x+y*screen__width];
+
+    switch (sel.type) {
+    case qc__grid:
+    case qc__fade:
+      sel.type        = qc__flash;
+      sel.type__begin = time;
+      sel.type__end   = time+0.175;
+      break;
+    default:
+      break;
+    }
+  }
+
 
   void effect3(float time, screen & screen) {
 
@@ -1110,6 +1146,87 @@ _________            .___       ___.
   Bend elements:    ╭ ╯ ╮ ╰
   */
 
+    std::array<qc, 4> candidates__cell  ;
+
+    std::size_t flashes = 0;
+    for (std::size_t i = 0; i < board.size(); ++i) {
+      auto & sel = board[i];
+      switch(sel.type) {
+      case qc__flash: {
+        ++flashes;
+        if (sel.type__end < time) {
+          sel.type          = qc__fade;
+          sel.type__begin   = time;
+          sel.type__end     = time+3;
+
+          std::size_t candidates__no  = 0;
+          auto        has__logo       = false;
+          auto collect = [&has__logo, &sel, &candidates__cell, &candidates__no](int delta__x, int delta__y) {
+            int x = sel.x + delta__x;
+            int y = sel.y + delta__y;
+
+            if (x < 0 || x >= screen__width) {
+              return;
+            }
+
+            if (y < 0 || y >= screen__height) {
+              return;
+            }
+
+            auto & c = board[x + y*screen__width];
+            switch(c.type) {
+            case qc__grid:
+              break;
+            case qc__logo:
+              has__logo = true;
+              return;
+            case qc__fade:
+            case qc__flash:
+            case qc__null:
+            default:
+              return;
+            }
+
+            candidates__cell[candidates__no] = c;
+            ++candidates__no;
+          };
+
+          auto f = lookup__cell.find(sel.shape);
+          if (f != lookup__cell.end()) {
+            auto connections = f->second.connection__single|f->second.connection__double;
+
+            if (0b1000 & connections) collect(-1, 0);
+            if (0b0010 & connections) collect( 1, 0);
+            if (0b0100 & connections) collect( 0, -1);
+            if (0b0001 & connections) collect( 0,  1);
+
+            assert(candidates__no <= 4);
+            if (!has__logo && candidates__no > 0) {
+              auto & c = candidates__cell[pick_a_number(0, candidates__no-1)];
+              flash(time, c.x, c.y);
+            }
+
+          }
+        }
+
+        break;
+      }
+      case qc__fade:
+        if (sel.type__end < time) {
+          sel.type          = qc__grid;
+          sel.type__begin   = time;
+          sel.type__end     = end__time;
+        }
+        break;
+      default:
+        break;
+      }
+    }
+
+    for (std::size_t i = flashes; i < 20; ++i) {
+      flash(time, pick_a_number(0, screen__width-1), pick_a_number(0, screen__height-1));
+    }
+
     for (std::size_t y = 0; y < screen.height; ++y) {
       auto y__off = y*screen__width;
       for (std::size_t x = 0; x < screen.width; ++x) {
@@ -1121,6 +1238,15 @@ _________            .___       ___.
           break;
         case qc__logo:
           col = col.sqrt();
+          break;
+        case qc__flash:
+          col = vec3 {1,1,1};
+          break;
+        case qc__fade: {
+          auto fade = std::expf(-0.707F*(time-qc.type__begin));
+          col += 0.5F*fade*fade;
+          col *= fade;
+          }
           break;
         default:
           break;
