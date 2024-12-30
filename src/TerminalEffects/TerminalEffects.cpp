@@ -433,6 +433,23 @@ _________            .___       ___.
          ╘═════════════════════════════════════════════════╛
 )BITMAP");          
 
+  bitmap const qc__impulse_0 = make_bitmap(col__white, LR"BITMAP(
+  ╔╗╔╧╗╔╩╗╔═╩╗╔╗╔╗╔╗ ╔╧═╗╔═╩╗╔╗
+  ╠╣║:╚╝:║║╔╗║║║║║║║ ║╔═╝║╔═╝║║
+  ╢║║:**:║║╚╝║║║║║║║ ║╚═╗║╚═╗║║
+  ║║║╔╗╔╗║║╔╤╝║║║║║║ ╚═╗║║╔═╝║╠ 
+  ╢║║║╚╝║║║║  ║╚╝║║╚╗╔═╝║║╚═╗╠╣
+  ╚╝╚╝  ╚╝╚╝  ╚╤═╝╚╦╝╚═╦╝╚╤═╝╚╝
+)BITMAP");          
+  bitmap const qc__impulse_1 = make_bitmap(col__white, LR"BITMAP(
+  ┌╮┌┴╮╭╨┐┌─╨╮┌╮╭┐┌╮ ╭──┐╭─╨┐╭┐
+  ├┤│:╰╯:││╭╮│││││││ │╭─╯│╭─╯││
+  ┤││:**:││└╯│││││││ │└─╮│└─╮││
+  │││╭╮╭╮││╭┬╯│││││├╯╰─╮││╭─╯│╞
+  ┤│││└╯││││  │└╯││└╮╭─┘││└─╮├┤
+  └╯└╯  ╰┘└╯  └┬─╯└╥╯└─╥╯╰┬─┘╰┘
+)BITMAP");          
+
   bitmap const sixel_pixel = make_bitmap(col__rainbow, LR"BITMAP(
   ████████ ██                  ██   ███████  ██                  ██
  ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██
@@ -694,63 +711,64 @@ _________            .___       ___.
     wchar_t shape               ;
     char    connection__single  ;
     char    connection__double  ;
+    int     priority            ;
   };
 
   cell cells[] {
-    { L' ', 0b0000, 0b0000 }
-  , { L'─', 0b1010, 0b0000 }
-  , { L'│', 0b0101, 0b0000 }
-  , { L'┌', 0b0011, 0b0000 }
-  , { L'┐', 0b1001, 0b0000 }
-  , { L'└', 0b0110, 0b0000 }
-  , { L'┘', 0b1100, 0b0000 }
-  , { L'├', 0b0111, 0b0000 }
-  , { L'┤', 0b1101, 0b0000 }
-  , { L'┬', 0b1011, 0b0000 }
-  , { L'┴', 0b1110, 0b0000 }
-  , { L'┼', 0b1111, 0b0000 }
+    { L' ', 0b0000, 0b0000, 10 }
+  , { L'─', 0b1010, 0b0000, 10 }
+  , { L'│', 0b0101, 0b0000, 10 }
+  , { L'┌', 0b0011, 0b0000, 10 }
+  , { L'┐', 0b1001, 0b0000, 10 }
+  , { L'└', 0b0110, 0b0000, 10 }
+  , { L'┘', 0b1100, 0b0000, 10 }
+  , { L'├', 0b0111, 0b0000, 10 }
+  , { L'┤', 0b1101, 0b0000, 10 }
+  , { L'┬', 0b1011, 0b0000, 10 }
+  , { L'┴', 0b1110, 0b0000, 10 }
+  , { L'┼', 0b1111, 0b0000, 10 }
 
-  , { L'═', 0b0000 , 0b1010}
-  , { L'║', 0b0000 , 0b0101}
-  , { L'╔', 0b0000 , 0b0011}
-  , { L'╗', 0b0000 , 0b1001}
-  , { L'╚', 0b0000 , 0b0110}
-  , { L'╝', 0b0000 , 0b1100}
-  , { L'╠', 0b0000 , 0b0111}
-  , { L'╣', 0b0000 , 0b1101}
-  , { L'╦', 0b0000 , 0b1011}
-  , { L'╩', 0b0000 , 0b1110}
-  , { L'╬', 0b0000 , 0b1111}
+  , { L'╭', 0b0011, 0b0000, 8  }
+  , { L'╯', 0b1100, 0b0000, 8  }
+  , { L'╮', 0b1001, 0b0000, 8  }
+  , { L'╰', 0b0110, 0b0000, 8  }
 
-  , { L'╒', 0b0001 , 0b0010}
-  , { L'╓', 0b0010 , 0b0001}
-  , { L'╕', 0b0001 , 0b1000}
-  , { L'╖', 0b1000 , 0b0001}
-  , { L'╘', 0b0100 , 0b0010}
-  , { L'╙', 0b0010 , 0b0100}
-  , { L'╛', 0b0100 , 0b1000}
-  , { L'╜', 0b1000 , 0b0100}
-  , { L'╞', 0b0101 , 0b0010}
-  , { L'╟', 0b0010 , 0b0101}
-  , { L'╡', 0b0101 , 0b1000}
-  , { L'╢', 0b1000 , 0b0101}
-  , { L'╤', 0b0001 , 0b1010}
-  , { L'╥', 0b1010 , 0b0001}
-  , { L'╧', 0b0100 , 0b1010}
-  , { L'╨', 0b1010 , 0b0100}
-  , { L'╪', 0b0101 , 0b1010}
-  , { L'╫', 0b1010 , 0b0101}
 
-  , { L'╴', 0b1000 , 0b0000}
-  , { L'╵', 0b0100 , 0b0000}
-  , { L'╶', 0b0010 , 0b0000}
-  , { L'╷', 0b0001 , 0b0000}
+  , { L'═', 0b0000, 0b1010, 10 }
+  , { L'║', 0b0000, 0b0101, 10 }
+  , { L'╔', 0b0000, 0b0011, 10 }
+  , { L'╗', 0b0000, 0b1001, 10 }
+  , { L'╚', 0b0000, 0b0110, 10 }
+  , { L'╝', 0b0000, 0b1100, 10 }
+  , { L'╠', 0b0000, 0b0111, 10 }
+  , { L'╣', 0b0000, 0b1101, 10 }
+  , { L'╦', 0b0000, 0b1011, 10 }
+  , { L'╩', 0b0000, 0b1110, 10 }
+  , { L'╬', 0b0000, 0b1111, 10 }
 
-  , { L'╭', 0b0011 , 0b0000}
-  , { L'╯', 0b1100 , 0b0000}
-  , { L'╮', 0b1001 , 0b0000}
-  , { L'╰', 0b0110 , 0b0000}
+  , { L'╒', 0b0001, 0b0010, 5  }
+  , { L'╓', 0b0010, 0b0001, 5  }
+  , { L'╕', 0b0001, 0b1000, 5  }
+  , { L'╖', 0b1000, 0b0001, 5  }
+  , { L'╘', 0b0100, 0b0010, 5  }
+  , { L'╙', 0b0010, 0b0100, 5  }
+  , { L'╛', 0b0100, 0b1000, 5  }
+  , { L'╜', 0b1000, 0b0100, 5  }
+  , { L'╞', 0b0101, 0b0010, 5  }
+  , { L'╟', 0b0010, 0b0101, 5  }
+  , { L'╡', 0b0101, 0b1000, 5  }
+  , { L'╢', 0b1000, 0b0101, 5  }
+  , { L'╤', 0b0001, 0b1010, 5  }
+  , { L'╥', 0b1010, 0b0001, 5  }
+  , { L'╧', 0b0100, 0b1010, 5  }
+  , { L'╨', 0b1010, 0b0100, 5  }
+  , { L'╪', 0b0101, 0b1010, 5  }
+  , { L'╫', 0b1010, 0b0101, 5  }
 
+  , { L'╴', 0b1000, 0b0000, 1  }
+  , { L'╵', 0b0100, 0b0000, 1  }
+  , { L'╶', 0b0010, 0b0000, 1  }
+  , { L'╷', 0b0001, 0b0000, 1  }
 
   };
 
@@ -774,17 +792,24 @@ _________            .___       ___.
   , connected_to_double
   };
 
+  enum qc__type {
+    qc__grid  = 0
+  , qc__logo  = 1
+  };
+
   struct qc {
     std::size_t freedom ;
     wchar_t     shape   ;
     std::size_t x       ;
     std::size_t y       ;
+    qc__type    type    ;
 
     qc() 
       : freedom (4)
       , shape   (0)
       , x       (0)
-      , y       (0) {
+      , y       (0)
+      , type    (qc__grid) {
     }
   };
 
@@ -860,6 +885,30 @@ _________            .___       ___.
     }
   }
 
+  std::size_t get__freedom(
+      qcs const & res
+    , qc const &  sel
+    , int         delta__x
+    , int         delta__y
+    ) {
+    int x = sel.x + delta__x;
+    int y = sel.y + delta__y;
+
+    if (x < 0 || x >= screen__width) {
+      return 1;
+    }
+
+    if (y < 0 || y >= screen__height) {
+      return 1;
+    }
+
+    auto neighbour  = res[x+y*screen__width];
+    
+    return neighbour.shape == 0 ? 1 : 0;
+
+  }
+
+
   bool check__candidate(
     cell const &  c
   , connection    conn
@@ -885,12 +934,47 @@ _________            .___       ___.
   qcs create__board() {
     qcs res;
 
+    auto & logo = qc__impulse_1;
+
+    for (std::size_t from__y = 0; from__y < logo.height; ++from__y) {
+      auto to__y        = from__y + 12;
+      auto from__y__off = from__y*logo.width;
+      auto to__y__off   = to__y*screen__width;
+      for (std::size_t from__x = 0; from__x < logo.width; ++from__x) {
+        auto to__x  = from__x + 24;
+        auto shape  = logo.shapes[from__y__off+from__x];
+        auto & qc   = res[to__y__off+to__x];
+        if (shape > 32) {
+          qc.type     = qc__logo;
+          qc.shape    = shape;
+          qc.freedom  = 0;
+        }
+      }
+    }
+
     for (std::size_t y = 0; y < screen__height; ++y) {
       auto y__off = y*screen__width;
       for (std::size_t x = 0; x < screen__width; ++x) {
         auto & qc = res[y__off+x];
         qc.x = x;
         qc.y = y;
+      }
+    }
+
+    for (std::size_t y = 0; y < screen__height; ++y) {
+      auto y__off = y*screen__width;
+      for (std::size_t x = 0; x < screen__width; ++x) {
+        auto & qc = res[y__off+x];
+        if (qc.shape == 0) {
+          std::size_t freedom = 0;
+          freedom += get__freedom(res, qc, -1, 0);
+          freedom += get__freedom(res, qc,  1, 0);
+          freedom += get__freedom(res, qc,  0,-1);
+          freedom += get__freedom(res, qc,  0, 1);
+          qc.freedom = freedom;
+        } else {
+          qc.freedom = 0;
+        }
       }
     }
 
@@ -931,10 +1015,6 @@ _________            .___       ___.
       auto  right   = undecided;
       auto  bottom  = undecided;
 
-      if (sel.x == 35 && sel.y == 2) {
-        printf("Hello\n");
-      }
-
       left    = determine__connection(res, sel, 0b0010, -1, 0);
       right   = determine__connection(res, sel, 0b1000, 1, 0);
       top     = determine__connection(res, sel, 0b0001, 0, -1);
@@ -955,7 +1035,9 @@ _________            .___       ___.
         candidate &= check__candidate(c, bottom , 0b0001);
 
         if (candidate) {
-          candidates__cell.push_back(c);
+          auto copy = c;
+          copy.priority += pick_a_number(0, 10);
+          candidates__cell.push_back(copy);
         }
       }
 
@@ -966,7 +1048,12 @@ _________            .___       ___.
         update.shape   = L'*';
         update.freedom = 0;
       } else {
-        auto c = candidates__cell[pick_a_number(0, candidates__cell.size() - 1)];
+        std::sort(
+            candidates__cell.begin()
+          , candidates__cell.end()
+          , [](auto & l, auto & r) { return l.priority > r.priority; }
+          );
+        auto c = candidates__cell.front();
         update.shape = c.shape;
         update.freedom = 0;
       }
@@ -1027,9 +1114,20 @@ _________            .___       ___.
       auto y__off = y*screen__width;
       for (std::size_t x = 0; x < screen.width; ++x) {
         auto & qc = board[x+y__off];
+        auto col = col__rainbow(time, x, y);
+        switch (qc.type) {
+        case qc__grid:
+          col *= 0.125F;
+          break;
+        case qc__logo:
+          col = col.sqrt();
+          break;
+        default:
+          break;
+        }
         screen.draw__pixel(
             qc.shape
-          , vec3 {1,1,1}
+          , col
           , vec3 {0,0,0}
           , x
           , y
