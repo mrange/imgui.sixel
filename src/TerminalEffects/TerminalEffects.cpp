@@ -1161,7 +1161,7 @@ _________            .___       ___.
 
           std::size_t candidates__no  = 0;
           auto        has__logo       = false;
-          auto collect = [&has__logo, &sel, &candidates__cell, &candidates__no](int delta__x, int delta__y) {
+          auto collect = [time, &has__logo, &sel, &candidates__cell, &candidates__no](int delta__x, int delta__y) {
             int x = sel.x + delta__x;
             int y = sel.y + delta__y;
 
@@ -1177,10 +1177,15 @@ _________            .___       ___.
             switch(c.type) {
             case qc__grid:
               break;
+            case qc__fade:
+              if (c.type__begin + 1 < time) {
+                break;
+              } else {
+                return;
+              }
             case qc__logo:
               has__logo = true;
               return;
-            case qc__fade:
             case qc__flash:
             case qc__null:
             default:
