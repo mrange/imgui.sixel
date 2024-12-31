@@ -1,34 +1,8 @@
 #pragma once
 
-#include <cmath>
+#include "common.hpp"
 
-namespace vectors {
-  float fractf(float x) {
-    return x-std::floorf(x);
-  }
-
-  float roundf(float x) {
-    return std::floorf(x+0.5F);
-  }
-
-  float mix(float b, float e, float x) {
-    return b+(e-b)*x;
-  }
-
-  float smoothstep(float edge0, float edge1, float x) {
-    float t = std::clamp<float>((x - edge0) / (edge1 - edge0), 0.0F, 1.0F);
-    return t * t * (3.0F - 2.0F * t);
-  }
-
-  // License: Unknown, author: Claude Brezinski, found: https://mathr.co.uk/blog/2017-09-06_approximating_hyperbolic_tangent.html
-  float tanh_approxf(float x) {
-    //  Found this somewhere on the interwebs
-    //  return tanh(x);
-    float x2 = x*x;
-    return std::clamp<float>(x*(27 + x2)/(27+9*x2), -1, 1);
-  }
-
- struct vec1 {
+struct vec1 {
   float x;
 
   explicit vec1()
@@ -182,7 +156,7 @@ namespace vectors {
   }
 
   void fract__inplace() {
-    x = fractf(x);
+    x = ::fractf(x);
   }
 
   vec1 fract() const {
@@ -192,7 +166,7 @@ namespace vectors {
   }
 
   void round__inplace() {
-    x = roundf(x);
+    x = ::roundf(x);
   }
 
   vec1 round() const {
@@ -202,7 +176,7 @@ namespace vectors {
   }
 
   void tanh_approx__inplace() {
-    x = tanh_approxf(x);
+    x = ::tanh_approxf(x);
   }
 
   vec1 tanh_approx() const {
@@ -240,18 +214,18 @@ namespace vectors {
   }
 };
 
-vec1 mix(vec1 const & b, vec1 const & e, float x) {
+inline vec1 mix(vec1 const & b, vec1 const & e, float x) {
   vec1 c;
 
-  c.x = mix(b.x, e.x, x);
+  c.x = ::mix(b.x, e.x, x);
 
   return c;
 }
 
-vec1 smoothstep(vec1 const & edge0, vec1 const & edge1, vec1 const & x) {
+inline vec1 smoothstep(vec1 const & edge0, vec1 const & edge1, vec1 const & x) {
   vec1 c;
 
-  c.x = smoothstep(edge0.x, edge1.x, x.x);
+  c.x = ::smoothstep(edge0.x, edge1.x, x.x);
 
   return c;
 }
@@ -431,8 +405,8 @@ struct vec2 {
   }
 
   void fract__inplace() {
-    x = fractf(x);
-    y = fractf(y);
+    x = ::fractf(x);
+    y = ::fractf(y);
   }
 
   vec2 fract() const {
@@ -442,8 +416,8 @@ struct vec2 {
   }
 
   void round__inplace() {
-    x = roundf(x);
-    y = roundf(y);
+    x = ::roundf(x);
+    y = ::roundf(y);
   }
 
   vec2 round() const {
@@ -453,8 +427,8 @@ struct vec2 {
   }
 
   void tanh_approx__inplace() {
-    x = tanh_approxf(x);
-    y = tanh_approxf(y);
+    x = ::tanh_approxf(x);
+    y = ::tanh_approxf(y);
   }
 
   vec2 tanh_approx() const {
@@ -493,20 +467,20 @@ struct vec2 {
   }
 };
 
-vec2 mix(vec2 const & b, vec2 const & e, float x) {
+inline vec2 mix(vec2 const & b, vec2 const & e, float x) {
   vec2 c;
 
-  c.x = mix(b.x, e.x, x);
-  c.y = mix(b.y, e.y, x);
+  c.x = ::mix(b.x, e.x, x);
+  c.y = ::mix(b.y, e.y, x);
 
   return c;
 }
 
-vec2 smoothstep(vec2 const & edge0, vec2 const & edge1, vec2 const & x) {
+inline vec2 smoothstep(vec2 const & edge0, vec2 const & edge1, vec2 const & x) {
   vec2 c;
 
-  c.x = smoothstep(edge0.x, edge1.x, x.x);
-  c.y = smoothstep(edge0.y, edge1.y, x.y);
+  c.x = ::smoothstep(edge0.x, edge1.x, x.x);
+  c.y = ::smoothstep(edge0.y, edge1.y, x.y);
 
   return c;
 }
@@ -703,9 +677,9 @@ struct vec3 {
   }
 
   void fract__inplace() {
-    x = fractf(x);
-    y = fractf(y);
-    z = fractf(z);
+    x = ::fractf(x);
+    y = ::fractf(y);
+    z = ::fractf(z);
   }
 
   vec3 fract() const {
@@ -715,9 +689,9 @@ struct vec3 {
   }
 
   void round__inplace() {
-    x = roundf(x);
-    y = roundf(y);
-    z = roundf(z);
+    x = ::roundf(x);
+    y = ::roundf(y);
+    z = ::roundf(z);
   }
 
   vec3 round() const {
@@ -727,9 +701,9 @@ struct vec3 {
   }
 
   void tanh_approx__inplace() {
-    x = tanh_approxf(x);
-    y = tanh_approxf(y);
-    z = tanh_approxf(z);
+    x = ::tanh_approxf(x);
+    y = ::tanh_approxf(y);
+    z = ::tanh_approxf(z);
   }
 
   vec3 tanh_approx() const {
@@ -776,22 +750,22 @@ struct vec3 {
   }
 };
 
-vec3 mix(vec3 const & b, vec3 const & e, float x) {
+inline vec3 mix(vec3 const & b, vec3 const & e, float x) {
   vec3 c;
 
-  c.x = mix(b.x, e.x, x);
-  c.y = mix(b.y, e.y, x);
-  c.z = mix(b.z, e.z, x);
+  c.x = ::mix(b.x, e.x, x);
+  c.y = ::mix(b.y, e.y, x);
+  c.z = ::mix(b.z, e.z, x);
 
   return c;
 }
 
-vec3 smoothstep(vec3 const & edge0, vec3 const & edge1, vec3 const & x) {
+inline vec3 smoothstep(vec3 const & edge0, vec3 const & edge1, vec3 const & x) {
   vec3 c;
 
-  c.x = smoothstep(edge0.x, edge1.x, x.x);
-  c.y = smoothstep(edge0.y, edge1.y, x.y);
-  c.z = smoothstep(edge0.z, edge1.z, x.z);
+  c.x = ::smoothstep(edge0.x, edge1.x, x.x);
+  c.y = ::smoothstep(edge0.y, edge1.y, x.y);
+  c.z = ::smoothstep(edge0.z, edge1.z, x.z);
 
   return c;
 }
@@ -1005,10 +979,10 @@ struct vec4 {
   }
 
   void fract__inplace() {
-    x = fractf(x);
-    y = fractf(y);
-    z = fractf(z);
-    w = fractf(w);
+    x = ::fractf(x);
+    y = ::fractf(y);
+    z = ::fractf(z);
+    w = ::fractf(w);
   }
 
   vec4 fract() const {
@@ -1018,10 +992,10 @@ struct vec4 {
   }
 
   void round__inplace() {
-    x = roundf(x);
-    y = roundf(y);
-    z = roundf(z);
-    w = roundf(w);
+    x = ::roundf(x);
+    y = ::roundf(y);
+    z = ::roundf(z);
+    w = ::roundf(w);
   }
 
   vec4 round() const {
@@ -1031,10 +1005,10 @@ struct vec4 {
   }
 
   void tanh_approx__inplace() {
-    x = tanh_approxf(x);
-    y = tanh_approxf(y);
-    z = tanh_approxf(z);
-    w = tanh_approxf(w);
+    x = ::tanh_approxf(x);
+    y = ::tanh_approxf(y);
+    z = ::tanh_approxf(z);
+    w = ::tanh_approxf(w);
   }
 
   vec4 tanh_approx() const {
@@ -1075,28 +1049,26 @@ struct vec4 {
   }
 };
 
-vec4 mix(vec4 const & b, vec4 const & e, float x) {
+inline vec4 mix(vec4 const & b, vec4 const & e, float x) {
   vec4 c;
 
-  c.x = mix(b.x, e.x, x);
-  c.y = mix(b.y, e.y, x);
-  c.z = mix(b.z, e.z, x);
-  c.w = mix(b.w, e.w, x);
+  c.x = ::mix(b.x, e.x, x);
+  c.y = ::mix(b.y, e.y, x);
+  c.z = ::mix(b.z, e.z, x);
+  c.w = ::mix(b.w, e.w, x);
 
   return c;
 }
 
-vec4 smoothstep(vec4 const & edge0, vec4 const & edge1, vec4 const & x) {
+inline vec4 smoothstep(vec4 const & edge0, vec4 const & edge1, vec4 const & x) {
   vec4 c;
 
-  c.x = smoothstep(edge0.x, edge1.x, x.x);
-  c.y = smoothstep(edge0.y, edge1.y, x.y);
-  c.z = smoothstep(edge0.z, edge1.z, x.z);
-  c.w = smoothstep(edge0.w, edge1.w, x.w);
+  c.x = ::smoothstep(edge0.x, edge1.x, x.x);
+  c.y = ::smoothstep(edge0.y, edge1.y, x.y);
+  c.z = ::smoothstep(edge0.z, edge1.z, x.z);
+  c.w = ::smoothstep(edge0.w, edge1.w, x.w);
 
   return c;
 }
 
-
-}
 
