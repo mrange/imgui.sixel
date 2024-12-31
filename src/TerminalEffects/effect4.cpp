@@ -63,22 +63,25 @@ namespace {
 
 void effect4(float time, screen & screen) {
   auto const rot1 = rotator {-1};
+
   for (std::size_t y = 0; y < screen.height; ++y) {
     auto py = (-1.F*screen.height+2.F*y)/screen.height;
     for (std::size_t x = 0; x < screen.width; ++x) {
       auto px = (-1.F*screen.width+2.F*x )/(2*screen.height);
       auto p = vec2 {px, py};
+      // To avoid division by 0
       p += 1E-3;
 
       auto l = p.length();
       auto r = rotator {time-l};
       r(p.x, p.y);
       
-      p *= std::expf(-time);
+      auto const pcol = palette(0.707F*time+l).sqrt();
       auto ang= std::atan2(p.y, p.x);
 
       auto col = vec3 {0,0,0};
       if (ang < pi-2E-1) {
+        p *= std::expf(-time);
         auto vp = vec2 { std::logf(l), ang*6.F/tau };
   //      auto vp = p;
         auto h = 0.F;
@@ -92,13 +95,13 @@ void effect4(float time, screen & screen) {
         }
         col = palette(h-time+lengthf(px, py));
       } else {
-        col = palette(time).sqrt();
+        col = pcol;
       }
 
       col += 0.05;
-      col *= 1.F/l;
+      col *= 1/std::max(l,0.01F);
       col -= 0.25*l;
-      col = aces_approx(col);
+      //col = aces_approx(col);
       screen.draw__pixel(
           L' '
         , vec3 {0,0,0}
