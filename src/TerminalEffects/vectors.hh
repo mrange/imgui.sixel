@@ -19,6 +19,14 @@ namespace vectors {
     return t * t * (3.0F - 2.0F * t);
   }
 
+  // License: Unknown, author: Claude Brezinski, found: https://mathr.co.uk/blog/2017-09-06_approximating_hyperbolic_tangent.html
+  float tanh_approxf(float x) {
+    //  Found this somewhere on the interwebs
+    //  return tanh(x);
+    float x2 = x*x;
+    return std::clamp<float>(x*(27 + x2)/(27+9*x2), -1, 1);
+  }
+
  struct vec1 {
   float x;
 
@@ -189,6 +197,16 @@ namespace vectors {
   vec1 round() const {
     vec1 c = *this;
     c.round__inplace();
+    return c;
+  }
+
+  void tanh_approx__inplace() {
+    x = tanh_approxf(x);
+  }
+
+  vec1 tanh_approx() const {
+    vec1 c = *this;
+    c.tanh_approx__inplace();
     return c;
   }
 
@@ -430,6 +448,17 @@ struct vec2 {
   vec2 round() const {
     vec2 c = *this;
     c.round__inplace();
+    return c;
+  }
+
+  void tanh_approx__inplace() {
+    x = tanh_approxf(x);
+    y = tanh_approxf(y);
+  }
+
+  vec2 tanh_approx() const {
+    vec2 c = *this;
+    c.tanh_approx__inplace();
     return c;
   }
 
@@ -693,6 +722,18 @@ struct vec3 {
   vec3 round() const {
     vec3 c = *this;
     c.round__inplace();
+    return c;
+  }
+
+  void tanh_approx__inplace() {
+    x = tanh_approxf(x);
+    y = tanh_approxf(y);
+    z = tanh_approxf(z);
+  }
+
+  vec3 tanh_approx() const {
+    vec3 c = *this;
+    c.tanh_approx__inplace();
     return c;
   }
 
@@ -985,6 +1026,19 @@ struct vec4 {
   vec4 round() const {
     vec4 c = *this;
     c.round__inplace();
+    return c;
+  }
+
+  void tanh_approx__inplace() {
+    x = tanh_approxf(x);
+    y = tanh_approxf(y);
+    z = tanh_approxf(z);
+    w = tanh_approxf(w);
+  }
+
+  vec4 tanh_approx() const {
+    vec4 c = *this;
+    c.tanh_approx__inplace();
     return c;
   }
 

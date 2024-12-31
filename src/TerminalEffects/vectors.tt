@@ -20,6 +20,14 @@ namespace vectors {
     return t * t * (3.0F - 2.0F * t);
   }
 
+  // License: Unknown, author: Claude Brezinski, found: https://mathr.co.uk/blog/2017-09-06_approximating_hyperbolic_tangent.html
+  float tanh_approxf(float x) {
+    //  Found this somewhere on the interwebs
+    //  return tanh(x);
+    float x2 = x*x;
+    return std::clamp<float>(x*(27 + x2)/(27+9*x2), -1, 1);
+  }
+
  <#
   var operators = new string [] {
     "+"
@@ -28,12 +36,13 @@ namespace vectors {
   , "/"
   };
   var functions = new (string Name, string Invoke) [] {
-      ("cos"  , "std::cosf"   )
-    , ("sin"  , "std::sinf"   )
-    , ("sqrt" , "std::sqrtf"  )
-    , ("floor", "std::floorf" )
-    , ("fract", "fractf"      )
-    , ("round", "roundf"      )
+      ("cos"        , "std::cosf"   )
+    , ("sin"        , "std::sinf"   )
+    , ("sqrt"       , "std::sqrtf"  )
+    , ("floor"      , "std::floorf" )
+    , ("fract"      , "fractf"      )
+    , ("round"      , "roundf"      )
+    , ("tanh_approx", "tanh_approxf")
   };
 #>
 <# for (var maxDim = 1; maxDim < 5; ++maxDim) { #>
