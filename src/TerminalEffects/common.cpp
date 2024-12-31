@@ -12,6 +12,12 @@ std::size_t pick_a_number(std::size_t min, std::size_t max) {
   return dist(random__generator);
 }
 
+float pick_a_float(float min, float max) {
+  assert(max >= min);
+  std::uniform_real_distribution<float> dist(min, max);
+  return dist(random__generator);
+}
+
 float smoothstep(float edge0, float edge1, float x) {
   float t = std::clamp<float>((x - edge0) / (edge1 - edge0), 0.0F, 1.0F);
   return t * t * (3.0F - 2.0F * t);

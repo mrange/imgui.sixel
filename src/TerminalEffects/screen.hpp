@@ -71,8 +71,8 @@ struct screen {
 
   void draw__pixel(
     wchar_t s
-  , vec3     f
-  , vec3     b
+  , vec3    f
+  , vec3    b
   , int     x
   , int     y
   ) {
@@ -87,6 +87,29 @@ struct screen {
         background[off] = b;
       }
     }
+  }
+
+  bool get__pixel(
+    wchar_t & s
+  , vec3    & f
+  , vec3    & b
+  , int     x
+  , int     y
+  ) {
+    assert(width*height == shapes.size());
+    assert(width*height == foreground.size());
+    assert(width*height == background.size());
+    if (x >= 0 && x < static_cast<int>(width)) {
+      if (y >= 0 && y < static_cast<int>(height)) {
+        auto off = x + y*width;
+        s = shapes[off]     ;
+        f = foreground[off] ;
+        b = background[off] ;
+        return true;
+      }
+    }
+
+    return false;
   }
 
   void draw__bitmap(

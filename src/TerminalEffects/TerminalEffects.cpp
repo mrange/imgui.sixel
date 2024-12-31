@@ -7,6 +7,7 @@ void effect1(float time, screen & screen);
 void effect2(float time, screen & screen);
 void effect3(float time, screen & screen);
 void effect4(float time, screen & screen);
+void effect5(float time, screen & screen);
 
 namespace {
   std::u8string to_u8string(std::string const & s) {
@@ -218,7 +219,7 @@ int main() {
 
     screen.clear();
 
-    effect4(time, screen);
+    effect5(time, screen);
     screen.draw__bitmap(border     , time,  0,  0);
 
     output.clear();

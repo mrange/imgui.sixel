@@ -22,25 +22,6 @@ namespace {
    ╰───────────┼          │ ▀ L O N G S H O T ▄ │
                           ╘═════════════════════╛
 )BITMAP");
-
-  struct rotator {
-    float const c;
-    float const s;
-    explicit rotator(float a) 
-    : c(std::cosf(a))
-    , s(std::sinf(a)) {
-    }
-
-    inline void operator()(float & x, float & y) const noexcept {
-      auto xx = c*x+s*y;
-      auto yy = -s*x+c*y;
-      x = xx;
-      y = yy;
-    }
-
-  };
-
-
   float vnoise(vec2 p) {
     auto i = p.floor();
     auto f = p.fract();

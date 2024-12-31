@@ -11,6 +11,8 @@ float       constexpr end__time       = 1E6;
 
 std::size_t pick_a_number(std::size_t min, std::size_t max);
 
+float pick_a_float(float min, float max);
+
 inline float dotf(float x, float y) {
   return std::sqrtf(x*x+y*y);
 }
@@ -46,4 +48,22 @@ float pmin(float a, float b, float k);
 
 // License: CC0, author: Mårten Rånge, found: https://github.com/mrange/glsl-snippets
 float pmax(float a, float b, float k);
+
+struct rotator {
+  float const c;
+  float const s;
+  explicit rotator(float a) 
+  : c(std::cosf(a))
+  , s(std::sinf(a)) {
+  }
+
+  inline void operator()(float & x, float & y) const noexcept {
+    auto xx = c*x+s*y;
+    auto yy = -s*x+c*y;
+    x = xx;
+    y = yy;
+  }
+
+};
+
 
