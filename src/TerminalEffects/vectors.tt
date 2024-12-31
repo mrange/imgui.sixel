@@ -13,8 +13,9 @@
   var functions = new (string Name, string Invoke) [] {
       ("cos"        , "std::cosf"     )
     , ("sin"        , "std::sinf"     )
-    , ("sqrt"       , "std::sqrtf"    )
     , ("floor"      , "std::floorf"   )
+    , ("log"        , "std::logf"     )
+    , ("sqrt"       , "std::sqrtf"    )
     , ("fract"      , "::fractf"      )
     , ("round"      , "::roundf"      )
     , ("tanh_approx", "::tanh_approxf")

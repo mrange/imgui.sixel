@@ -135,16 +135,6 @@ struct vec1 {
     return c;
   }
 
-  void sqrt__inplace() {
-    x = std::sqrtf(x);
-  }
-
-  vec1 sqrt() const {
-    vec1 c = *this;
-    c.sqrt__inplace();
-    return c;
-  }
-
   void floor__inplace() {
     x = std::floorf(x);
   }
@@ -152,6 +142,26 @@ struct vec1 {
   vec1 floor() const {
     vec1 c = *this;
     c.floor__inplace();
+    return c;
+  }
+
+  void log__inplace() {
+    x = std::logf(x);
+  }
+
+  vec1 log() const {
+    vec1 c = *this;
+    c.log__inplace();
+    return c;
+  }
+
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+  }
+
+  vec1 sqrt() const {
+    vec1 c = *this;
+    c.sqrt__inplace();
     return c;
   }
 
@@ -382,17 +392,6 @@ struct vec2 {
     return c;
   }
 
-  void sqrt__inplace() {
-    x = std::sqrtf(x);
-    y = std::sqrtf(y);
-  }
-
-  vec2 sqrt() const {
-    vec2 c = *this;
-    c.sqrt__inplace();
-    return c;
-  }
-
   void floor__inplace() {
     x = std::floorf(x);
     y = std::floorf(y);
@@ -401,6 +400,28 @@ struct vec2 {
   vec2 floor() const {
     vec2 c = *this;
     c.floor__inplace();
+    return c;
+  }
+
+  void log__inplace() {
+    x = std::logf(x);
+    y = std::logf(y);
+  }
+
+  vec2 log() const {
+    vec2 c = *this;
+    c.log__inplace();
+    return c;
+  }
+
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+    y = std::sqrtf(y);
+  }
+
+  vec2 sqrt() const {
+    vec2 c = *this;
+    c.sqrt__inplace();
     return c;
   }
 
@@ -652,18 +673,6 @@ struct vec3 {
     return c;
   }
 
-  void sqrt__inplace() {
-    x = std::sqrtf(x);
-    y = std::sqrtf(y);
-    z = std::sqrtf(z);
-  }
-
-  vec3 sqrt() const {
-    vec3 c = *this;
-    c.sqrt__inplace();
-    return c;
-  }
-
   void floor__inplace() {
     x = std::floorf(x);
     y = std::floorf(y);
@@ -673,6 +682,30 @@ struct vec3 {
   vec3 floor() const {
     vec3 c = *this;
     c.floor__inplace();
+    return c;
+  }
+
+  void log__inplace() {
+    x = std::logf(x);
+    y = std::logf(y);
+    z = std::logf(z);
+  }
+
+  vec3 log() const {
+    vec3 c = *this;
+    c.log__inplace();
+    return c;
+  }
+
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+    y = std::sqrtf(y);
+    z = std::sqrtf(z);
+  }
+
+  vec3 sqrt() const {
+    vec3 c = *this;
+    c.sqrt__inplace();
     return c;
   }
 
@@ -952,19 +985,6 @@ struct vec4 {
     return c;
   }
 
-  void sqrt__inplace() {
-    x = std::sqrtf(x);
-    y = std::sqrtf(y);
-    z = std::sqrtf(z);
-    w = std::sqrtf(w);
-  }
-
-  vec4 sqrt() const {
-    vec4 c = *this;
-    c.sqrt__inplace();
-    return c;
-  }
-
   void floor__inplace() {
     x = std::floorf(x);
     y = std::floorf(y);
@@ -975,6 +995,32 @@ struct vec4 {
   vec4 floor() const {
     vec4 c = *this;
     c.floor__inplace();
+    return c;
+  }
+
+  void log__inplace() {
+    x = std::logf(x);
+    y = std::logf(y);
+    z = std::logf(z);
+    w = std::logf(w);
+  }
+
+  vec4 log() const {
+    vec4 c = *this;
+    c.log__inplace();
+    return c;
+  }
+
+  void sqrt__inplace() {
+    x = std::sqrtf(x);
+    y = std::sqrtf(y);
+    z = std::sqrtf(z);
+    w = std::sqrtf(w);
+  }
+
+  vec4 sqrt() const {
+    vec4 c = *this;
+    c.sqrt__inplace();
     return c;
   }
 

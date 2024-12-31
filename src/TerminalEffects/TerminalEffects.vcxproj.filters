@@ -9,6 +9,7 @@
     <ClCompile Include="effect2.cpp" />
     <ClCompile Include="screen.cpp" />
     <ClCompile Include="precompiled.cpp" />
+    <ClCompile Include="effect4.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.hpp" />
