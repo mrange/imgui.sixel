@@ -46,9 +46,9 @@ void effect4(float time, screen & screen) {
   auto const rot1 = rotator {-1};
 
   for (std::size_t y = 0; y < screen.height; ++y) {
-    auto py = (-1.F*screen.height+2.F*y)/screen.height;
+    auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
     for (std::size_t x = 0; x < screen.width; ++x) {
-      auto px = (-1.F*screen.width+2.F*x )/(2*screen.height);
+      auto px = (-1.F*screen.width+2.F*(x+0.5F) )/(2*screen.height);
       auto p = vec2 {px, py};
       // To avoid division by 0
       p += 1E-3;
@@ -81,7 +81,7 @@ void effect4(float time, screen & screen) {
 
       col += 0.05;
       col *= 1/std::max(l,0.01F);
-      col -= 0.25*l;
+      col -= 0.25F*l;
       //col = aces_approx(col);
       screen.draw__pixel(
           L' '

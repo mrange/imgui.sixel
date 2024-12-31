@@ -32,9 +32,9 @@ void effect1(float time, screen & screen) {
   };
 
   for (std::size_t y = 0; y < screen.height; ++y) {
-    auto py = (-1.F*screen.height+2.F*y)/screen.height;
+    auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
     for (std::size_t x = 0; x < screen.width; ++x) {
-      auto px = (-1.F*screen.width+2.F*x )/(2*screen.height);
+      auto px = (-1.F*screen.width+2.F*(x+0.5F))/(2*screen.height);
 
       auto px0 = px;
       auto py0 = py;

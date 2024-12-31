@@ -573,10 +573,10 @@ Bend elements:    ╭ ╯ ╮ ╰
 
 
   for (std::size_t y = 0; y < screen.height; ++y) {
-    auto py = (-1.F*screen.height+2.F*y)/screen.height;
+    auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
     auto y__off = y*screen__width;
     for (std::size_t x = 0; x < screen.width; ++x) {
-      auto px = (-1.F*screen.width+2.F*x )/(2*screen.height);
+      auto px = (-1.F*screen.width+2.F*(x+0.5F))/(2*screen.height);
       auto & qc = board[x+y__off];
       auto col = col__rainbow(time, x, y);
       float grid__fade = mix(0.25F, 0.00, tanh_approxf(2*dotf(px,py))); 

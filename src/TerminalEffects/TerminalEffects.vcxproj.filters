@@ -11,6 +11,7 @@
     <ClCompile Include="precompiled.cpp" />
     <ClCompile Include="effect4.cpp" />
     <ClCompile Include="effect5.cpp" />
+    <ClCompile Include="effect6.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.hpp" />

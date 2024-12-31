@@ -42,9 +42,9 @@ _________            .___       ___.
 void effect2(float time, screen & screen) {
 
   for (std::size_t y = 0; y < screen.height; ++y) {
-    auto py = (-1.F*screen.height+2.F*y)/screen.height;
+    auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
     for (std::size_t x = 0; x < screen.width; ++x) {
-      auto px = (-1.F*screen.width+2.F*x)/(2*screen.height);
+      auto px = (-1.F*screen.width+2.F*(x+0.5F))/(2*screen.height);
 
       auto p = vec2 {px, py};
       auto h0 = hash(p+std::floorf(-0.25F*time+py*py+0.33F*hash(p)));
