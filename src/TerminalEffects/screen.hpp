@@ -155,3 +155,5 @@ bitmap make_bitmap(
     f__generate_color foreground
   , std::wstring      pixels    
   );
+
+float vnoise(vec2 p);

@@ -180,3 +180,22 @@ screen make_screen(std::size_t w, std::size_t h) {
   , h
   };
 }
+
+float vnoise(vec2 p) {
+  auto i = p.floor();
+  auto f = p.fract();
+
+  auto u = f*f*(f*-2+3);
+
+  auto a = hash(i + vec2(0,0));
+  auto b = hash(i + vec2(1,0));
+  auto c = hash(i + vec2(0,1));
+  auto d = hash(i + vec2(1,1));
+
+  auto m0 = mix(a, b, u.x);
+  auto m1 = mix(c, d, u.x);
+  auto m2 = mix(m0, m1, u.y);
+
+  return m2;
+}
+
