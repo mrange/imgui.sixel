@@ -1,4 +1,5 @@
-<#@ output extension=".hh"#>
+﻿<#@ output extension=".hpp"#>
+#pragma once
 
 #include <cmath>
 

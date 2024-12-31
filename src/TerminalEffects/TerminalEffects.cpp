@@ -17,7 +17,7 @@
 #include <random>
 #include <vector>
 
-#include "vectors.hh"
+#include "vectors.hpp"
 
 using namespace vectors;
 
@@ -1297,6 +1297,16 @@ _________            .___       ___.
           , x
           , y
           );
+      }
+    }
+  }
+
+  void effect4(float time, screen & screen) {
+    for (std::size_t y = 0; y < screen.height; ++y) {
+      auto py = (-1.F*screen.height+2.F*y)/screen.height;
+      auto y__off = y*screen__width;
+      for (std::size_t x = 0; x < screen.width; ++x) {
+        auto px = (-1.F*screen.width+2.F*x )/(2*screen.height);
       }
     }
   }
