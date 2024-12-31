@@ -9,7 +9,7 @@ namespace {
     vec3 col;
   };
 
-  using stars = std::array<star, 200>;
+  using stars = std::array<star, 100>;
 
   stars create__stars_1() {
     stars res;
@@ -42,7 +42,7 @@ namespace {
     return res;
   }
 
-  stars universe = create__stars_2();
+  stars universe = create__stars_1();
 
 }
 
@@ -56,18 +56,17 @@ void effect5(float time, screen & screen) {
 
   for (std::size_t i = 0; i < universe.size(); ++i) {
     auto & star = universe[i];
-//    star.pos.z -= 0.011;
-    rot0(star.pos.x, star.pos.z);
-    rot1(star.pos.y, star.pos.z);
+    star.pos.z -= 0.011;
+//    rot0(star.pos.x, star.pos.z);
+//    rot1(star.pos.y, star.pos.z);
   }
-/*
+
   for (std::size_t i = 0; i < universe.size(); ++i) {
     auto & star = universe[i];
     star.pos.x = fractf(star.pos.x+0.5F)-0.5F;
     star.pos.y = fractf(star.pos.y+0.5F)-0.5F;
     star.pos.z = fractf(star.pos.z+0.5F)-0.5F;
   }
-  */
 
   std::sort(universe.begin(), universe.end(), [](auto & l, auto & r) { return l.pos.z > r.pos.z; });
 
@@ -82,20 +81,24 @@ void effect5(float time, screen & screen) {
     auto cf = smoothstep(0.5F, -0.5F, star.pos.z);
     col *= cf*cf;
     /* █■▪ */
+    /*
     auto shape = L'▪';
     if (star.pos.z < -0.5F*1.F/3.F) {
       shape = L'█';
     } else if (star.pos.z < 0.5F*1.F/3.F) {
       shape = L'■';
     }
-    /*
-    auto shape = L'∘';
-    if (star.z < -0.25F) {
-      shape = L'◯';
-    } else if (star.z < 0.F) {
-      shape = L'○';
-    }
     */
+    /* ·∘○◎ */
+    /* ·∘●◎ */
+    auto shape = L'·';
+    if (star.pos.z < -0.25F) {
+      shape = L'◎';
+    } else if (star.pos.z < 0.F) {
+      shape = L'○';
+    } else if (star.pos.z < 0.25F) {
+      shape = L'∘';
+    }
     screen.draw__pixel(
         shape
       , col
