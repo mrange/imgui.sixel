@@ -167,6 +167,7 @@
     <ClCompile Include="effect4.cpp" />
     <ClCompile Include="effect5.cpp" />
     <ClCompile Include="effect6.cpp" />
+    <ClCompile Include="effect7.cpp" />
     <ClCompile Include="precompiled.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
