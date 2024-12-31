@@ -47,7 +47,7 @@ void effect2(float time, screen & screen) {
       auto px = (-1.F*screen.width+2.F*x)/(2*screen.height);
 
       auto p = vec2 {px, py};
-      auto h0 = hash(p+std::floorf(-0.25*time+py*py+0.33*hash(p)));
+      auto h0 = hash(p+std::floorf(-0.25F*time+py*py+0.33F*hash(p)));
 
       auto shape = L'╳';
       if (h0 > 0.55) {
@@ -59,7 +59,7 @@ void effect2(float time, screen & screen) {
       }
       screen.draw__pixel(
           shape
-        , hsv2rgb_approx(std::sinf(time*0.707F)*px*py+0.5*py*py-0.5*time, mix(1.0,0.5,py*py), 1.0+py*py)*(smoothstep(0,1,py*py))
+        , hsv2rgb_approx(std::sinf(time*0.707F)*px*py+0.5F*py*py-0.5F*time, mix(1,0.5F,py*py), 1+py*py)*(smoothstep(0,1,py*py))
         , vec3 {0,0,0}
         , x
         , y

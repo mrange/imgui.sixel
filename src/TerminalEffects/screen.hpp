@@ -79,8 +79,8 @@ struct screen {
     assert(width*height == shapes.size());
     assert(width*height == foreground.size());
     assert(width*height == background.size());
-    if (x >= 0 && x < width) {
-      if (y >= 0 && y < height) {
+    if (x >= 0 && x < static_cast<int>(width)) {
+      if (y >= 0 && y < static_cast<int>(height)) {
         auto off = x + y*width;
         shapes[off]     = s;
         foreground[off] = f;

@@ -3,11 +3,11 @@
 #include "precompiled.hpp"
 
 static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
-float       const pi              = 3.141592654F;
-float       const tau             = 2*pi;
-std::size_t const screen__width   = 80;
-std::size_t const screen__height  = 30;
-float       const end__time       = 1E6;
+float       constexpr pi              = 3.141592654F;
+float       constexpr tau             = 2*pi;
+std::size_t constexpr screen__width   = 80;
+std::size_t constexpr screen__height  = 30;
+float       constexpr end__time       = 1E6;
 
 std::size_t pick_a_number(std::size_t min, std::size_t max);
 

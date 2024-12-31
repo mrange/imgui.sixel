@@ -29,8 +29,8 @@ namespace {
 }
 
 void effect0(float time, screen & screen) {
-  int xx = std::roundf(8+std::sinf(time+100)*8);
-  int yy = std::roundf(8+std::sinf(0.707f*(time+100))*8);
+  int xx = static_cast<int>(std::roundf(8+std::sinf(time+100)*8));
+  int yy = static_cast<int>(std::roundf(8+std::sinf(0.707f*(time+100))*8));
 
   screen.draw__bitmap(impulse    , time, xx, yy);
   screen.draw__bitmap(sixel_pixel, time, yy, xx);

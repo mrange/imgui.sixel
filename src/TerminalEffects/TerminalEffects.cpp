@@ -12,7 +12,7 @@ namespace {
     return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
   }
 
-  std::u8string const prelude              = u8"\x1B[?25l\x1B[H";
+  std::u8string const prelude__goto_top    = u8"\x1B[?25l\x1B[H";
   std::u8string const reset__colors        = u8"\x1B[0m";
   std::u8string const prelude__foreground  = u8"\x1B[38;2";
   std::u8string const prelude__background  = u8"\x1B[48;2";
@@ -110,7 +110,7 @@ namespace {
   void write__color(
       std::u8string &       output
     , std::u8string const & prelude
-    , vec3 const &           color
+    , vec3 const &          color
     ) {
     output.append(prelude);
     auto to_i = [](float v) -> std::size_t {
@@ -221,10 +221,21 @@ int main() {
     screen.draw__bitmap(border     , time,  0,  0);
 
     output.clear();
-    output.append(prelude);
+    output.append(prelude__goto_top);
     write(hstdout, output, screen);
-  
-    Sleep(20);  // 50 FPS
+
+    // 60 FPS
+    auto const desired_wait = 1.F/60;
+    auto frame_time         = (GetTickCount64() - now) / 1000.0f;
+
+    if (frame_time > desired_wait) {
+      Sleep(0);
+    } else {
+      auto sleep_for = static_cast<DWORD>(std::roundf((desired_wait-frame_time)*1000));
+      // printf("%d\n",sleep_for);
+      Sleep(sleep_for);
+    }
+
   }
 
   return 0;

@@ -183,7 +183,6 @@ namespace {
       return free;
     }
 
-    auto conn = undecided;
     auto neighbour  = res[x+y*screen__width];
     auto shape      = neighbour.shape;
     if (shape == 0) {
