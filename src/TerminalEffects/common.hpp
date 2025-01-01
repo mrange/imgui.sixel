@@ -3,6 +3,7 @@
 #include "precompiled.hpp"
 
 #define CHECK_CONDITION(cond) check_condition(cond, #cond, __FILE__, __LINE__)
+#define CHECK_HRESULT(cond)   check_hresult(cond, #cond, __FILE__, __LINE__)
 
 static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
 float       constexpr pi              = 3.141592654F;
@@ -117,6 +118,13 @@ auto on_exit(TOnExit && on_exit) {
 
 void check_condition(
     bool          condition
+  , char const *  condition_
+  , char const *  file_name
+  , int           line_no
+  );
+
+void check_hresult(
+    HRESULT       condition
   , char const *  condition_
   , char const *  file_name
   , int           line_no

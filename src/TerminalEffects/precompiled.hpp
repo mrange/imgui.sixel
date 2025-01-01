@@ -7,6 +7,10 @@
 #define _WIN32_WINNT 0x0A00  // Match WINVER
 
 #include <windows.h>
+#include <mfapi.h>
+#include <mfplay.h>
+#include <mfreadwrite.h>
+#include <mferror.h>
 
 #include <algorithm>
 #include <array>

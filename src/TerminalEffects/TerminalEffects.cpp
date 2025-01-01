@@ -3,6 +3,15 @@
 #include "screen.hpp"
 
 #include <cstdio>
+#include <gl/GL.h>
+#include "glext.h"
+
+
+#pragma comment(lib, "mf.lib")
+#pragma comment(lib, "mfplat.lib")
+#pragma comment(lib, "mfreadwrite.lib")
+#pragma comment(lib, "mfplay.lib")
+#pragma comment(lib, "opengl32.lib")
 
 void effect0(float time, screen & screen);
 void effect1(float time, screen & screen);
@@ -14,6 +23,13 @@ void effect6(float time, screen & screen);
 void effect7(float time, screen & screen);
 
 namespace {
+  std::size_t const desired__width  = 800;
+  std::size_t const desired__height = 600;
+  wchar_t const windows_class_name[]= L"TerminalEffects";
+
+  std::size_t viewport__width       = desired__width ;
+  std::size_t viewport__height      = desired__height;
+
   std::u8string to_u8string(std::string const & s) {
     return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
   }
@@ -233,59 +249,208 @@ namespace {
 //    assert(flushOk);
   }
 
+  LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch (uMsg) {
+    case WM_SIZE: {
+      int width = LOWORD(lParam);
+      int height = HIWORD(lParam);
+
+      glViewport(0, 0, width, height);
+
+      viewport__width   = width;
+      viewport__height  = height;
+
+      return 0;
+    }
+    case WM_CLOSE:
+      ::PostQuitMessage(0);
+      return 0;
+    }
+
+    return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+  }
+
+  PIXELFORMATDESCRIPTOR pixel_format_descriptor = {
+    sizeof(PIXELFORMATDESCRIPTOR)
+  , 1
+  , PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
+  , PFD_TYPE_RGBA
+  , 32
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 8
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 24
+  , 8
+  , 0
+  , PFD_MAIN_PLANE
+  , 0
+  , 0
+  , 0
+  , 0
+  };
+
+  WNDCLASSEX wnd_class_ex = {
+    sizeof(WNDCLASSEX)
+  , CS_HREDRAW | CS_VREDRAW | CS_OWNDC
+  , WindowProc
+  , 0
+  , 0
+  , 0
+  , LoadIcon(nullptr, IDI_APPLICATION)
+  , LoadCursor(nullptr, IDC_ARROW)
+  , reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1)
+  , nullptr
+  , windows_class_name
+  , nullptr
+  };
 
 }
 
 int main() {
-  //SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
-  auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-  CHECK_CONDITION(hstdout != INVALID_HANDLE_VALUE);
+  try {
+    CHECK_HRESULT(CoInitialize(0));
+    auto onexit__counitialize = on_exit([]{ CoUninitialize(); });
+
+    CHECK_HRESULT(MFStartup(MF_VERSION));
+    auto onexit__mfshutdown = on_exit([]{ MFShutdown(); });
+
+    auto hinstance = GetModuleHandle(0);
+    CHECK_CONDITION(hinstance);
+
+    wnd_class_ex.hInstance = hinstance;
+    auto dw_style = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
+
+    auto result__register_class = RegisterClassEx(&wnd_class_ex);
+    CHECK_CONDITION(result__register_class);
+
+    auto on_exit__unregister_class = on_exit([hinstance]{ UnregisterClass(windows_class_name, hinstance); });
+
+    RECT window_rect = { 0, 0, desired__width, desired__height };
+    auto result__rect= AdjustWindowRect(&window_rect, dw_style, 0);
+    CHECK_CONDITION(result__rect);
+
+    auto wnd__width   = window_rect.right-window_rect.left;
+    auto wnd__height  = window_rect.bottom-window_rect.top;
+    auto wnd__x       = GetSystemMetrics(SM_CXSCREEN) - wnd__width;
+    auto wnd__y       = 0;
+
+    auto hwnd = CreateWindowEx(
+      0                   // Extended style
+    , windows_class_name  // Window class name
+    , windows_class_name  // Window title
+    , dw_style            // Window style
+    , wnd__x              // StartPosition X
+    , wnd__y              // StartPosition Y
+    , wnd__width          // Width
+    , wnd__height         // Height
+    , nullptr             // Parent
+    , nullptr             // Menu
+    , hinstance           // Instance
+    , nullptr             // additional params
+    );
+    CHECK_CONDITION(hwnd);
+    auto on_exit__destroy_window = on_exit([hwnd]{ DestroyWindow(hwnd); });
+
+    // Intentionally ignore return value
+    ShowWindow(hwnd, SW_SHOWNORMAL);
+    auto result__update_window = UpdateWindow(hwnd);
+    assert(result__update_window);
+
+    auto hdc = GetDC(hwnd);
+    CHECK_CONDITION(hdc);
+    auto on_exit__release_dc = on_exit([hwnd, hdc]{ ReleaseDC(hwnd, hdc); });
+
+    auto pixel_format = ChoosePixelFormat(hdc, &pixel_format_descriptor);
+    CHECK_CONDITION(pixel_format);
+
+    CHECK_CONDITION(SetPixelFormat(hdc, pixel_format, &pixel_format_descriptor));
+
+    auto hrc = wglCreateContext(hdc);
+    CHECK_CONDITION(hrc);
+    auto on_exit__delete_context = on_exit([hrc]{ wglDeleteContext(hrc); });
+
+    auto result__make_current = wglMakeCurrent(hdc, hrc);
+    CHECK_CONDITION(result__make_current);
+    auto on_exit__make_current = on_exit([]{ wglMakeCurrent(nullptr, nullptr); });
+
+    IMFPMediaPlayer * player = nullptr;
+    CHECK_HRESULT(MFPCreateMediaPlayer(
+      LR"PATH(D:\assets\astroboy--my-head-is-spiritualism.wav)PATH"
+    , FALSE   
+    , 0       
+    , nullptr 
+    , hwnd 
+    , &player
+    ));
+    assert(player);
+    auto onexit__release_player = on_exit([player]{ player->Release(); });
+
+    auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    CHECK_CONDITION(hstdout != INVALID_HANDLE_VALUE);
   
-  auto result__setUtf8 = SetConsoleOutputCP(CP_UTF8);
-  CHECK_CONDITION(result__setUtf8);
+    CHECK_CONDITION(SetConsoleOutputCP(CP_UTF8));
 
-  DWORD consoleMode;
-  auto result__get_console_mode = GetConsoleMode(hstdout, &consoleMode);
-  CHECK_CONDITION(result__get_console_mode);
+    DWORD consoleMode;
+    CHECK_CONDITION(GetConsoleMode(hstdout, &consoleMode));
 
-  //consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-  // No flickering with just ENABLE_PROCESSED_OUTPUT?
-  consoleMode = ENABLE_PROCESSED_OUTPUT;
+    //consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    // No flickering with just ENABLE_PROCESSED_OUTPUT?
+    consoleMode = ENABLE_PROCESSED_OUTPUT;
 
-  auto result__set_console_mode = SetConsoleMode(hstdout, consoleMode);
-  CHECK_CONDITION(result__set_console_mode);
+    CHECK_CONDITION(SetConsoleMode(hstdout, consoleMode));
 
-  std::u8string output;
-  output.reserve(16384);
+    std::u8string output;
+    output.reserve(16384);
 
-  screen screen = make_screen(screen__width, screen__height);
+    CHECK_HRESULT(player->Play());
+    auto onexit__stop_player = on_exit([player]{ player->Stop(); });
 
-  auto before = GetTickCount64();
-  while(true) {
+    screen screen = make_screen(screen__width, screen__height);
 
-    auto now  = GetTickCount64();
-    auto time = (now - before) / 1000.0f;
+    auto before = GetTickCount64();
+    auto done = false;
+    auto msg = MSG {};
 
-    screen.clear();
+    while(!done) {
+      while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) done = true;
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+      }
 
-    effect7(time, screen);
-    screen.draw__bitmap(border     , time,  0,  0);
+      glClearColor(0,0,0,1.0F);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    write__screen(hstdout, time, output, screen);
+      auto now  = GetTickCount64();
+      auto time = (now - before) / 1000.0f;
 
-    // 60 FPS
-    auto const desired_wait = 1.F/60;
-    auto frame_time         = (GetTickCount64() - now) / 1000.0f;
+      screen.clear();
 
-    if (frame_time > desired_wait) {
-      Sleep(0);
-    } else {
-      auto sleep_for = static_cast<DWORD>(std::roundf((desired_wait-frame_time)*1000));
-      // printf("%d\n",sleep_for);
-      Sleep(sleep_for);
+      effect7(time, screen);
+      screen.draw__bitmap(border     , time,  0,  0);
+
+      write__screen(hstdout, time, output, screen);
+
+      auto result__swap_buffers = SwapBuffers(hdc);
+      assert(result__swap_buffers);
     }
 
+    return 0;
+  } catch (std::runtime_error const & e) {
+    std::printf("An error occured: %s", e.what());
+    return 98;
+  } catch (...) {
+    std::printf("An error occured: Unknown");
+    return 99;
   }
-
-  return 0;
 }

@@ -82,3 +82,21 @@ void check_condition(
     }
   }
 }
+
+
+void check_hresult(
+    HRESULT       condition
+  , char const *  condition_
+  , char const *  file_name
+  , int           line_no
+  ) {
+  if (FAILED(condition)) {
+    char buffer[1024];
+    auto r = sprintf_s(buffer, "%s(%d): Check hresult failed (0x%x): %s", file_name, line_no, condition, condition_);
+    if (r > -1) {
+      throw std::runtime_error(buffer);
+    } else {
+      throw std::runtime_error("Check hresult failed: Unknown reason");
+    }
+  }
+}
