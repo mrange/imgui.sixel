@@ -1,6 +1,6 @@
 ﻿#include "precompiled.hpp"
 
-#include "screen.hpp"
+#include "effect.hpp"
 
 namespace {
   float const time__step            = 0.175F;
@@ -431,7 +431,7 @@ namespace {
 }
 
 
-void effect3(float time, screen & screen) {
+void effect3(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
 
 /*
 ┌─┬─┐

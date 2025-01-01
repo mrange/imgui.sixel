@@ -1,6 +1,6 @@
 ﻿#include "precompiled.hpp"
 
-#include "screen.hpp"
+#include "effect.hpp"
 
 namespace {
 
@@ -24,7 +24,7 @@ namespace {
 )BITMAP");
 }
 
-void effect4(float time, screen & screen) {
+void effect4(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
   auto const rot1 = rotator {-1};
 
   for (std::size_t y = 0; y < screen.height; ++y) {

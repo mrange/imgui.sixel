@@ -13,7 +13,7 @@ std::size_t constexpr screen__height  = 30;
 float       constexpr end__time       = 1E6;
 
 float       constexpr music__bpm              = 145;
-float       constexpr music__beat_length      = 528;
+std::size_t constexpr music__beat_length      = 528;
 float       constexpr music__beat_time        = 60/music__bpm;
 float       constexpr music__subdivision_time = music__beat_time/4;
 float       constexpr music__bar_time         = music__beat_time*4;

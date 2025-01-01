@@ -1,6 +1,6 @@
 ﻿#include "precompiled.hpp"
 
-#include "screen.hpp"
+#include "effect.hpp"
 
 namespace {
   bitmap const impulse2 = make_bitmap(col__black, LR"BITMAP(
@@ -23,7 +23,7 @@ namespace {
 )BITMAP");
 }
 
-void effect1(float time, screen & screen) {
+void effect1(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
   auto df = [](float x, float y) -> float {
     const float m = 0.5;
     float l = lengthf(x,y);

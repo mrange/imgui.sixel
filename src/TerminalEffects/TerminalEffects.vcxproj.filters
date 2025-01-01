@@ -13,11 +13,13 @@
     <ClCompile Include="effect5.cpp" />
     <ClCompile Include="effect6.cpp" />
     <ClCompile Include="effect7.cpp" />
+    <ClCompile Include="effect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.hpp" />
     <ClInclude Include="vectors.hpp" />
     <ClInclude Include="screen.hpp" />
     <ClInclude Include="precompiled.hpp" />
+    <ClInclude Include="effect.hpp" />
   </ItemGroup>
 </Project>

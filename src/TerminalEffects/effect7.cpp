@@ -1,6 +1,6 @@
 ﻿#include "precompiled.hpp"
 
-#include "screen.hpp"
+#include "effect.hpp"
 
 /*
 * 
@@ -42,7 +42,7 @@ namespace {
   }
 }
 
-void effect7(float time, screen & screen) {
+void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
   auto rot = rotator {time};
   for (std::size_t y = 0; y < screen.height; ++y) {
     auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;

@@ -13,14 +13,14 @@
 #pragma comment(lib, "mfplay.lib")
 #pragma comment(lib, "opengl32.lib")
 
-void effect0(float time, screen & screen);
-void effect1(float time, screen & screen);
-void effect2(float time, screen & screen);
-void effect3(float time, screen & screen);
-void effect4(float time, screen & screen);
-void effect5(float time, screen & screen);
-void effect6(float time, screen & screen);
-void effect7(float time, screen & screen);
+void effect0(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect1(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect2(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect3(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect4(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
 
 namespace {
   std::size_t const desired__width  = 800;
@@ -47,39 +47,6 @@ namespace {
     return res;
   }
   std::array<std::u8string, 256> color_values = generate__color_values();
-
-  bitmap const border = make_bitmap(col__rainbow, LR"BITMAP(
-╔══════════════════════════════════════════════════════════════════════════════╗ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-╚══════════════════════════════════════════════════════════════════════════════╝ 
-)BITMAP");
 
   void wchar_to_utf8(std::u8string & output, wchar_t wc) {
     uint32_t codepoint = wc; // Assume UTF-32
@@ -172,9 +139,6 @@ namespace {
     {
       
       /*⣀⣤⣶⣿ */
-
-
-
       wchar_t fg__red[]     = L"\x1B[38;2;255;85;85m";  
       wchar_t fg__orange[]  = L"\x1B[38;2;255;165;85m"; 
       wchar_t fg__yellow[]  = L"\x1B[38;2;255;255;85m"; 
@@ -314,10 +278,64 @@ namespace {
   , nullptr
   };
 
+  using f__effect = std::function<void (
+      float       time
+    , std::size_t beat__start
+    , std::size_t beat__end
+    , screen  &   screen
+    )>;
+
+  struct script_part {
+    std::size_t beat__start ;
+    f__effect   effect      ;
+  };
+
+  struct effective_script_part {
+    std::size_t beat__start ;
+    std::size_t beat__end   ;
+    f__effect   effect      ;
+  };
+
+  std::array<effective_script_part, music__beat_length> effective_script;
+  auto script = std::to_array<script_part>({
+    {0  , effect7}
+  , {32 , effect0}
+  });
+
+  script_part get__script_part(std::size_t i) {
+    if (i < script.size()) {
+      return script[i];
+    } else {
+      return script_part {
+        effective_script.size()
+      , effect0
+      };
+    }
+  }
+
+
 }
 
 int main() {
   try {
+    {
+      // Create effective script
+      std::size_t idx = 0;
+      auto current    = script[idx];
+      auto next       = script[idx+1];
+      for (std::size_t i = 0; i < effective_script.size(); ++i) {
+        if (i >= next.beat__start) {
+          ++idx;
+          current = get__script_part(idx);
+          next    = get__script_part(idx + 1);
+        }
+        effective_script[i] = effective_script_part {
+          current.beat__start
+        , next.beat__start
+        , current.effect
+        };
+      }
+    }
     CHECK_HRESULT(CoInitialize(0));
     auto onexit__counitialize = on_exit([]{ CoUninitialize(); });
 
@@ -434,10 +452,15 @@ int main() {
       auto now  = GetTickCount64();
       auto time = (now - before) / 1000.0f;
 
+      auto nbeat = music__nbeat(time);
+      done |= nbeat >= effective_script.size();
+      nbeat = std::clamp<std::size_t>(nbeat, 0, effective_script.size()-1);
+
       screen.clear();
 
-      effect7(time, screen);
-      screen.draw__bitmap(border     , time,  0,  0);
+      auto & part = effective_script[nbeat];
+
+      part.effect(time, part.beat__start, part.beat__end, screen);
 
       write__screen(hstdout, time, output, screen);
 

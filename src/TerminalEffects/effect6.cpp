@@ -1,6 +1,6 @@
 ﻿#include "precompiled.hpp"
 
-#include "screen.hpp"
+#include "effect.hpp"
 
 namespace {
 
@@ -133,7 +133,7 @@ namespace {
 
 }
 
-void effect6(float time, screen & screen) {
+void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
   {
     auto m = smoothstep(-0.5F, 0.5F, std::cosf(time*tau/10));
     float const zf  = 2.0;

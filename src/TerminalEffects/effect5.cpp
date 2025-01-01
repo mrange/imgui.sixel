@@ -1,6 +1,6 @@
 ﻿#include "precompiled.hpp"
 
-#include "screen.hpp"
+#include "effect.hpp"
 
 namespace {
 
@@ -46,7 +46,7 @@ namespace {
 
 }
 
-void effect5(float time, screen & screen) {
+void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
   float const zf  = 2.0;
   auto hwidth     = 0.5F*screen__width;
   auto hheight    = 0.5F*screen__height;

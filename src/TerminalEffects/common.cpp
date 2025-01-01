@@ -6,27 +6,27 @@ namespace {
   std::mt19937      random__generator { 19740531 };
 }
 
-int music__nbeat  (float time) {
+int music__nbeat(float time) {
   return static_cast<int>(std::floorf(time/music__beat_time));
 }
 
-int music__nsubdivision  (float time) {
+int music__nsubdivision(float time) {
   return static_cast<int>(std::floorf(time/music__subdivision_time));
 }
 
-int music__nbar   (float time) {
+int music__nbar(float time) {
   return static_cast<int>(std::floorf(time/music__bar_time));
 }
 
-float music__fbeat  (float time) {
+float music__fbeat(float time) {
   return fractf(time/music__beat_time); 
 }
 
-float music__fsubdivision  (float time) {
+float music__fsubdivision(float time) {
   return fractf(time/music__subdivision_time); 
 }
 
-float music__fbar   (float time) {
+float music__fbar(float time) {
   return fractf(time/music__bar_time); 
 }
 

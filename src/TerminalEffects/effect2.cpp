@@ -1,6 +1,6 @@
 ﻿#include "precompiled.hpp"
 
-#include "screen.hpp"
+#include "effect.hpp"
 
 namespace {
   bitmap const code_by = make_bitmap(col__white, LR"BITMAP(
@@ -39,7 +39,7 @@ _________            .___       ___.
 
 
 
-void effect2(float time, screen & screen) {
+void effect2(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
 
   for (std::size_t y = 0; y < screen.height; ++y) {
     auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
