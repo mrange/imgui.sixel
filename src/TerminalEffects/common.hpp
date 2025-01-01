@@ -2,6 +2,8 @@
 
 #include "precompiled.hpp"
 
+#define CHECK_CONDITION(cond) check_condition(cond, #cond, __FILE__, __LINE__)
+
 static_assert(sizeof(char) == sizeof(char8_t), "Must be same size");
 float       constexpr pi              = 3.141592654F;
 float       constexpr tau             = 2*pi;
@@ -79,4 +81,43 @@ struct rotator {
 
 };
 
+template<typename TOnExit>
+struct on_exit__impl {
+  on_exit__impl ()                                = delete;
+  on_exit__impl (on_exit__impl const &)           = delete;
+  on_exit__impl& operator=(on_exit__impl const &) = delete;
 
+  explicit on_exit__impl (TOnExit && on_exit)
+    : suppress (false)
+    , on_exit  (std::move(on_exit)) {
+  }
+
+  explicit on_exit__impl (on_exit__impl && impl)
+    : suppress (impl.suppress)
+    , on_exit  (std::move(impl.on_exit)) {
+    impl.suppress = true;
+  }
+
+  ~on_exit__impl() noexcept {
+    if(!suppress) {
+      suppress = true;
+      on_exit();
+    }
+  }
+
+  bool suppress;
+private:
+  TOnExit on_exit;
+};
+
+template<typename TOnExit>
+auto on_exit(TOnExit && on_exit) {
+  return on_exit__impl<std::decay_t<TOnExit>>(std::move(on_exit));
+}
+
+void check_condition(
+    bool          condition
+  , char const *  condition_
+  , char const *  file_name
+  , int           line_no
+  );

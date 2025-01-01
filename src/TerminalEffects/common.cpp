@@ -66,3 +66,19 @@ float pmax(float a, float b, float k) {
   return -pmin(-a, -b, k);
 }
 
+void check_condition(
+    bool          condition
+  , char const *  condition_
+  , char const *  file_name
+  , int           line_no
+  ) {
+  if (!condition) {
+    char buffer[1024];
+    auto r = sprintf_s(buffer, "%s(%d): Check condition failed: %s", file_name, line_no, condition_);
+    if (r > -1) {
+      throw std::runtime_error(buffer);
+    } else {
+      throw std::runtime_error("Check condition failed: Unknown reason");
+    }
+  }
+}

@@ -12,6 +12,7 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <exception>
 #include <format>
 #include <functional>
 #include <map>

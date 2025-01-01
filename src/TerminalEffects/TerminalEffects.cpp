@@ -162,8 +162,6 @@ namespace {
       wchar_t fg__red[]     = L"\x1B[38;2;255;85;85m";  
       wchar_t fg__orange[]  = L"\x1B[38;2;255;165;85m"; 
       wchar_t fg__yellow[]  = L"\x1B[38;2;255;255;85m"; 
-      wchar_t fg__magenta[] = L"\x1B[38;2;255;85;255m";
-      wchar_t fg__cyan[]    = L"\x1B[38;2;85;255;255m";
       wchar_t fg__muted[]   = L"\x1B[38;2;80;80;120m";
       wchar_t fg__hilight[] = L"\x1B[38;2;160;160;220m";
 
@@ -241,21 +239,21 @@ namespace {
 int main() {
   //SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
   auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-  assert(hstdout != INVALID_HANDLE_VALUE);
+  CHECK_CONDITION(hstdout != INVALID_HANDLE_VALUE);
   
   auto result__setUtf8 = SetConsoleOutputCP(CP_UTF8);
-  assert(result__setUtf8);
+  CHECK_CONDITION(result__setUtf8);
 
   DWORD consoleMode;
   auto result__get_console_mode = GetConsoleMode(hstdout, &consoleMode);
-  assert(result__get_console_mode);
+  CHECK_CONDITION(result__get_console_mode);
 
   //consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
   // No flickering with just ENABLE_PROCESSED_OUTPUT?
   consoleMode = ENABLE_PROCESSED_OUTPUT;
 
   auto result__set_console_mode = SetConsoleMode(hstdout, consoleMode);
-  assert(result__set_console_mode);
+  CHECK_CONDITION(result__set_console_mode);
 
   std::u8string output;
   output.reserve(16384);

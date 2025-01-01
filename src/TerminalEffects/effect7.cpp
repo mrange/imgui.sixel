@@ -52,7 +52,7 @@ void effect7(float time, screen & screen) {
 
       auto vp= p;
       auto constexpr per = tau/6;
-      auto constexpr amp = 8.0;
+      auto constexpr amp = 8.0F;
       vp.x += amp*std::sinf(time*(per/amp));
       vp.y += amp*std::sinf(time*(per*0.707F/amp));
       auto n = vnoise(vp);
@@ -65,8 +65,8 @@ void effect7(float time, screen & screen) {
       auto pp = mmp;
 
 //      rot(pp.x, pp.y);
-      pp *= (0.5+n);
-      pp.x += 0.13*time;
+      pp *= (0.5F+n);
+      pp.x += 0.13F*time;
       auto np = pp.round();
       auto cp = pp-np;
 
@@ -92,7 +92,6 @@ void effect7(float time, screen & screen) {
   screen.draw__bitmap(gerp, time, 5, 12);
 
   {
-    std::size_t i = 0;
     wchar_t s;
     vec3    f;
     vec3    b;
