@@ -298,7 +298,7 @@ namespace {
 
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
-    {0  , effect7}
+    {0  , effect0}
   , {32 , effect0}
   });
 
