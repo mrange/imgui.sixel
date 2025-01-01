@@ -39,6 +39,44 @@ namespace {
   std::u8string const prelude__foreground  = u8"\x1B[38;2";
   std::u8string const prelude__background  = u8"\x1B[48;2";
   
+  using f__effect = std::function<void (
+      float       time
+    , std::size_t beat__start
+    , std::size_t beat__end
+    , screen  &   screen
+    )>;
+
+  struct script_part {
+    std::size_t   beat__start ;
+    f__effect     effect      ;
+    std::wstring  name        ;
+  };
+
+  struct effective_script_part {
+    std::size_t beat__start ;
+    std::size_t beat__end   ;
+    f__effect   effect      ;
+    std::wstring  name        ;
+  };
+
+  std::array<effective_script_part, music__beat_length> effective_script;
+  auto script = std::to_array<script_part>({
+    {0  , effect7, L"Running INTRO.COM"}
+  });
+
+  script_part get__script_part(std::size_t i) {
+    if (i < script.size()) {
+      return script[i];
+    } else {
+      return script_part {
+        effective_script.size()
+      , effect0
+      , L"FITB"
+      };
+    }
+  }
+
+
   std::array<std::u8string, 256> generate__color_values() {
     std::array<std::u8string, 256> res;
     for (std::size_t i = 0; i < 256; ++i) {
@@ -94,10 +132,11 @@ namespace {
   }
 
   void write__screen(
-      HANDLE          hstdout
-    , float           time
-    , std::u8string & output
-    , screen const &  screen
+      HANDLE                        hstdout
+    , float                         time
+    , effective_script_part const & part
+    , std::u8string &               output
+    , screen const &                screen
     ) {
     output.clear();
     output.append(prelude__goto_top);
@@ -144,6 +183,7 @@ namespace {
       wchar_t fg__yellow[]  = L"\x1B[38;2;255;255;85m"; 
       wchar_t fg__muted[]   = L"\x1B[38;2;80;80;120m";
       wchar_t fg__hilight[] = L"\x1B[38;2;160;160;220m";
+      wchar_t fg__cyan[]    = L"\x1B[38;2;85;255;255m";
 
       wchar_t fg__white[]   = L"\x1B[38;2;255;255;255m";
 
@@ -157,9 +197,16 @@ namespace {
       };
 
       wchar_t   info__buffer[4096];
-      auto      beat__i        = music__nsubdivision(time)%4;
+      auto      beat__i         = music__nsubdivision(time)%4;
       wchar_t   beat__progress  = L"⣀⣤⣶⣿"[beat__i];
       wchar_t*  beat__color     = beat__colors[beat__i];
+
+      /*
+      auto      run__i          = static_cast<int>(fractf(time)*5);
+      wchar_t   run__progress   = L"○◔◑◕●"[run__i];
+      */
+      auto      run__i          = static_cast<int>(fractf(time)*8);
+      wchar_t   run__progress   = L"⣤⣆⡇⠏⠛⠹⢸⣰"[run__i];
       
       auto sub = fractf(time);
       auto sec = static_cast<int>(std::floorf(time));
@@ -169,7 +216,7 @@ namespace {
 
       auto info__len = swprintf_s(
           info__buffer
-        , L"%s%s%c %s[%s%03d%s/%s%03d%s] %s%02d%s:%s%02d%s.%s%03d %56s %s%c"
+        , L"%s%s%c %s[%s%03d%s/%s%03d%s] %s%02d%s:%s%02d%s.%s%03d %c %s%-44s %sGERP 2025 %s%c"
         , bg__blue
         , beat__color
         , beat__progress
@@ -188,7 +235,10 @@ namespace {
         , fg__muted
         , fg__hilight
         , ms
-        , L"GERP 2025"
+        , run__progress
+        , fg__cyan
+        , part.name.c_str()
+        , fg__hilight
         , beat__color
         , beat__progress
         );
@@ -278,42 +328,6 @@ namespace {
   , nullptr
   };
 
-  using f__effect = std::function<void (
-      float       time
-    , std::size_t beat__start
-    , std::size_t beat__end
-    , screen  &   screen
-    )>;
-
-  struct script_part {
-    std::size_t beat__start ;
-    f__effect   effect      ;
-  };
-
-  struct effective_script_part {
-    std::size_t beat__start ;
-    std::size_t beat__end   ;
-    f__effect   effect      ;
-  };
-
-  std::array<effective_script_part, music__beat_length> effective_script;
-  auto script = std::to_array<script_part>({
-    {0  , effect0}
-  , {32 , effect0}
-  });
-
-  script_part get__script_part(std::size_t i) {
-    if (i < script.size()) {
-      return script[i];
-    } else {
-      return script_part {
-        effective_script.size()
-      , effect0
-      };
-    }
-  }
-
-
 }
 
 int main() {
@@ -321,8 +335,8 @@ int main() {
     {
       // Create effective script
       std::size_t idx = 0;
-      auto current    = script[idx];
-      auto next       = script[idx+1];
+      auto current    = get__script_part(idx);
+      auto next       = get__script_part(idx+1);
       for (std::size_t i = 0; i < effective_script.size(); ++i) {
         if (i >= next.beat__start) {
           ++idx;
@@ -333,6 +347,7 @@ int main() {
           current.beat__start
         , next.beat__start
         , current.effect
+        , current.name
         };
       }
     }
@@ -462,7 +477,12 @@ int main() {
 
       part.effect(time, part.beat__start, part.beat__end, screen);
 
-      write__screen(hstdout, time, output, screen);
+      write__screen(
+          hstdout
+        , time
+        , part
+        , output
+        , screen);
 
       auto result__swap_buffers = SwapBuffers(hdc);
       assert(result__swap_buffers);

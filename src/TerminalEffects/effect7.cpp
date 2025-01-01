@@ -116,4 +116,5 @@ void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen 
     }
   }
 
+  draw__border(time, screen);
 }
