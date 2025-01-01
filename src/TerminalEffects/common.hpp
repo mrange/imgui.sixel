@@ -25,6 +25,8 @@ float       music__fbeat        (float time);
 float       music__fsubdivision (float time);
 float       music__fbar         (float time);
 
+float       music__from_nbeat   (int beat);
+
 std::size_t pick_a_number(std::size_t min, std::size_t max);
 
 float pick_a_float(float min, float max);
@@ -52,6 +54,10 @@ inline float mix(float b, float e, float x) {
 // License: Unknown, author: Unknown, found: don't remember
 inline float hash(float co) {
   return fractf(sinf(co*12.9898F) * 13758.5453F);
+}
+
+inline float saturate(float x) {
+  return std::clamp<float>(x,0,1);
 }
 
 float smoothstep(float edge0, float edge1, float x);

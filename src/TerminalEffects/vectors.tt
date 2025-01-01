@@ -19,6 +19,7 @@
     , ("fract"      , "::fractf"      )
     , ("round"      , "::roundf"      )
     , ("tanh_approx", "::tanh_approxf")
+    , ("saturate"   , "::saturate"    )
   };
 #>
 <# for (var maxDim = 1; maxDim < 5; ++maxDim) { #>

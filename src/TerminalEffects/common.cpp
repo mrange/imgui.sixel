@@ -30,6 +30,11 @@ float music__fbar(float time) {
   return fractf(time/music__bar_time); 
 }
 
+float music__from_nbeat (int nbeat) {
+  return nbeat*music__beat_time;
+}
+
+
 std::size_t pick_a_number(std::size_t min, std::size_t max) {
   assert(max >= min);
   std::uniform_int_distribution<std::size_t> dist(min, max);

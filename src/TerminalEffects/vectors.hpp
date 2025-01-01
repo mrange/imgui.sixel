@@ -195,6 +195,16 @@ struct vec1 {
     return c;
   }
 
+  void saturate__inplace() {
+    x = ::saturate(x);
+  }
+
+  vec1 saturate() const {
+    vec1 c = *this;
+    c.saturate__inplace();
+    return c;
+  }
+
 
   float dot(vec1 const & other) const {
     float sum = 0.F;
@@ -455,6 +465,17 @@ struct vec2 {
   vec2 tanh_approx() const {
     vec2 c = *this;
     c.tanh_approx__inplace();
+    return c;
+  }
+
+  void saturate__inplace() {
+    x = ::saturate(x);
+    y = ::saturate(y);
+  }
+
+  vec2 saturate() const {
+    vec2 c = *this;
+    c.saturate__inplace();
     return c;
   }
 
@@ -742,6 +763,18 @@ struct vec3 {
   vec3 tanh_approx() const {
     vec3 c = *this;
     c.tanh_approx__inplace();
+    return c;
+  }
+
+  void saturate__inplace() {
+    x = ::saturate(x);
+    y = ::saturate(y);
+    z = ::saturate(z);
+  }
+
+  vec3 saturate() const {
+    vec3 c = *this;
+    c.saturate__inplace();
     return c;
   }
 
@@ -1060,6 +1093,19 @@ struct vec4 {
   vec4 tanh_approx() const {
     vec4 c = *this;
     c.tanh_approx__inplace();
+    return c;
+  }
+
+  void saturate__inplace() {
+    x = ::saturate(x);
+    y = ::saturate(y);
+    z = ::saturate(z);
+    w = ::saturate(w);
+  }
+
+  vec4 saturate() const {
+    vec4 c = *this;
+    c.saturate__inplace();
     return c;
   }
 

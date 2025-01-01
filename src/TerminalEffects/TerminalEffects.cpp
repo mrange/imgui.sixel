@@ -62,6 +62,7 @@ namespace {
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7, L"Running INTRO.COM"}
+  , {64 , effect0, L"FITB"}
   });
 
   script_part get__script_part(std::size_t i) {
@@ -196,18 +197,30 @@ namespace {
       , fg__white
       };
 
-      wchar_t   info__buffer[4096];
+      wchar_t   info__buffer[2048];
       auto      beat__i         = music__nsubdivision(time)%4;
       wchar_t   beat__progress  = L"⣀⣤⣶⣿"[beat__i];
       wchar_t*  beat__color     = beat__colors[beat__i];
 
-      /*
-      auto      run__i          = static_cast<int>(fractf(time)*5);
-      wchar_t   run__progress   = L"○◔◑◕●"[run__i];
-      */
-      auto      run__i          = static_cast<int>(fractf(time)*8);
+      auto      run__i          = static_cast<int>(fractf(0.5F*time/music__beat_time)*8);
       wchar_t   run__progress   = L"⣤⣆⡇⠏⠛⠹⢸⣰"[run__i];
-      
+
+      wchar_t const * part__progress_parts[] = {
+        L"▱▱▱▱▱"
+      , L"▰▱▱▱▱"
+      , L"▰▰▱▱▱"
+      , L"▰▰▰▱▱"
+      , L"▰▰▰▰▱"
+      , L"▰▰▰▰▰"
+      };
+      int part__i;
+      {
+        auto x = time - music__from_nbeat(part.beat__start);
+        auto y = music__from_nbeat(part.beat__end) - music__from_nbeat(part.beat__start);
+        part__i = std::clamp<int>(static_cast<int>(6*x/y), 0, 5);
+      }
+      wchar_t const * part__progress = part__progress_parts[part__i] ;
+
       auto sub = fractf(time);
       auto sec = static_cast<int>(std::floorf(time));
       auto min = sec/60;
@@ -216,7 +229,7 @@ namespace {
 
       auto info__len = swprintf_s(
           info__buffer
-        , L"%s%s%c %s[%s%03d%s/%s%03d%s] %s%02d%s:%s%02d%s.%s%03d %c %s%-44s %sGERP 2025 %s%c"
+        , L"%s%s%c %s[%s%03d%s/%s%03d%s] %s%02d%s:%s%02d%s.%s%03d %c %s%-38s %s%s GERP 2025 %s%c"
         , bg__blue
         , beat__color
         , beat__progress
@@ -239,6 +252,7 @@ namespace {
         , fg__cyan
         , part.name.c_str()
         , fg__hilight
+        , part__progress
         , beat__color
         , beat__progress
         );
@@ -450,7 +464,11 @@ int main() {
 
     screen screen = make_screen(screen__width, screen__height);
 
+#define MUSIC_TIME
+#ifdef MUSIC_TIME
+#else
     auto before = GetTickCount64();
+#endif
     auto done = false;
     auto msg = MSG {};
 
@@ -464,8 +482,19 @@ int main() {
       glClearColor(0,0,0,1.0F);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+#ifdef MUSIC_TIME
+      float time = 0;
+      PROPVARIANT position_value;
+      if (SUCCEEDED(player->GetPosition(MFP_POSITIONTYPE_100NS, &position_value))) {
+        if (position_value.vt == VT_I8) {
+          time = position_value.hVal.QuadPart/1E7F;
+        }
+      };
+#else
       auto now  = GetTickCount64();
       auto time = (now - before) / 1000.0f;
+#endif
 
       auto nbeat = music__nbeat(time);
       done |= nbeat >= effective_script.size();
