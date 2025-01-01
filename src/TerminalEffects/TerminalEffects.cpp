@@ -2,6 +2,8 @@
 
 #include "screen.hpp"
 
+#include <cstdio>
+
 void effect0(float time, screen & screen);
 void effect1(float time, screen & screen);
 void effect2(float time, screen & screen);
@@ -108,11 +110,14 @@ namespace {
     output.append(reset__colors);
   }
 
-  void write(
+  void write__screen(
       HANDLE          hstdout
+    , float           time
     , std::u8string & output
     , screen const &  screen
     ) {
+    output.clear();
+    output.append(prelude__goto_top);
 
     auto w = screen.width;
     auto h = screen.height;
@@ -148,7 +153,75 @@ namespace {
       wchar_to_utf8(output, L'\n');
     }
 
-    write__reset_color(output);
+    {
+      
+      /*⣀⣤⣶⣿ */
+
+
+
+      wchar_t fg__red[]     = L"\x1B[38;2;255;85;85m";  
+      wchar_t fg__orange[]  = L"\x1B[38;2;255;165;85m"; 
+      wchar_t fg__yellow[]  = L"\x1B[38;2;255;255;85m"; 
+      wchar_t fg__magenta[] = L"\x1B[38;2;255;85;255m";
+      wchar_t fg__cyan[]    = L"\x1B[38;2;85;255;255m";
+      wchar_t fg__muted[]   = L"\x1B[38;2;80;80;120m";
+      wchar_t fg__hilight[] = L"\x1B[38;2;160;160;220m";
+
+      wchar_t fg__white[]   = L"\x1B[38;2;255;255;255m";
+
+      wchar_t bg__blue[]    = L"\x1B[48;2;10;10;80m";
+
+      wchar_t* beat__colors[] = {
+        fg__red
+      , fg__orange
+      , fg__yellow
+      , fg__white
+      };
+
+      wchar_t   info__buffer[4096];
+      auto      beat__i        = music__nsubdivision(time)%4;
+      wchar_t   beat__progress  = L"⣀⣤⣶⣿"[beat__i];
+      wchar_t*  beat__color     = beat__colors[beat__i];
+      
+      auto sub = fractf(time);
+      auto sec = static_cast<int>(std::floorf(time));
+      auto min = sec/60;
+      sec -= min*60;
+      auto ms  = static_cast<int>(sub*1000);
+
+      auto info__len = swprintf_s(
+          info__buffer
+        , L"%s%s%c %s[%s%03d%s/%s%03d%s] %s%02d%s:%s%02d%s.%s%03d %56s %s%c"
+        , bg__blue
+        , beat__color
+        , beat__progress
+        , fg__muted
+        , fg__hilight
+        , music__nbeat(time)
+        , fg__muted
+        , fg__hilight
+        , music__nbar(time)
+        , fg__muted
+        , fg__hilight
+        , min
+        , fg__muted
+        , fg__hilight
+        , sec
+        , fg__muted
+        , fg__hilight
+        , ms
+        , L"GERP 2025"
+        , beat__color
+        , beat__progress
+        );
+      assert(info__len > -1);
+      for (auto i = 0; i < info__len; ++i) {
+        wchar_to_utf8(output, info__buffer[i]);
+      }
+
+      write__reset_color(output);
+    }
+
 
     auto writeOk = WriteFile(
       hstdout
@@ -200,9 +273,7 @@ int main() {
     effect7(time, screen);
     screen.draw__bitmap(border     , time,  0,  0);
 
-    output.clear();
-    output.append(prelude__goto_top);
-    write(hstdout, output, screen);
+    write__screen(hstdout, time, output, screen);
 
     // 60 FPS
     auto const desired_wait = 1.F/60;

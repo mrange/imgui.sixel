@@ -9,6 +9,18 @@ std::size_t constexpr screen__width   = 80;
 std::size_t constexpr screen__height  = 30;
 float       constexpr end__time       = 1E6;
 
+float       constexpr music__bpm              = 80;
+float       constexpr music__beat_time        = music__bpm/60;
+float       constexpr music__subdivision_time = music__beat_time/4;
+float       constexpr music__bar_time         = music__beat_time*4;
+
+int         music__nbeat        (float time);
+int         music__nsubdivision (float time);
+int         music__nbar         (float time);
+float       music__fbeat        (float time);
+float       music__fsubdivision (float time);
+float       music__fbar         (float time);
+
 std::size_t pick_a_number(std::size_t min, std::size_t max);
 
 float pick_a_float(float min, float max);
