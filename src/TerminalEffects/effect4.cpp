@@ -14,13 +14,16 @@ namespace {
  ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░
  ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░
  ░         ░               ░         ░  ░      ░     ░  ░ ░   
-
                                      ╭─────╮
                ╭─────────────────────┤▄▀▄▀▄├───────────────╮
    ┼───────────┼ ▀ G L I M G L A M ▄ │▄▀▄▀▄│ ▄ L A N C E ▀ │
    │ ▄ J E Z ▀ ┼──────────┼──────────┼─────┼────┼──────────┼
    ╰───────────┼          │ ▀ L O N G S H O T ▄ │
                           ╘═════════════════════╛
+
+
+
+                    ▄▀▄▀ P R E S E N T S ▄▀▄▀
 )BITMAP");
 }
 
@@ -75,4 +78,15 @@ void effect4(float time, std::size_t beat__start, std::size_t beat__end, screen 
     }
   }
   screen.draw__bitmap(impulse2  , time, 8, 6);
+
+  { 
+    float start = music__from_nbeat(beat__start);
+    float end   = music__from_nbeat(beat__start+16);
+    float fade  = smoothstep(start, end, time);
+    screen.apply_to_all([fade](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
+      f *= fade;
+      b *= fade;
+    });
+  }
+
 }

@@ -100,17 +100,26 @@ void effect2(float time, std::size_t beat__start, std::size_t beat__end, screen 
   { 
     auto gcol = palette(-time*tau/(music__beat_time*16)-2)*0.025F;
     auto const sub = vec3(2,3,1)*0.01;
-    float start = music__from_nbeat(beat__start);
-    float end   = music__from_nbeat(beat__start+4);
-    float fade  = smoothstep(end, start, time);
-    screen.apply_to_all([fade,sub,gcol](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
-      f += fade;
-      b += fade;
+    float fadein  = smoothstep(
+        music__from_nbeat(beat__start+4)
+      , music__from_nbeat(beat__start)
+      , time
+    );
+    float fadeout = smoothstep(
+        music__from_nbeat(beat__end)
+      , music__from_nbeat(beat__end-4)
+      , time
+    );
+    screen.apply_to_all([fadein, fadeout,sub,gcol](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
       auto dot = (p*vec2 {0.707F,1.41F}).length2();
       auto add = (gcol/std::max(dot, 1E-3F)).tanh_approx();
       add -= sub*dot;
       f += add;
       b += add;
+      f += fadein;
+      b += fadein;
+      f *= fadeout;
+      b *= fadeout;
     });
   }
 }

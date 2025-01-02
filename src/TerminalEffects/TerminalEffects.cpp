@@ -63,7 +63,7 @@ namespace {
   auto script = std::to_array<script_part>({
     {0  , effect7, L"Running INTRO.COM"}
   , {64 , effect2, L"Code by Lance, Gfx by Glimglam"}
-  , {128, effect4, L"Part 3"}
+  , {128, effect4, L"Impulse presents SIXEL PIXEL"}
   , {192, effect0, L"FITB"}
   });
 
@@ -469,7 +469,7 @@ int main() {
 #define MUSIC_TIME
 #ifdef MUSIC_TIME
     {
-      auto start_time = 0*music__beat_time;
+      auto start_time = 64*music__beat_time;
       PROPVARIANT position_value;
       PropVariantInit(&position_value);
       position_value.vt = VT_I8;
