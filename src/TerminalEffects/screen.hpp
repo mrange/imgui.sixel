@@ -38,6 +38,26 @@ struct screen {
     background.resize(width*height  , vec3 {0,0,0});
   }
 
+  template<typename TFunc>
+  void apply_to_all(TFunc f) {
+    assert(width*height == shapes.size());
+    assert(width*height == foreground.size());
+    assert(width*height == background.size());
+    for (std::size_t y = 0; y < height; ++y) {
+      auto y__off = y * width;
+      for (std::size_t x = 0; x < width; ++x) {
+        auto off = x + y__off;
+        f(
+          x
+          , y
+          , shapes[off]
+          , foreground[off]
+          , background[off]
+          );
+      }
+    }
+  }
+
   void draw__pixel(
     wchar_t s
   , vec3    f
@@ -48,9 +68,10 @@ struct screen {
     assert(width*height == shapes.size());
     assert(width*height == foreground.size());
     assert(width*height == background.size());
-    if (x >= 0 && x < static_cast<int>(width)) {
-      if (y >= 0 && y < static_cast<int>(height)) {
-        auto off = x + y*width;
+    if (y >= 0 && y < static_cast<int>(height)) {
+      auto y__off = y * width;
+      if (x >= 0 && x < static_cast<int>(width)) {
+        auto off = x + y__off;
         shapes[off]     = s;
         foreground[off] = f;
         background[off] = b;
@@ -68,9 +89,10 @@ struct screen {
     assert(width*height == shapes.size());
     assert(width*height == foreground.size());
     assert(width*height == background.size());
-    if (x >= 0 && x < static_cast<int>(width)) {
-      if (y >= 0 && y < static_cast<int>(height)) {
-        auto off = x + y*width;
+    if (y >= 0 && y < static_cast<int>(height)) {
+      auto y__off = y * width;
+      if (x >= 0 && x < static_cast<int>(width)) {
+        auto off = x + y__off;
         s = shapes[off]     ;
         f = foreground[off] ;
         b = background[off] ;

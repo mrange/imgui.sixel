@@ -131,11 +131,10 @@ void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen 
     float start = music__from_nbeat(beat__start+2);
     float end   = music__from_nbeat(beat__start+32);
     float fade  = smoothstep(start, end, time);
-    // Fader
-    for (std::size_t i = 0; i < screen__width*screen__height; ++i) {
-      screen.foreground[i] *= fade;
-      screen.background[i] *= fade;
-    }
+    screen.apply_to_all([fade](auto x, auto y, auto& s, auto& f, auto& b) {
+      f *= fade;
+      b *= fade;
+    });
   }
 
 }
