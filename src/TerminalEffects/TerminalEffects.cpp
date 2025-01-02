@@ -466,8 +466,14 @@ int main() {
 
 #define MUSIC_TIME
 #ifdef MUSIC_TIME
-#else
-    auto before = GetTickCount64();
+    {
+      auto start_time = 64*music__beat_time;
+      PROPVARIANT position_value;
+      PropVariantInit(&position_value);
+      position_value.vt = VT_I8;
+      position_value.hVal.QuadPart = static_cast<LONGLONG>(start_time*1E7F);
+      CHECK_HRESULT(player->SetPosition(MFP_POSITIONTYPE_100NS, &position_value));
+    }
 #endif
     auto done = false;
     auto msg = MSG {};
@@ -481,7 +487,6 @@ int main() {
 
       glClearColor(0,0,0,1.0F);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
 #ifdef MUSIC_TIME
       float time = 0;
