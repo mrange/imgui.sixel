@@ -45,15 +45,18 @@ struct screen {
     assert(width*height == background.size());
     for (std::size_t y = 0; y < height; ++y) {
       auto y__off = y * width;
+      auto py = (-1.F*height+2.F*(y+0.5F))/height;
       for (std::size_t x = 0; x < width; ++x) {
+        auto px = (-1.F*width+2.F*(x+0.5F) )/(2*height);
         auto off = x + y__off;
         f(
           x
-          , y
-          , shapes[off]
-          , foreground[off]
-          , background[off]
-          );
+        , y
+        , vec2{ px, py }
+        , shapes[off]
+        , foreground[off]
+        , background[off]
+        );
       }
     }
   }
