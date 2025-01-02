@@ -21,6 +21,9 @@
 
 namespace {
   bitmap const gerp = make_bitmap(col__white, LR"BITMAP(
+                     I M P U L S E   G O E S   T O 
+                    ───────────────────────────────
+
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ░░░░░░░░      ░░░░░░░░░        ░░░░░░░░       ░░░░░░░░░       ░░░░░░░░
 ▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒
@@ -98,7 +101,7 @@ void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen 
     }
   }
 
-  screen.draw__bitmap(gerp, time, 5, 12);
+  screen.draw__bitmap(gerp, time, 5, 9);
 
   {
     wchar_t s;

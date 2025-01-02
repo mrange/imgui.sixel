@@ -579,7 +579,7 @@ Bend elements:    ╭ ╯ ╮ ╰
       auto px = (-1.F*screen.width+2.F*(x+0.5F))/(2*screen.height);
       auto & qc = board[x+y__off];
       auto col = col__rainbow(time, x, y);
-      float grid__fade = mix(0.25F, 0.00, tanh_approxf(2*length2f(px,py))); 
+      float grid__fade = mix(0.25F, 0.00, tanh_approxf(length2f(px,py))); 
       switch (qc.type) {
       case qc__grid:
         col *= grid__fade;
