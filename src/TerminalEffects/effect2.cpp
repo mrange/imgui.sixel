@@ -78,7 +78,7 @@ void effect2(float time, std::size_t beat__start, std::size_t beat__end, screen 
 
   auto selection= (music__nbeat(time)-beat__start)/16;
   auto nbeat    = selection*16+beat__start;
-  auto opacity  = std::expf(-0.7*std::max(0.F, time-music__from_nbeat(nbeat+2)));
+  auto opacity  = std::expf(-std::max(0.F, time-music__from_nbeat(nbeat+4)));
 
   switch(selection) {
   case 0:
@@ -99,15 +99,15 @@ void effect2(float time, std::size_t beat__start, std::size_t beat__end, screen 
 
   { 
     auto gcol = palette(-time*tau/(music__beat_time*16)-2)*0.025F;
-    auto const sub = vec3(2,3,1)*0.0033;
+    auto const sub = vec3(2,3,1)*0.01;
     float start = music__from_nbeat(beat__start);
     float end   = music__from_nbeat(beat__start+4);
     float fade  = smoothstep(end, start, time);
     screen.apply_to_all([fade,sub,gcol](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
       f += fade;
       b += fade;
-      auto dot = (p*vec2 {1,2}).length2();
-      auto add = gcol/std::max(dot, 1E-3F);
+      auto dot = (p*vec2 {0.707F,1.41F}).length2();
+      auto add = (gcol/std::max(dot, 1E-3F)).tanh_approx();
       add -= sub*dot;
       f += add;
       b += add;
