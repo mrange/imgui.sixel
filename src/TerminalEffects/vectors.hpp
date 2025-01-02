@@ -215,6 +215,10 @@ struct vec1 {
   }
 
 
+  float length2() const {
+    return dot(*this);
+  }
+
   float length() const {
     return std::sqrt(dot(*this));
   }
@@ -489,6 +493,10 @@ struct vec2 {
     return sum;
   }
 
+
+  float length2() const {
+    return dot(*this);
+  }
 
   float length() const {
     return std::sqrt(dot(*this));
@@ -795,6 +803,10 @@ struct vec3 {
         z * other.x - x * other.z,
         x * other.y - y * other.x
     );
+  }
+
+  float length2() const {
+    return dot(*this);
   }
 
   float length() const {
@@ -1121,6 +1133,10 @@ struct vec4 {
     return sum;
   }
 
+
+  float length2() const {
+    return dot(*this);
+  }
 
   float length() const {
     return std::sqrt(dot(*this));

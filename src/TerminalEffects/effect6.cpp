@@ -232,7 +232,7 @@ void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen 
         vec3    f;
         vec3    b;
         if (screen.get__pixel(s,f,b,x,y)) {
-          auto dot = dotf(px,py);
+          auto dot = length2f(px,py);
           auto add = gcol/dot;
           add -= sub*dot;
           f += add;

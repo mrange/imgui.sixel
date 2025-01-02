@@ -121,6 +121,10 @@ struct vec<#=maxDim#> {
   }
 <# } #>
 
+  float length2() const {
+    return dot(*this);
+  }
+
   float length() const {
     return std::sqrt(dot(*this));
   }

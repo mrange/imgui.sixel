@@ -31,12 +31,12 @@ std::size_t pick_a_number(std::size_t min, std::size_t max);
 
 float pick_a_float(float min, float max);
 
-inline float dotf(float x, float y) {
-  return std::sqrtf(x*x+y*y);
+inline float length2f(float x, float y) {
+  return x*x+y*y;
 }
 
 inline float lengthf(float x, float y) {
-  return std::sqrtf(dotf(x,y));
+  return std::sqrtf(length2f(x,y));
 }
 
 inline float fractf(float x) {
