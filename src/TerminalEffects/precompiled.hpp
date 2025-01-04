@@ -12,16 +12,31 @@
 #include <mfreadwrite.h>
 #include <mferror.h>
 
+#include <gl/GL.h>
+#include "glext.h"
+
+#include <mmintrin.h>
+#include <xmmintrin.h>
+
+
+
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
-#include <exception>
+#include <condition_variable>
+#include <cstdint>
+#include <cstdlib>
+#include <iterator>
 #include <format>
 #include <functional>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <random>
 #include <string>
+#include <thread>
+#include <type_traits>
 #include <vector>
 
 #pragma warning(disable : 4100) 
