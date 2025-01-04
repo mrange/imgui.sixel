@@ -21,7 +21,7 @@ void effect4(float time, std::size_t beat__start, std::size_t beat__end, screen 
 void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
 void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
 void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect8(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+//void effect8(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
 
 namespace {
   std::size_t const desired__width  = 800;
@@ -65,7 +65,6 @@ namespace {
     {0  , effect7, L"Running INTRO.COM"}
   , {64 , effect2, L"Code by Lance, Gfx by Glimglam"}
   , {128, effect4, L"Impulse presents SIXEL PIXEL"}
-  , {192, effect8, L"Sixel Pixel"}
   , {256, effect0, L"FITB"}
   });
 
@@ -175,44 +174,6 @@ namespace {
 
       write__reset_color(output);
       wchar_to_utf8(output, L'\n');
-    }
-  }
-
-  void write__sixel_screen(
-      std::u8string &   output
-    , sixel_screen &    sixel_screen
-    ) {
-    glReadBuffer(GL_FRONT);
-
-    if (viewport__width > 0 && viewport__height > 0) {
-      // Make sure the number of rows in the buffer is divisible by 6
-      std::size_t buffer_height  = ((viewport__height+5)/6)*6;
-      assert(buffer_height%6 == 0);
-      auto total_size = viewport__width*buffer_height;
-      sixel_screen.pixels.resize(total_size);
-
-      auto ptr__pixels = &sixel_screen.pixels.front();
-
-      glReadPixels(
-          0
-        , 0
-        , static_cast<GLsizei>(viewport__width )
-        , static_cast<GLsizei>(viewport__height)
-        , GL_RGBA
-        , GL_UNSIGNED_BYTE
-        , ptr__pixels
-        );
-
-      ticks__write_pixel_as_sixels ticks = {};
-
-      write_pixel_as_sixels(
-          sixel_screen.viewport__width
-        , buffer_height
-        , sixel_screen.pixels
-        , sixel_screen.sixel_pixels
-        , sixel_screen.get__current_buffer()
-        , ticks
-        );
     }
   }
 
@@ -392,7 +353,6 @@ namespace {
   using ABGR = std::uint32_t;
 
   char const        sixel_base      = 63;
-  char const windows_class_name[]   = "ImGui.Test";
 
   // Hide cursor, clear screen
   //std::u8string const buffer__prelude    = u8"\x1B[2J\x1B[?25l";
@@ -455,10 +415,6 @@ namespace {
     auto green  = (g & 0x7)<<2;
     auto blue   = (b & 0x3);
     return static_cast<GLubyte>(blue|green|red);
-  }
-
-  std::u8string to_u8string(std::string const & s) {
-    return std::u8string(reinterpret_cast<char8_t const *>(s.c_str()), s.size());
   }
 
   std::array<std::u8string, 256> generate_col_selectors() {
@@ -814,6 +770,45 @@ namespace {
 
     append(buffer, sixel__epilogue, ticks);
   }
+
+  void write__sixel_screen(
+      std::u8string &   output
+    , sixel_screen &    sixel_screen
+    ) {
+    glReadBuffer(GL_FRONT);
+
+    if (viewport__width > 0 && viewport__height > 0) {
+      // Make sure the number of rows in the buffer is divisible by 6
+      std::size_t buffer_height  = ((viewport__height+5)/6)*6;
+      assert(buffer_height%6 == 0);
+      auto total_size = viewport__width*buffer_height;
+      sixel_screen.pixels.resize(total_size);
+
+      auto ptr__pixels = &sixel_screen.pixels.front();
+
+      glReadPixels(
+          0
+        , 0
+        , static_cast<GLsizei>(viewport__width )
+        , static_cast<GLsizei>(viewport__height)
+        , GL_RGBA
+        , GL_UNSIGNED_BYTE
+        , ptr__pixels
+        );
+
+      ticks__write_pixel_as_sixels ticks = {};
+
+      write_pixel_as_sixels(
+          sixel_screen.viewport__width
+        , buffer_height
+        , sixel_screen.pixels
+        , sixel_screen.sixel_pixels
+        , sixel_screen.get__current_buffer()
+        , ticks
+        );
+    }
+  }
+
 }
 
 int main() {
@@ -940,7 +935,7 @@ int main() {
 #define MUSIC_TIME
 #ifdef MUSIC_TIME
     {
-      auto start_time = 192*music__beat_time;
+      auto start_time = 0*music__beat_time;
       PROPVARIANT position_value;
       PropVariantInit(&position_value);
       position_value.vt = VT_I8;
