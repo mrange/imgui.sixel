@@ -286,6 +286,17 @@ namespace {
 
   LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
+    case WM_KEYDOWN: {
+      if (wParam == VK_ESCAPE) {
+        ::PostQuitMessage(0);
+        return 0;
+      }
+      else if ((wParam == 'C') && (GetKeyState(VK_CONTROL) & 0x8000)) {
+        ::PostQuitMessage(0);
+        return 0;
+      }
+      break;
+    }
     case WM_SIZE: {
       int width = LOWORD(lParam);
       int height = HIWORD(lParam);
@@ -935,7 +946,7 @@ int main() {
 #define MUSIC_TIME
 #ifdef MUSIC_TIME
     {
-      auto start_time = 0*music__beat_time;
+      auto start_time = 64*music__beat_time;
       PROPVARIANT position_value;
       PropVariantInit(&position_value);
       position_value.vt = VT_I8;
