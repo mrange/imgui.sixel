@@ -431,7 +431,7 @@ namespace {
 }
 
 
-void effect3(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
+void effect3(effect_input const & ei) {
 
 /*
 ┌─┬─┐
@@ -472,6 +472,7 @@ Mixed doubles:    ╒ ╓ ╕ ╖ ╘ ╙ ╛ ╜ ╞ ╟ ╡ ╢ ╤ ╥ ╧ �
 Half elements:    ╴ ╵ ╶ ╷
 Bend elements:    ╭ ╯ ╮ ╰
 */
+  auto time = ei.time;
 
   std::array<qc, 4> candidates__cell  ;
 
@@ -572,11 +573,11 @@ Bend elements:    ╭ ╯ ╮ ╰
   }
 
 
-  for (std::size_t y = 0; y < screen.height; ++y) {
-    auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
+  for (std::size_t y = 0; y < ei.screen.height; ++y) {
+    auto py = (-1.F*ei.screen.height+2.F*(y+0.5F))/ei.screen.height;
     auto y__off = y*screen__width;
-    for (std::size_t x = 0; x < screen.width; ++x) {
-      auto px = (-1.F*screen.width+2.F*(x+0.5F))/(2*screen.height);
+    for (std::size_t x = 0; x < ei.screen.width; ++x) {
+      auto px = (-1.F*ei.screen.width+2.F*(x+0.5F))/(2*ei.screen.height);
       auto & qc = board[x+y__off];
       auto col = col__rainbow(time, x, y);
       float grid__fade = mix(0.25F, 0.00, tanh_approxf(length2f(px,py))); 
@@ -599,7 +600,7 @@ Bend elements:    ╭ ╯ ╮ ╰
       default:
         break;
       }
-      screen.draw__pixel(
+      ei.screen.draw__pixel(
           qc.shape
         , col
         , vec3 {0,0,0}

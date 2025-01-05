@@ -64,14 +64,14 @@ namespace {
 )BITMAP");
 }
 
-void effect9(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
-  meditation__fade = linstep(music__from_nbeat(beat__start), music__from_nbeat(beat__start+5), time);
-  screen.draw__bitmap(meditation, time, 9, 4);
-  spiritualism__fade = linstep(music__from_nbeat(beat__start+3), music__from_nbeat(beat__start+8), time);
-  screen.draw__bitmap(spiritualism, time, 7, 19);
+void effect9(effect_input const & ei) {
+  meditation__fade = linstep(music__from_nbeat(ei.beat__start), music__from_nbeat(ei.beat__start+5), ei.time);
+  ei.screen.draw__bitmap(meditation, ei.time, 9, 4);
+  spiritualism__fade = linstep(music__from_nbeat(ei.beat__start+3), music__from_nbeat(ei.beat__start+8), ei.time);
+  ei.screen.draw__bitmap(spiritualism, ei.time, 7, 19);
 
-  if (music__nbeat(time) > beat__start + 7) {
-    heart__fade = linstep(music__from_nbeat(beat__start+7), music__from_nbeat(beat__start+12), time);
-    screen.draw__bitmap(heart, time, 16, 6);
+  if (music__nbeat(ei.time) > ei.beat__start + 7) {
+    heart__fade = linstep(music__from_nbeat(ei.beat__start+7), music__from_nbeat(ei.beat__start+12), ei.time);
+    ei.screen.draw__bitmap(heart, ei.time, 16, 6);
   }
 }

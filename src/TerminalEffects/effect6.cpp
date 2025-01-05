@@ -133,7 +133,9 @@ namespace {
 
 }
 
-void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
+void effect6(effect_input const & ei) {
+  auto time = ei.time;
+
   {
     auto m = smoothstep(-0.5F, 0.5F, std::cosf(time*tau/10));
     float const zf  = 2.0;
@@ -200,7 +202,7 @@ void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen 
         shape = L'∘';
       }
       */
-      screen.draw__pixel(
+      ei.screen.draw__pixel(
           shape
         , col
         , vec3 {0,0,0}
@@ -208,7 +210,7 @@ void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen 
         , yy
         );
       if (shape == L'█') {
-        screen.draw__pixel(
+        ei.screen.draw__pixel(
             shape
           , col
           , vec3 {0,0,0}
@@ -222,22 +224,22 @@ void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen 
   {
     auto gcol = palette(-time)*0.025F;
     auto sub = vec3(2,3,1)*0.0033;
-    for (std::size_t y = 0; y < screen.height; ++y) {
-      auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
-      for (std::size_t x = 0; x < screen.width; ++x) {
-        auto px = (-1.F*screen.width+2.F*(x+0.5F) )/(2*screen.height);
+    for (std::size_t y = 0; y < ei.screen.height; ++y) {
+      auto py = (-1.F*ei.screen.height+2.F*(y+0.5F))/ei.screen.height;
+      for (std::size_t x = 0; x < ei.screen.width; ++x) {
+        auto px = (-1.F*ei.screen.width+2.F*(x+0.5F) )/(2*ei.screen.height);
         px += 1E-3;
         py += 1E-3;
         wchar_t s;
         vec3    f;
         vec3    b;
-        if (screen.get__pixel(s,f,b,x,y)) {
+        if (ei.screen.get__pixel(s,f,b,x,y)) {
           auto dot = length2f(px,py);
           auto add = gcol/dot;
           add -= sub*dot;
           f += add;
           b += add;
-          screen.draw__pixel(s,f,b,x,y);
+          ei.screen.draw__pixel(s,f,b,x,y);
         }
       }
     }

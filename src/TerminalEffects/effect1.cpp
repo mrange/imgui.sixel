@@ -23,7 +23,9 @@ namespace {
 )BITMAP");
 }
 
-void effect1(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
+void effect1(effect_input const & ei) {
+  auto time = ei.time;
+
   auto df = [](float x, float y) -> float {
     const float m = 0.5;
     float l = lengthf(x,y);
@@ -31,10 +33,10 @@ void effect1(float time, std::size_t beat__start, std::size_t beat__end, screen 
     return std::abs(l)-(m*0.25F);
   };
 
-  for (std::size_t y = 0; y < screen.height; ++y) {
-    auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
-    for (std::size_t x = 0; x < screen.width; ++x) {
-      auto px = (-1.F*screen.width+2.F*(x+0.5F))/(2*screen.height);
+  for (std::size_t y = 0; y < ei.screen.height; ++y) {
+    auto py = (-1.F*ei.screen.height+2.F*(y+0.5F))/ei.screen.height;
+    for (std::size_t x = 0; x < ei.screen.width; ++x) {
+      auto px = (-1.F*ei.screen.width+2.F*(x+0.5F))/(2*ei.screen.height);
 
       auto px0 = px;
       auto py0 = py;
@@ -61,7 +63,7 @@ void effect1(float time, std::size_t beat__start, std::size_t beat__end, screen 
       auto col1 = palette(d+1.5F+time*0.707F+py);
       auto col = d < 0.0 ? col0 : col1;
       col *= smoothstep(-0.5F, 0.5F, -std::cosf(time-py-0.25F*px*px));
-      screen.draw__pixel(
+      ei.screen.draw__pixel(
           L' '
         , vec3{0,0,0}
         , col
@@ -70,7 +72,7 @@ void effect1(float time, std::size_t beat__start, std::size_t beat__end, screen 
         );
     }
   }
-  screen.draw__bitmap(impulse2  , time, 8, 6);
+  ei.screen.draw__bitmap(impulse2  , time, 8, 6);
 //    screen.draw__bitmap(gerp        , time, 5, 6);
 
 }

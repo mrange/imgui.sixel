@@ -46,7 +46,9 @@ namespace {
 
 }
 
-void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
+void effect5(effect_input const & ei) {
+  auto time       = ei.time;
+
   float const zf  = 2.0;
   auto hwidth     = 0.5F*screen__width;
   auto hheight    = 0.5F*screen__height;
@@ -99,7 +101,7 @@ void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen 
     } else if (star.pos.z < 0.25F) {
       shape = L'∘';
     }
-    screen.draw__pixel(
+    ei.screen.draw__pixel(
         shape
       , col
       , vec3 {0,0,0}
@@ -107,7 +109,7 @@ void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen 
       , yy
       );
     if (shape == L'█') {
-      screen.draw__pixel(
+      ei.screen.draw__pixel(
           shape
         , col
         , vec3 {0,0,0}
@@ -119,19 +121,19 @@ void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen 
 
   auto gcol = palette(-time)*0.05F;
 
-  for (std::size_t y = 0; y < screen.height; ++y) {
-    auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
-    for (std::size_t x = 0; x < screen.width; ++x) {
-      auto px = (-1.F*screen.width+2.F*(x+0.5F))/(2*screen.height);
+  for (std::size_t y = 0; y < ei.screen.height; ++y) {
+    auto py = (-1.F*ei.screen.height+2.F*(y+0.5F))/ei.screen.height;
+    for (std::size_t x = 0; x < ei.screen.width; ++x) {
+      auto px = (-1.F*ei.screen.width+2.F*(x+0.5F))/(2*ei.screen.height);
       px += 1E-3;
       py += 1E-3;
       wchar_t s;
       vec3    f;
       vec3    b;
-      if (screen.get__pixel(s,f,b,x,y)) {
+      if (ei.screen.get__pixel(s,f,b,x,y)) {
         f += gcol/length2f(px,py);
         b += gcol/length2f(px,py);
-        screen.draw__pixel(s,f,b,x,y);
+        ei.screen.draw__pixel(s,f,b,x,y);
       }
     }
   }

@@ -152,25 +152,3 @@ bitmap make_bitmap(
 
 using ABGR = std::uint32_t;
 
-struct sixel_screen {
-  std::size_t viewport__width;
-  std::size_t viewport__height;
-
-  std::vector<ABGR>     pixels          ;
-  std::vector<GLubyte>  sixel_pixels    ;
-  bool                  buffer__selector;
-
-  void clear() {
-    pixels.clear();
-    sixel_pixels.clear();
-    get__current_buffer().clear();
-  }
-  
-  std::vector<char8_t> & get__current_buffer() {
-    return buffer__selector ? buffer0 : buffer1;
-  }
-
-private:
-  std::vector<char8_t>  buffer0         ;
-  std::vector<char8_t>  buffer1         ;
-};

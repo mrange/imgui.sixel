@@ -9,6 +9,16 @@ inline float hash(vec2 const & co) {
   return fractf(sin(co.dot(vec2(12.9898,58.233F))) * 13758.5453F);
 }
 
+struct effect_input {
+  float       time        ;
+  std::size_t beat__start ;
+  std::size_t beat__end   ;
+  screen &    screen      ;
+
+  std::size_t viewport__width;
+  std::size_t viewport__height;
+};
+
 vec3 aces_approx(vec3 v);
 
 // License: Unknown, author: XorDev, found: https://x.com/XorDev/status/1808902860677001297

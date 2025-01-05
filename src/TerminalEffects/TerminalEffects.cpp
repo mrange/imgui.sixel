@@ -1,6 +1,7 @@
 ﻿#include "precompiled.hpp"
 
 #include "screen.hpp"
+#include "effect.hpp"
 
 #include <cstdio>
 #include <gl/GL.h>
@@ -13,16 +14,16 @@
 #pragma comment(lib, "mfplay.lib")
 #pragma comment(lib, "opengl32.lib")
 
-void effect0(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect1(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect2(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect3(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect4(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-//void effect8(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
-void effect9(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect0(effect_input const & ei);
+void effect1(effect_input const & ei);
+void effect2(effect_input const & ei);
+void effect3(effect_input const & ei);
+void effect4(effect_input const & ei);
+void effect5(effect_input const & ei);
+void effect6(effect_input const & ei);
+void effect7(effect_input const & ei);
+void effect8(effect_input const & ei);
+void effect9(effect_input const & ei);
 
 namespace {
   std::size_t const desired__width  = 800;
@@ -42,10 +43,7 @@ namespace {
   std::u8string const prelude__background  = u8"\x1B[48;2";
   
   using f__effect = std::function<void (
-      float       time
-    , std::size_t beat__start
-    , std::size_t beat__end
-    , screen  &   screen
+      effect_input const & ei
     )>;
 
   struct script_part {
@@ -82,6 +80,12 @@ namespace {
     }
   }
 
+  inline void append(
+      std::vector<char8_t>          & buffer
+    , std::u8string const           & v
+    ) {
+    buffer.insert(buffer.end(), v.begin(), v.end());
+  }
 
   std::array<std::u8string, 256> generate__color_values() {
     std::array<std::u8string, 256> res;
@@ -92,7 +96,7 @@ namespace {
   }
   std::array<std::u8string, 256> color_values = generate__color_values();
 
-  void wchar_to_utf8(std::u8string & output, wchar_t wc) {
+  void wchar_to_utf8(std::vector<char8_t> & output, wchar_t wc) {
     uint32_t codepoint = wc; // Assume UTF-32
     if (codepoint <= 0x7F) {
       output.push_back(static_cast<char8_t>(codepoint));
@@ -110,38 +114,39 @@ namespace {
       output.push_back(static_cast<char8_t>(0x80 | (codepoint & 0x3F)));
     }
   }
-  void wchars_to_utf8(std::u8string & output, std::wstring const & wcs) {
+
+  void wchars_to_utf8(std::vector<char8_t> & output, std::wstring const & wcs) {
     for (auto wc : wcs) {
       wchar_to_utf8(output, wc);
     }
   }
 
   void write__color(
-      std::u8string &       output
-    , std::u8string const & prelude
-    , vec3 const &          color
+      std::vector<char8_t> &  output
+    , std::u8string const  &  prelude
+    , vec3 const &            color
     ) {
-    output.append(prelude);
+    append(output, prelude);
     auto to_i = [](float v) -> std::size_t {
       return static_cast<std::size_t>(std::roundf(std::sqrtf(std::clamp<float>(v, 0, 1))*255));
     };
-    output.append(color_values[to_i(color.x)]);
-    output.append(color_values[to_i(color.y)]);
-    output.append(color_values[to_i(color.z)]);
+    append(output, color_values[to_i(color.x)]);
+    append(output, color_values[to_i(color.y)]);
+    append(output, color_values[to_i(color.z)]);
     output.push_back(u8'm');
   }
 
   void write__reset_color(
-      std::u8string &       output
+      std::vector<char8_t> &  output
     ) {
-    output.append(reset__colors);
+    append(output, reset__colors);
   }
 
   void write__screen(
-      std::u8string &               output
-    , screen const &                screen
+      std::vector<char8_t>  & output
+    , screen const &          screen
     ) {
-    output.append(prelude__goto_top);
+    append(output, prelude__goto_top);
 
     auto w = screen.width;
     auto h = screen.height;
@@ -180,7 +185,7 @@ namespace {
   }
 
   void write__footer(
-      std::u8string &               output
+      std::vector<char8_t> &        output
     , float                         time
     , effective_script_part const & part
     ) {
@@ -271,8 +276,8 @@ namespace {
   }
 
   void write__output(
-      HANDLE                        hstdout
-    , std::u8string &               output
+      HANDLE                  hstdout
+    , std::vector<char8_t> &  output
     ) {
     auto writeOk = WriteFile(
       hstdout
@@ -785,8 +790,9 @@ namespace {
   }
 
   void write__sixel_screen(
-      std::u8string &   output
-    , sixel_screen &    sixel_screen
+      std::vector<char8_t>  & output
+    , std::vector<ABGR>     & pixels
+    , std::vector<GLubyte>  & sixel_pixels
     ) {
     glReadBuffer(GL_FRONT);
 
@@ -795,9 +801,9 @@ namespace {
       std::size_t buffer_height  = ((viewport__height+5)/6)*6;
       assert(buffer_height%6 == 0);
       auto total_size = viewport__width*buffer_height;
-      sixel_screen.pixels.resize(total_size);
+      pixels.resize(total_size);
 
-      auto ptr__pixels = &sixel_screen.pixels.front();
+      auto ptr__pixels = &pixels.front();
 
       glReadPixels(
           0
@@ -812,11 +818,11 @@ namespace {
       ticks__write_pixel_as_sixels ticks = {};
 
       write_pixel_as_sixels(
-          sixel_screen.viewport__width
+          viewport__width
         , buffer_height
-        , sixel_screen.pixels
-        , sixel_screen.sixel_pixels
-        , sixel_screen.get__current_buffer()
+        , pixels
+        , sixel_pixels
+        , output
         , ticks
         );
     }
@@ -936,14 +942,17 @@ int main() {
 
     CHECK_CONDITION(SetConsoleMode(hstdout, consoleMode));
 
-    std::u8string output;
-    output.reserve(16384);
+    std::vector<char8_t> output;
+    output.reserve(1<<20);
+    /*
+    std::vector<char8_t>  buffer0         ;
+    std::vector<char8_t>  buffer1         ;
+    */
 
     CHECK_HRESULT(player->Play());
     auto onexit__stop_player = on_exit([player]{ player->Stop(); });
 
     screen screen = make_screen(screen__width, screen__height);
-    sixel_screen sixel_screen;
 
 #define MUSIC_TIME
 #ifdef MUSIC_TIME
@@ -987,11 +996,19 @@ int main() {
       nbeat = std::clamp<std::size_t>(nbeat, 0, effective_script.size()-1);
 
       screen.clear();
-      sixel_screen.clear();
 
       auto & part = effective_script[nbeat];
 
-      part.effect(time, part.beat__start, part.beat__end, screen);
+      auto ei = effect_input {
+          time        
+        , part.beat__start 
+        , part.beat__end   
+        , screen      
+        , viewport__width
+        , viewport__height
+      };
+
+      part.effect(ei);
 
       auto result__swap_buffers = SwapBuffers(hdc);
       assert(result__swap_buffers);

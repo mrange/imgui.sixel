@@ -45,17 +45,19 @@ namespace {
   }
 }
 
-void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
+void effect7(effect_input const & ei) {
+  auto time = ei.time;
+
   auto rot = rotator {time};
   {
-    float start = music__from_nbeat(beat__start+24);
-    float end   = music__from_nbeat(beat__start+48);
+    float start = music__from_nbeat(ei.beat__start+24);
+    float end   = music__from_nbeat(ei.beat__start+48);
     float fade  = smoothstep(start, end, time);
 
-    for (std::size_t y = 0; y < screen.height; ++y) {
-      auto py = (-1.F*screen.height+2.F*(y+0.5F))/screen.height;
-      for (std::size_t x = 0; x < screen.width; ++x) {
-        auto px = (-1.F*screen.width+2.F*(x+0.5F) )/(2*screen.height);
+    for (std::size_t y = 0; y < ei.screen.height; ++y) {
+      auto py = (-1.F*ei.screen.height+2.F*(y+0.5F))/ei.screen.height;
+      for (std::size_t x = 0; x < ei.screen.width; ++x) {
+        auto px = (-1.F*ei.screen.width+2.F*(x+0.5F) )/(2*ei.screen.height);
         auto p = vec2 {px, py};
 
         auto vp= p;
@@ -90,7 +92,7 @@ void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen 
 //        col.saturate__inplace();
         col *= fade;
 
-        screen.draw__pixel(
+        ei.screen.draw__pixel(
             L' '
           , vec3 {0,0,0}
           , col
@@ -101,7 +103,7 @@ void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen 
     }
   }
 
-  screen.draw__bitmap(gerp, time, 5, 9);
+  ei.screen.draw__bitmap(gerp, time, 5, 9);
 
   {
     wchar_t s;
@@ -110,14 +112,14 @@ void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen 
     wchar_t const t2025[] = L"2025";
     for (std::size_t i = 0; i < 4; ++i) {
       auto c = t2025[i];
-      if (screen.get__pixel(
+      if (ei.screen.get__pixel(
           s
         , f
         , b
         , 67+i*2
         , 18
         )) {
-        screen.draw__pixel(
+        ei.screen.draw__pixel(
             c
           , b
           , vec3 {1,1,1}
@@ -128,13 +130,13 @@ void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen 
     }
   }
 
-  draw__border(time, screen);
+  draw__border(time, ei.screen);
 
   { 
-    float start = music__from_nbeat(beat__start+2);
-    float end   = music__from_nbeat(beat__start+32);
+    float start = music__from_nbeat(ei.beat__start+2);
+    float end   = music__from_nbeat(ei.beat__start+32);
     float fade  = smoothstep(start, end, time);
-    screen.apply_to_all([fade](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
+    ei.screen.apply_to_all([fade](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
       f *= fade;
       b *= fade;
     });

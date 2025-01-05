@@ -70,8 +70,7 @@ namespace {
   }
 
   void draw_effect(
-      sixel_screen const &  sixel_screen
-    , GLfloat               time
+      effect_input const &  ei
     , GLfloat               fixed_radius2
     , GLfloat               min_radius2
     , GLfloat               folding_limit
@@ -92,11 +91,11 @@ namespace {
     assert(shader.loc__time > -1);
     assert(shader.loc__resolution > -1);
 
-    fp__glUniform1f(shader.loc__time, time);
+    fp__glUniform1f(shader.loc__time, ei.time);
     fp__glUniform2f(
       shader.loc__resolution
-    , static_cast<GLfloat>(sixel_screen.viewport__width)
-    , static_cast<GLfloat>(sixel_screen.viewport__height)
+    , static_cast<GLfloat>(ei.viewport__width)
+    , static_cast<GLfloat>(ei.viewport__height)
     );
     fp__glUniform1f(shader.loc__fixed_radius2 , fixed_radius2);
     fp__glUniform1f(shader.loc__min_radius2   , min_radius2);
@@ -109,14 +108,13 @@ namespace {
   }
 }
 
-void effect8(float time, std::size_t beat__start, std::size_t beat__end, screen & screen, sixel_screen const & sixel_screen) {
-    draw_effect(
-        sixel_screen
-      , time
-      , 1.9
-      , 0.2
-      , 1.
-      , -2.1
-      );
+void effect8(effect_input const & ei) {
+  draw_effect(
+      ei
+    , 1.9
+    , 0.2
+    , 1.
+    , -2.1
+    );
 
 }

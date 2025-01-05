@@ -24,6 +24,6 @@ FFFFFFFFFFF           IIIIIIIIII      TTTTTTTTTTT      BBBBBBBBBBBBBBBBB
 )BITMAP");          
 }
 
-void effect0(float time, std::size_t beat__start, std::size_t beat__end, screen & screen) {
-  screen.draw__bitmap(fitb, time, 2, 7);
+void effect0(effect_input const & ei) {
+  ei.screen.draw__bitmap(fitb, ei.time, 2, 7);
 }
