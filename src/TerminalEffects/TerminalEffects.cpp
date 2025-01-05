@@ -14,7 +14,7 @@
 #pragma comment(lib, "mfplay.lib")
 #pragma comment(lib, "opengl32.lib")
 
-//#define USE_BACKGROUND_WRITER_THREAD
+#define USE_BACKGROUND_WRITER_THREAD
 #define USE_MMX
 #define MUSIC_TIME
 
@@ -85,10 +85,10 @@ namespace {
   }
 
   inline void append(
-      std::vector<char8_t>          & buffer
+      std::vector<char8_t>          & output
     , std::u8string const           & v
     ) {
-    buffer.insert(buffer.end(), v.begin(), v.end());
+    output.insert(output.end(), v.begin(), v.end());
   }
 
   std::array<std::u8string, 256> generate__color_values() {
@@ -925,12 +925,11 @@ int main() {
 
     CHECK_CONDITION(SetConsoleMode(hstdout, consoleMode));
 
-    std::vector<char8_t> output;
-    output.reserve(1<<20);
-    /*
-    std::vector<char8_t>  buffer0         ;
-    std::vector<char8_t>  buffer1         ;
-    */
+    auto buffer_selector          = false;
+    std::vector<char8_t> output0  ;
+    std::vector<char8_t> output1  ;
+    output0.reserve(1<<20);
+    output1.reserve(1<<20);
 
     CHECK_HRESULT(player->Play());
     auto onexit__stop_player = on_exit([player]{ player->Stop(); });
@@ -993,6 +992,13 @@ int main() {
 
       auto result__swap_buffers = SwapBuffers(hdc);
       assert(result__swap_buffers);
+
+      buffer_selector = !buffer_selector;
+      std::vector<char8_t> & output = 
+        buffer_selector
+        ? output0
+        : output1
+        ;
 
       output.clear();
 
