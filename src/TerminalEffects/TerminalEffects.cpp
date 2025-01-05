@@ -61,11 +61,12 @@ namespace {
     std::wstring  name        ;
   };
 
+  auto const start_time = music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7, L"Running INTRO.COM"}
-  , {64 , effect2, L"Code by Lance, Gfx by Glimglam"}
-  , {120, effect9, L"Love"}
+  , {64 , effect2, L"Gfx by Glimglam, Code by Lance"}
+  , {120, effect9, L"With Love from Impulse"}
   , {136, effect0, L"FITB"}
   });
 
@@ -947,7 +948,6 @@ int main() {
 #define MUSIC_TIME
 #ifdef MUSIC_TIME
     {
-      auto start_time = 120*music__beat_time;
       PROPVARIANT position_value;
       PropVariantInit(&position_value);
       position_value.vt = VT_I8;
