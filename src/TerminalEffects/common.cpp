@@ -47,6 +47,11 @@ float pick_a_float(float min, float max) {
   return dist(random__generator);
 }
 
+float linstep(float edge0, float edge1, float x) {
+  float t = std::clamp<float>((x - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+  return t;
+}
+
 float smoothstep(float edge0, float edge1, float x) {
   float t = std::clamp<float>((x - edge0) / (edge1 - edge0), 0.0F, 1.0F);
   return t * t * (3.0F - 2.0F * t);

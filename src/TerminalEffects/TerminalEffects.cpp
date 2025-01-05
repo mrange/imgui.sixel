@@ -22,6 +22,7 @@ void effect5(float time, std::size_t beat__start, std::size_t beat__end, screen 
 void effect6(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
 void effect7(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
 //void effect8(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
+void effect9(float time, std::size_t beat__start, std::size_t beat__end, screen & screen);
 
 namespace {
   std::size_t const desired__width  = 800;
@@ -64,8 +65,8 @@ namespace {
   auto script = std::to_array<script_part>({
     {0  , effect7, L"Running INTRO.COM"}
   , {64 , effect2, L"Code by Lance, Gfx by Glimglam"}
-  , {128, effect4, L"Impulse presents SIXEL PIXEL"}
-  , {256, effect0, L"FITB"}
+  , {120, effect9, L"Love"}
+  , {136, effect0, L"FITB"}
   });
 
   script_part get__script_part(std::size_t i) {
@@ -946,7 +947,7 @@ int main() {
 #define MUSIC_TIME
 #ifdef MUSIC_TIME
     {
-      auto start_time = 64*music__beat_time;
+      auto start_time = 120*music__beat_time;
       PROPVARIANT position_value;
       PropVariantInit(&position_value);
       position_value.vt = VT_I8;

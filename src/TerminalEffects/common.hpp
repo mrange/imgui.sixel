@@ -60,6 +60,12 @@ inline float saturate(float x) {
   return std::clamp<float>(x,0,1);
 }
 
+inline float step(float edge, float x) {
+  return x < edge ? 0.F : 1.F;
+}
+
+float linstep(float edge0, float edge1, float x);
+
 float smoothstep(float edge0, float edge1, float x);
 
 // License: Unknown, author: Claude Brezinski, found: https://mathr.co.uk/blog/2017-09-06_approximating_hyperbolic_tangent.html
