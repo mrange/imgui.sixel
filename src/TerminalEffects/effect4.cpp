@@ -27,7 +27,7 @@ namespace {
 )BITMAP");
 }
 
-void effect4(effect_input const & ei) {
+effect_kind effect4(effect_input const & ei) {
   auto time = ei.time;
 
   auto const rot1 = rotator {-1};
@@ -91,4 +91,5 @@ void effect4(effect_input const & ei) {
     });
   }
 
+  return ascii_effect;
 }

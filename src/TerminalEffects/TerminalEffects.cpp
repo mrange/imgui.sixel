@@ -14,16 +14,20 @@
 #pragma comment(lib, "mfplay.lib")
 #pragma comment(lib, "opengl32.lib")
 
-void effect0(effect_input const & ei);
-void effect1(effect_input const & ei);
-void effect2(effect_input const & ei);
-void effect3(effect_input const & ei);
-void effect4(effect_input const & ei);
-void effect5(effect_input const & ei);
-void effect6(effect_input const & ei);
-void effect7(effect_input const & ei);
-void effect8(effect_input const & ei);
-void effect9(effect_input const & ei);
+//#define USE_BACKGROUND_WRITER_THREAD
+#define USE_MMX
+#define MUSIC_TIME
+
+effect_kind effect0(effect_input const & ei);
+effect_kind effect1(effect_input const & ei);
+effect_kind effect2(effect_input const & ei);
+effect_kind effect3(effect_input const & ei);
+effect_kind effect4(effect_input const & ei);
+effect_kind effect5(effect_input const & ei);
+effect_kind effect6(effect_input const & ei);
+effect_kind effect7(effect_input const & ei);
+effect_kind effect8(effect_input const & ei);
+effect_kind effect9(effect_input const & ei);
 
 namespace {
   std::size_t const desired__width  = 800;
@@ -42,7 +46,7 @@ namespace {
   std::u8string const prelude__foreground  = u8"\x1B[38;2";
   std::u8string const prelude__background  = u8"\x1B[48;2";
   
-  using f__effect = std::function<void (
+  using f__effect = std::function<effect_kind (
       effect_input const & ei
     )>;
 
@@ -59,7 +63,7 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = music__beat_time;
+  auto const start_time = 120*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7, L"Running INTRO.COM"}
@@ -273,22 +277,6 @@ namespace {
     }
 
     write__reset_color(output);
-  }
-
-  void write__output(
-      HANDLE                  hstdout
-    , std::vector<char8_t> &  output
-    ) {
-    auto writeOk = WriteFile(
-      hstdout
-    , &output.front()
-    , static_cast<DWORD>(output.size())
-    , nullptr
-    , nullptr
-    );
-    assert(writeOk);
-//    auto flushOk = FlushFileBuffers(hstdout);
-//    assert(flushOk);
   }
 
   LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -521,8 +509,6 @@ namespace {
     buffer.insert(buffer.end(), n ,v);
   }
 
-#define USE_BACKGROUND_WRITER_THREAD
-
 #ifdef USE_BACKGROUND_WRITER_THREAD
   struct background_writer {
     background_writer() 
@@ -571,8 +557,8 @@ namespace {
           , nullptr
           );
           assert(writeOk);
-          auto flushOk = FlushFileBuffers(hstdout);
-          assert(flushOk);
+//          auto flushOk = FlushFileBuffers(hstdout);
+//          assert(flushOk);
         }
       }
     }
@@ -584,44 +570,42 @@ namespace {
     std::thread             thread  ;
   };
   background_writer bkg_writer;
-  void write_to_stdout(
+  void write__output(
       HANDLE                        hstdout
-    , std::vector<char8_t> &        buffer
+    , std::vector<char8_t> &        output
     , ticks__write_pixel_as_sixels  & ticks
     ) {
-    bkg_writer.enqueue(buffer);
+    bkg_writer.enqueue(output);
   }
 #else
-  void write_to_stdout(
+  void write__output(
       HANDLE                        hstdout
-    , std::vector<char8_t> &        buffer
+    , std::vector<char8_t> &        output
     , ticks__write_pixel_as_sixels  & ticks
     ) {
-//    auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (buffer.size() > 0) {
+    if (output.size() > 0) {
       ticks__timer time__sixel_pixel(&ticks.write_file);
-      // TODO: Use async API to avoid waiting for file write before processing next frame
       auto writeOk = WriteFile(
         hstdout
-      , &buffer.front()
-      , static_cast<DWORD>(buffer.size())
+      , &output.front()
+      , static_cast<DWORD>(output.size())
       , nullptr
       , nullptr
       );
       assert(writeOk);
-      auto flushOk = FlushFileBuffers(hstdout);
-      assert(flushOk);
+//      auto flushOk = FlushFileBuffers(hstdout);
+//      assert(flushOk);
     }
   }
 #endif
 
   void write_pixel_as_sixels(
-      std::size_t                   width
-    , std::size_t                   height
-    , std::vector<ABGR> const &     pixels
-    , std::vector<GLubyte> &        sixel_pixels
-    , std::vector<char8_t> &        buffer
-    , ticks__write_pixel_as_sixels &ticks
+      std::size_t                     width
+    , std::size_t                     height
+    , std::vector<ABGR> const       & pixels
+    , std::vector<GLubyte>          & sixel_pixels
+    , std::vector<char8_t>          & buffer
+    , ticks__write_pixel_as_sixels  & ticks
     ) {
     hires__timer hires__total(&ticks.total__hires);
     ticks__timer time__total(&ticks.total);
@@ -790,9 +774,10 @@ namespace {
   }
 
   void write__sixel_screen(
-      std::vector<char8_t>  & output
-    , std::vector<ABGR>     & pixels
-    , std::vector<GLubyte>  & sixel_pixels
+      std::vector<char8_t>          & output
+    , std::vector<ABGR>             & pixels
+    , std::vector<GLubyte>          & sixel_pixels
+    , ticks__write_pixel_as_sixels  & ticks
     ) {
     glReadBuffer(GL_FRONT);
 
@@ -814,8 +799,6 @@ namespace {
         , GL_UNSIGNED_BYTE
         , ptr__pixels
         );
-
-      ticks__write_pixel_as_sixels ticks = {};
 
       write_pixel_as_sixels(
           viewport__width
@@ -954,7 +937,6 @@ int main() {
 
     screen screen = make_screen(screen__width, screen__height);
 
-#define MUSIC_TIME
 #ifdef MUSIC_TIME
     {
       PROPVARIANT position_value;
@@ -975,8 +957,7 @@ int main() {
         DispatchMessage(&msg);
       }
 
-      glClearColor(0,0,0,1.0F);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      ticks__write_pixel_as_sixels ticks = {};
 
 #ifdef MUSIC_TIME
       float time = 0;
@@ -1008,17 +989,27 @@ int main() {
         , viewport__height
       };
 
-      part.effect(ei);
+      auto kind = part.effect(ei);
 
       auto result__swap_buffers = SwapBuffers(hdc);
       assert(result__swap_buffers);
 
       output.clear();
 
-      write__screen(
-          output
-        , screen
-        );
+      switch(kind) {
+      case ascii_effect:
+        write__screen(
+            output
+          , screen
+          );
+        break;
+      case sixel_effect:
+        write__screen(
+            output
+          , screen
+          );
+        break;
+      }
 
       write__footer(
           output
@@ -1029,6 +1020,7 @@ int main() {
       write__output(
         hstdout
       , output
+      , ticks
       );
 
     }

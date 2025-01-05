@@ -45,7 +45,7 @@ namespace {
   }
 }
 
-void effect7(effect_input const & ei) {
+effect_kind effect7(effect_input const & ei) {
   auto time = ei.time;
 
   auto rot = rotator {time};
@@ -142,4 +142,5 @@ void effect7(effect_input const & ei) {
     });
   }
 
+  return ascii_effect;
 }

@@ -24,6 +24,7 @@ FFFFFFFFFFF           IIIIIIIIII      TTTTTTTTTTT      BBBBBBBBBBBBBBBBB
 )BITMAP");          
 }
 
-void effect0(effect_input const & ei) {
+effect_kind effect0(effect_input const & ei) {
   ei.screen.draw__bitmap(fitb, ei.time, 2, 7);
+  return ascii_effect;
 }

@@ -108,7 +108,7 @@ namespace {
   }
 }
 
-void effect8(effect_input const & ei) {
+effect_kind effect8(effect_input const & ei) {
   draw_effect(
       ei
     , 1.9
@@ -117,4 +117,5 @@ void effect8(effect_input const & ei) {
     , -2.1
     );
 
+  return sixel_effect;
 }

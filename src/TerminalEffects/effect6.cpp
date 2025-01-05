@@ -133,7 +133,7 @@ namespace {
 
 }
 
-void effect6(effect_input const & ei) {
+effect_kind effect6(effect_input const & ei) {
   auto time = ei.time;
 
   {
@@ -244,4 +244,6 @@ void effect6(effect_input const & ei) {
       }
     }
   }
+
+  return ascii_effect;
 }

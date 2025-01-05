@@ -9,6 +9,10 @@ inline float hash(vec2 const & co) {
   return fractf(sin(co.dot(vec2(12.9898,58.233F))) * 13758.5453F);
 }
 
+enum effect_kind {
+  ascii_effect
+, sixel_effect
+};
 struct effect_input {
   float       time        ;
   std::size_t beat__start ;

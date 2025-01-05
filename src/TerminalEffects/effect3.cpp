@@ -431,7 +431,7 @@ namespace {
 }
 
 
-void effect3(effect_input const & ei) {
+effect_kind effect3(effect_input const & ei) {
 
 /*
 ┌─┬─┐
@@ -609,4 +609,6 @@ Bend elements:    ╭ ╯ ╮ ╰
         );
     }
   }
+
+  return ascii_effect;
 }

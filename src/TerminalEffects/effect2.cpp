@@ -47,7 +47,7 @@ namespace {
 
 }
 
-void effect2(effect_input const & ei) {
+effect_kind effect2(effect_input const & ei) {
   auto time = ei.time;
 
   for (std::size_t y = 0; y < ei.screen.height; ++y) {
@@ -124,4 +124,6 @@ void effect2(effect_input const & ei) {
       b *= fadeout;
     });
   }
+
+  return ascii_effect;
 }

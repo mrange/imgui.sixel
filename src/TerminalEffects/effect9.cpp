@@ -64,7 +64,7 @@ namespace {
 )BITMAP");
 }
 
-void effect9(effect_input const & ei) {
+effect_kind effect9(effect_input const & ei) {
   meditation__fade = linstep(music__from_nbeat(ei.beat__start), music__from_nbeat(ei.beat__start+5), ei.time);
   ei.screen.draw__bitmap(meditation, ei.time, 9, 4);
   spiritualism__fade = linstep(music__from_nbeat(ei.beat__start+3), music__from_nbeat(ei.beat__start+8), ei.time);
@@ -74,4 +74,6 @@ void effect9(effect_input const & ei) {
     heart__fade = linstep(music__from_nbeat(ei.beat__start+7), music__from_nbeat(ei.beat__start+12), ei.time);
     ei.screen.draw__bitmap(heart, ei.time, 16, 6);
   }
+
+  return ascii_effect;
 }

@@ -23,7 +23,7 @@ namespace {
 )BITMAP");
 }
 
-void effect1(effect_input const & ei) {
+effect_kind effect1(effect_input const & ei) {
   auto time = ei.time;
 
   auto df = [](float x, float y) -> float {
@@ -75,4 +75,5 @@ void effect1(effect_input const & ei) {
   ei.screen.draw__bitmap(impulse2  , time, 8, 6);
 //    screen.draw__bitmap(gerp        , time, 5, 6);
 
+  return ascii_effect;
 }

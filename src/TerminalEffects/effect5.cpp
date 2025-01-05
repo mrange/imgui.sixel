@@ -46,7 +46,7 @@ namespace {
 
 }
 
-void effect5(effect_input const & ei) {
+effect_kind effect5(effect_input const & ei) {
   auto time       = ei.time;
 
   float const zf  = 2.0;
@@ -137,4 +137,6 @@ void effect5(effect_input const & ei) {
       }
     }
   }
+
+  return ascii_effect;
 }
