@@ -66,14 +66,14 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 120*music__beat_time;
+  auto const start_time = 0*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7, L"Running INTRO.COM"}
   , {64 , effect2, L"Gfx by Glimglam, Code by Lance"}
   , {120, effect9, L"With Love from Impulse"}
   , {136, effect8, L"An approximation of a cube"}
-  , {168, effect0, L"FITB"}
+  , {196, effect0, L"FITB"}
   });
 
   script_part get__script_part(std::size_t i) {

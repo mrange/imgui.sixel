@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 namespace {
-  char const vertex_shader__source[] = R"SHADER(
+  char const vertex_shader__basic[] = R"SHADER(
 #version 300 es
 layout (location = 0) in vec3 aPos;
 void main() {
@@ -9,28 +9,59 @@ void main() {
 }
 )SHADER";
 
-  char const fragment_shader__source[] = R"SHADER(
+  char const fragment_shader__mandelbox[] = R"SHADER(
 #version 300 es
+#define USE_UNIFORMS
 
 precision highp float;
 
 uniform float time;
 uniform vec2 resolution;
 
-#define USE_UNIFORMS
 #ifdef USE_UNIFORMS
-uniform float fixed_radius2;
-uniform float min_radius2;
-uniform float folding_limit;
-uniform float scale;
+uniform vec4 state;
+
+float beat() {
+  return state.x;
+}
+
+float fade_in() {
+  return state.y;
+}
+
+float fade_out() {
+  return state.z;
+}
+
+float fade() {
+  return state.w;
+}
+
 
 #else
+const float BPM = 145.0/60.;
+
+float fade_in() {
+  return 0.;
+}
+
+float fade_out() {
+  return 0.;
+}
+
+float fade() {
+  return smoothstep(-0.707, 0.707, sin(time));
+}
+
+float beat() {
+  return exp(-1.*fract(time*BPM));
+}
+#endif
+
 const float fixed_radius2 = 1.9;
 const float min_radius2 = 0.1;
 const float folding_limit = 1.0;
-const float scale = -2.5;
-#endif
-
+const float scale = -2.2;
 
 out vec4 fragColor;
 
@@ -192,7 +223,8 @@ float mb(vec3 z) {
 
 float df(vec3 p) {
   p *= g_rot;
-  float d = mb(p);
+  float z = 1.0+0.1*beat();
+  float d = mb(p/z)*z;
   return d; 
 } 
 
@@ -295,7 +327,25 @@ vec3 render(vec3 ro, vec3 rd) {
   return col;
 }
 
+// License: Unknown, author: Unknown, found: don't remember
+float hash(vec2 co) {
+  return fract(sin(dot(co.xy ,vec2(12.9898,58.233))) * 13758.5453);
+}
+
+vec3 palette(float a) {
+  return 0.5*(1.+sin(vec3(0,1,2)+a));
+}
+
+
 vec3 effect(vec2 p) {
+  const vec2 csz = 1.0/vec2(80.,30.);
+  vec2 np = round(p/csz)*csz;
+  float fade = fade();
+  float h0 = hash(np);
+  float f0 = -0.1*h0+0.5*(np.y*np.y+np.x*np.x)+mix(-1.4, 0.6, fade);  
+  if (f0 < 0.) {
+    p = np;
+  }
   const vec3 cam  = 5.0*vec3(1.0, 0.5, 1.0);
   const vec3 dcam = normalize(vec3(0.0) - cam);
   const vec3 ro = cam;
@@ -304,13 +354,14 @@ vec3 effect(vec2 p) {
   const vec3 vv = cross(ww,uu);
   const float rdd = 2.0;
   vec3 rd = normalize(-p.x*uu + p.y*vv + rdd*ww);
-
-  float a = 0.25*time;
-  vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*a),sin(0.707*a))), a);
+  
+  vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*time),sin(0.707*time))), 0.5*time);
   //vec4 q = createQuaternion(normalize(cam.zxy), time);
   g_rot = rotationFromQuaternion(q);
   vec3 col = render(ro, rd);
-  return col;
+  col += 3.*(palette(time+(np.x+np.y)*PI/2.+PI)+f0)*exp(-10.*f0)*step(0.,f0);
+  
+  return col+3.*fade_in();
 }
 
 // License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/

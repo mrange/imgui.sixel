@@ -13,6 +13,7 @@ enum effect_kind {
   ascii_effect
 , sixel_effect
 };
+
 struct effect_input {
   float       time        ;
   std::size_t beat__start ;

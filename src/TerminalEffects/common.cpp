@@ -6,6 +6,11 @@ namespace {
   std::mt19937      random__generator { 19740531 };
 }
 
+
+float music__beat(float time) {
+  return std::expf(-1.F*std::max(fractf((time+0.043)/music__beat_time), 0.F));
+}
+
 int music__nbeat(float time) {
   return static_cast<int>(std::floorf(time/music__beat_time));
 }

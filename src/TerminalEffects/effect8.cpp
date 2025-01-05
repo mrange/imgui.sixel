@@ -26,10 +26,7 @@ namespace {
     GLuint  program           ;
     GLint   loc__time         ;
     GLint   loc__resolution   ;
-    GLint   loc__fixed_radius2;
-    GLint   loc__min_radius2  ;
-    GLint   loc__folding_limit;
-    GLint   loc__scale        ;
+    GLint   loc__state        ;
   };
 
   t_shader shader;
@@ -41,22 +38,16 @@ namespace {
     assert(fp__glCreateShaderProgramv);
     assert(fp__glGetUniformLocation);
 
-    GLchar const* fragment_shaders[] = { fragment_shader__source };
+    GLchar const* fragment_shaders[] = { fragment_shader__mandelbox };
     shader.program = fp__glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, fragment_shaders);
     assert(shader.program > 0);
 
     shader.loc__time          = fp__glGetUniformLocation(shader.program, "time");
     shader.loc__resolution    = fp__glGetUniformLocation(shader.program, "resolution");
-    shader.loc__fixed_radius2 = fp__glGetUniformLocation(shader.program, "fixed_radius2");
-    shader.loc__min_radius2   = fp__glGetUniformLocation(shader.program, "min_radius2");
-    shader.loc__folding_limit = fp__glGetUniformLocation(shader.program, "folding_limit");
-    shader.loc__scale         = fp__glGetUniformLocation(shader.program, "scale");
+    shader.loc__state         = fp__glGetUniformLocation(shader.program, "state");
     assert(shader.loc__time > -1);
     assert(shader.loc__resolution > -1);
-    assert(shader.loc__fixed_radius2 > -1);
-    assert(shader.loc__min_radius2 > -1);
-    assert(shader.loc__folding_limit > -1);
-    assert(shader.loc__scale > -1);
+    assert(shader.loc__state > -1);
 
 
 #ifdef _DEBUG
@@ -69,43 +60,6 @@ namespace {
   void deinit_effect() {
   }
 
-  void draw_effect(
-      effect_input const &  ei
-    , GLfloat               fixed_radius2
-    , GLfloat               min_radius2
-    , GLfloat               folding_limit
-    , GLfloat               scale
-    ) {
-    auto fp__glUniform1f  = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
-    auto fp__glUniform2f  = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
-    auto fp__glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
-    assert(fp__glUniform1f);
-    assert(fp__glUniform1f);
-    assert(fp__glUseProgram);
-
-    GLint currentProgram = 0;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
-
-    fp__glUseProgram(shader.program);
-
-    assert(shader.loc__time > -1);
-    assert(shader.loc__resolution > -1);
-
-    fp__glUniform1f(shader.loc__time, ei.time);
-    fp__glUniform2f(
-      shader.loc__resolution
-    , static_cast<GLfloat>(ei.viewport__width)
-    , static_cast<GLfloat>(ei.viewport__height)
-    );
-    fp__glUniform1f(shader.loc__fixed_radius2 , fixed_radius2);
-    fp__glUniform1f(shader.loc__min_radius2   , min_radius2);
-    fp__glUniform1f(shader.loc__folding_limit , folding_limit);
-    fp__glUniform1f(shader.loc__scale         , scale);
-
-    glRects(-1, -1, 1, 1);
-
-    fp__glUseProgram(currentProgram);
-  }
 }
 
 
@@ -114,13 +68,40 @@ void init__effect8() {
 }
 
 effect_kind effect8(effect_input const & ei) {
-  draw_effect(
-      ei
-    , 1.9
-    , 0.2
-    , 1.
-    , -2.1
+  auto fp__glUniform1f  = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
+  auto fp__glUniform2f  = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
+  auto fp__glUniform4f  = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
+  auto fp__glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
+  assert(fp__glUniform1f);
+  assert(fp__glUniform1f);
+  assert(fp__glUseProgram);
+
+  GLint currentProgram = 0;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+
+  fp__glUseProgram(shader.program);
+
+  assert(shader.loc__time > -1);
+  assert(shader.loc__resolution > -1);
+
+  fp__glUniform1f(shader.loc__time, ei.time);
+  fp__glUniform2f(
+    shader.loc__resolution
+  , static_cast<GLfloat>(ei.viewport__width)
+  , static_cast<GLfloat>(ei.viewport__height)
+  );
+  fp__glUniform4f(
+      shader.loc__state 
+    , music__beat(ei.time)
+    ,   smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
+      + smoothstep(music__from_nbeat(168+1), music__from_nbeat(168), ei.time)*step(music__from_nbeat(168), ei.time)
+    , 0
+    , smoothstep(music__from_nbeat(164), music__from_nbeat(170), ei.time)
     );
+
+  glRects(-1, -1, 1, 1);
+
+  fp__glUseProgram(currentProgram);
 
   return sixel_effect;
 }

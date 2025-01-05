@@ -18,6 +18,7 @@ float       constexpr music__beat_time        = 60/music__bpm;
 float       constexpr music__subdivision_time = music__beat_time/4;
 float       constexpr music__bar_time         = music__beat_time*4;
 
+float       music__beat         (float time);
 int         music__nbeat        (float time);
 int         music__nsubdivision (float time);
 int         music__nbar         (float time);
