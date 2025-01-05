@@ -18,6 +18,9 @@
 #define USE_MMX
 #define MUSIC_TIME
 
+void init__effect8();
+
+
 effect_kind effect0(effect_input const & ei);
 effect_kind effect1(effect_input const & ei);
 effect_kind effect2(effect_input const & ei);
@@ -69,7 +72,8 @@ namespace {
     {0  , effect7, L"Running INTRO.COM"}
   , {64 , effect2, L"Gfx by Glimglam, Code by Lance"}
   , {120, effect9, L"With Love from Impulse"}
-  , {136, effect0, L"FITB"}
+  , {136, effect8, L"An approximation of a cube"}
+  , {168, effect0, L"FITB"}
   });
 
   script_part get__script_part(std::size_t i) {
@@ -682,16 +686,6 @@ namespace {
         {
           // Convert colors in use to sixels
           for (std::size_t current_col = 0; current_col < 256; ++current_col) {
-            // Bright green
-            //if (current_col == 0x18) continue;
-            switch (current_col) {
-              // Bright greens
-              case to_rgb(0,7,0):
-              case to_rgb(0,7,1):
-              case to_rgb(1,7,0):
-              case to_rgb(1,7,1):
-                continue;
-            }
             if (!used_colors[current_col]) {
               continue;
             }
@@ -925,9 +919,14 @@ int main() {
 
     CHECK_CONDITION(SetConsoleMode(hstdout, consoleMode));
 
-    auto buffer_selector          = false;
-    std::vector<char8_t> output0  ;
-    std::vector<char8_t> output1  ;
+    init__effect8();
+
+    std::vector<ABGR>     pixels          ;
+    std::vector<GLubyte>  sixel_pixels    ;
+    std::vector<char8_t> output0          ;
+    std::vector<char8_t> output1          ;
+    auto buffer_selector                  = false;
+
     output0.reserve(1<<20);
     output1.reserve(1<<20);
 
@@ -1010,9 +1009,11 @@ int main() {
           );
         break;
       case sixel_effect:
-        write__screen(
+        write__sixel_screen(
             output
-          , screen
+          , pixels
+          , sixel_pixels
+          , ticks
           );
         break;
       }

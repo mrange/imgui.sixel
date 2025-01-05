@@ -108,6 +108,11 @@ namespace {
   }
 }
 
+
+void init__effect8() {
+  init_effect();
+}
+
 effect_kind effect8(effect_input const & ei) {
   draw_effect(
       ei

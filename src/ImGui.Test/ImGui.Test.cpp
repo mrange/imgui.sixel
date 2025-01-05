@@ -194,40 +194,6 @@ namespace {
   // Sixel image done
   std::u8string const sixel__epilogue    = u8"\x1B\\";
 
-  //                                                                    ------->
-  std::u8string const logo = u8"\x1B[H" u8R"LOGO(
-╔══════════════════════════════════════════════════════════════════════════════╗ 
-║                                                                              ║ 
-║                                                                              ║ 
-║         ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌        ║ 
-║        ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌        ║ 
-║        ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌        ║ 
-║        ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒        ║ 
-║        ░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄         ║ 
-║        ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒        ║ 
-║         ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░        ║ 
-║         ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░        ║ 
-║         ░         ░               ░         ░  ░      ░     ░  ░ ░           ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║                               P R E S E N T S                                ║ 
-║                                                                              ║ 
-║                                                                              ║ 
-║       ████████ ██                  ██   ███████  ██                  ██      ║ 
-║      ██░░░░░░ ░░                  ░██  ░██░░░░██░░                  ░██      ║ 
-║     ░██        ██ ██   ██  █████  ░██  ░██   ░██ ██ ██   ██  █████  ░██      ║ 
-║     ░█████████░██░░██ ██  ██░░░██ ░██  ░███████ ░██░░██ ██  ██░░░██ ░██      ║ 
-║     ░░░░░░░░██░██ ░░███  ░███████ ░██  ░██░░░░  ░██ ░░███  ░███████ ░██      ║ 
-║            ░██░██  ██░██ ░██░░░░  ░██  ░██      ░██  ██░██ ░██░░░░  ░██      ║ 
-║      ████████ ░██ ██ ░░██░░██████ ███  ░██      ░██ ██ ░░██░░██████ ███      ║ 
-║     ░░░░░░░░  ░░ ░░   ░░  ░░░░░░ ░░░   ░░       ░░ ░░   ░░  ░░░░░░ ░░░       ║ 
-║                                                                              ║ 
-║     Designed for Cascadia Code font                                          ║ 
-║                                Ensure that the entire border is visible      ║ 
-╚══════════════════════════════════════════════════════════════════════════════╝ 
-)LOGO";
-
-
   constexpr GLubyte to_rgb(char r, char g, char b) {
     // 3 bits for red
     // 3 bits for green
@@ -481,8 +447,6 @@ namespace {
 
     append(buffer, buffer__prelude, ticks);
 
-    append(buffer, logo, ticks);
-
     append(buffer, sixel__prelude, ticks);
 
     append(buffer, sixel__palette, ticks);
@@ -508,16 +472,6 @@ namespace {
         {
           // Convert colors in use to sixels
           for (std::size_t current_col = 0; current_col < 256; ++current_col) {
-            // Bright green
-            //if (current_col == 0x18) continue;
-            switch (current_col) {
-              // Bright greens
-              case to_rgb(0,7,0):
-              case to_rgb(0,7,1):
-              case to_rgb(1,7,0):
-              case to_rgb(1,7,1):
-                continue;
-            }
             if (!used_colors[current_col]) {
               continue;
             }
