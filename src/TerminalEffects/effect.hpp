@@ -4,6 +4,7 @@
 
 #include "screen.hpp"
 
+
 // License: Unknown, author: Unknown, found: don't remember
 inline float hash(vec2 const & co) {
   return fractf(sin(co.dot(vec2(12.9898,58.233F))) * 13758.5453F);
@@ -53,4 +54,12 @@ f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t 
 
 float vnoise(vec2 p);
 
+float dheart(vec2 p);
+
 void draw__border(float time, screen & screen);
+
+bitmap const & get__impulse_logo();
+
+bitmap const & get__meditation();
+
+bitmap const & get__spiritualism();

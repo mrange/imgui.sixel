@@ -22,6 +22,12 @@ namespace {
   char debug__log[0xFFFF];  // 65535 characters
 #endif
 
+  const std::size_t no_shaders = 2;
+  char const * fragment_shader_sources[no_shaders]={
+    fragment_shader__mandelbox
+  , fragment_shader__bw
+  };
+
   struct t_shader {
     GLuint  program           ;
     GLint   loc__time         ;
@@ -29,7 +35,8 @@ namespace {
     GLint   loc__state        ;
   };
 
-  t_shader shader;
+  t_shader shaders[no_shaders];
+
 
 
   void init_effect() {
@@ -38,17 +45,20 @@ namespace {
     assert(fp__glCreateShaderProgramv);
     assert(fp__glGetUniformLocation);
 
-    GLchar const* fragment_shaders[] = { fragment_shader__mandelbox };
-    shader.program = fp__glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, fragment_shaders);
-    assert(shader.program > 0);
+    for (std::size_t i = 0; i < no_shaders; ++i) {
+      auto & shader = shaders[i];
 
-    shader.loc__time          = fp__glGetUniformLocation(shader.program, "time");
-    shader.loc__resolution    = fp__glGetUniformLocation(shader.program, "resolution");
-    shader.loc__state         = fp__glGetUniformLocation(shader.program, "state");
-    assert(shader.loc__time > -1);
-    assert(shader.loc__resolution > -1);
-    assert(shader.loc__state > -1);
+      GLchar const* fragment_shaders[] = { fragment_shader_sources[i] };
+      shader.program = fp__glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, fragment_shaders);
+      assert(shader.program > 0);
 
+      shader.loc__time          = fp__glGetUniformLocation(shader.program, "time");
+      shader.loc__resolution    = fp__glGetUniformLocation(shader.program, "resolution");
+      shader.loc__state         = fp__glGetUniformLocation(shader.program, "state");
+      assert(shader.loc__time > -1);
+      assert(shader.loc__resolution > -1);
+      assert(shader.loc__state > -1);
+    }
 
 #ifdef _DEBUG
     auto glGetProgramInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
@@ -67,7 +77,11 @@ void init__effect8() {
   init_effect();
 }
 
-effect_kind effect8(effect_input const & ei) {
+effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
+  assert(shader_id < no_shaders);
+
+  auto & shader = shaders[shader_id];
+
   auto fp__glUniform1f  = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
   auto fp__glUniform2f  = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
   auto fp__glUniform4f  = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
@@ -90,14 +104,27 @@ effect_kind effect8(effect_input const & ei) {
   , static_cast<GLfloat>(ei.viewport__width)
   , static_cast<GLfloat>(ei.viewport__height)
   );
-  fp__glUniform4f(
-      shader.loc__state 
-    , music__drum(ei.time)
-    ,   smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
-      + smoothstep(music__from_nbeat(168+1), music__from_nbeat(168), ei.time)*step(music__from_nbeat(168), ei.time)
-    , smoothstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time)
-    , smoothstep(music__from_nbeat(164), music__from_nbeat(170), ei.time)
-    );
+  switch (shader_id) {
+    case 0:
+      fp__glUniform4f(
+          shader.loc__state 
+        , music__drum(ei.time)
+        ,   smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
+          + smoothstep(music__from_nbeat(168+1), music__from_nbeat(168), ei.time)*step(music__from_nbeat(168), ei.time)
+        , smoothstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time)
+        , smoothstep(music__from_nbeat(164), music__from_nbeat(170), ei.time)
+        );
+      break;
+    case 1:
+      fp__glUniform4f(
+          shader.loc__state 
+        , music__drum(ei.time)-100
+        , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
+        , smoothstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time)
+        , smoothstep(music__from_nbeat(164), music__from_nbeat(170), ei.time)
+        );
+      break;
+  }  
 
   glRects(-1, -1, 1, 1);
 

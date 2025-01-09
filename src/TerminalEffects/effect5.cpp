@@ -4,6 +4,8 @@
 
 namespace {
 
+  auto const impulse_logo = get__impulse_logo().with__foreground(col__rainbow);
+
   struct star {
     vec3 pos;
     vec3 col;
@@ -137,6 +139,16 @@ effect_kind effect5(effect_input const & ei) {
       }
     }
   }
+
+  ei.screen.draw__bitmap(impulse_logo, time, 6, 7);
+
+  draw__border(time, ei.screen);
+
+  auto fadein = smoothstep(music__from_nbeat(ei.beat__start), music__from_nbeat(ei.beat__start+1), ei.time);
+  ei.screen.apply_to_all([&ei, fadein](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
+    f += 1-fadein;
+    b += 1-fadein;
+  });
 
   return ascii_effect;
 }

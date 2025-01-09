@@ -16,34 +16,12 @@ namespace {
 
   float meditation__fade;
   f__generate_color const meditation__col  = gen__col(meditation__fade);
-  bitmap const meditation = make_bitmap(meditation__col, LR"BITMAP(
-• ▌ ▄ ·. ▄▄▄ .·▄▄▄▄  ▪  ▄▄▄▄▄ ▄▄▄· ▄▄▄▄▄▪         ▐ ▄ 
-·██ ▐███▪▀▄.▀·██▪ ██ ██ •██  ▐█ ▀█ •██  ██ ▪     •█▌▐█
-▐█ ▌▐▌▐█·▐▀▀▪▄▐█· ▐█▌▐█· ▐█.▪▄█▀▀█  ▐█.▪▐█· ▄█▀▄ ▐█▐▐▌
-██ ██▌▐█▌▐█▄▄▌██. ██ ▐█▌ ▐█▌·▐█ ▪▐▌ ▐█▌·▐█▌▐█▌.▐▌██▐█▌
-▀▀  █▪▀▀▀ ▀▀▀ ▀▀▀▀▀• ▀▀▀ ▀▀▀  ▀  ▀  ▀▀▀ ▀▀▀ ▀█▄▀▪▀▀ █▪
-)BITMAP");
+  bitmap const meditation = get__meditation().with__foreground(meditation__col);
 
   float spiritualism__fade;
   f__generate_color const spiritualism__col  = gen__col(spiritualism__fade);
-  bitmap const spiritualism = make_bitmap(spiritualism__col, LR"BITMAP(
-.▄▄ ·  ▄▄▄·▪  ▄▄▄  ▪  ▄▄▄▄▄▄• ▄▌ ▄▄▄· ▄▄▌  ▪  .▄▄ · • ▌ ▄ ·.     
-▐█ ▀. ▐█ ▄███ ▀▄ █·██ •██  █▪██▌▐█ ▀█ ██•  ██ ▐█ ▀. ·██ ▐███▪    
-▄▀▀▀█▄ ██▀·▐█·▐▀▀▄ ▐█· ▐█.▪█▌▐█▌▄█▀▀█ ██▪  ▐█·▄▀▀▀█▄▐█ ▌▐▌▐█·    
-▐█▄▪▐█▐█▪·•▐█▌▐█•█▌▐█▌ ▐█▌·▐█▄█▌▐█ ▪▐▌▐█▌▐▌▐█▌▐█▄▪▐███ ██▌▐█▌    
- ▀▀▀▀ .▀   ▀▀▀.▀  ▀▀▀▀ ▀▀▀  ▀▀▀  ▀  ▀ .▀▀▀ ▀▀▀ ▀▀▀▀ ▀▀  █▪▀▀▀    
-)BITMAP");
+  bitmap const spiritualism = get__spiritualism().with__foreground(spiritualism__col);
 
-  float dheart(vec2 p) {
-    p.y += -0.5F;
-    p.y = -p.y;
-    p.x = abs(p.x);
-
-    if( p.y+p.x>1.0 )
-        return (p-vec2(0.25F,0.75F)).length() - std::sqrtf(2)/4;
-    return std::sqrtf(std::min((p-vec2(0,1)).length2(),
-                    (p-0.5F*std::max(p.x+p.y,0.F)).length2())) * signf(p.x-p.y);
-  }
 }
 
 effect_kind effect9(effect_input const & ei) {

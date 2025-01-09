@@ -3,24 +3,9 @@
 #include "effect.hpp"
 
 namespace {
-  bitmap const impulse2 = make_bitmap(col__black, LR"BITMAP(
- ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌
-▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌
-▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌
-░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒
-░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄ 
-░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒
- ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░
- ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░
- ░         ░               ░         ░  ░      ░     ░  ░ ░   
+  bitmap const meditation = get__meditation().with__foreground(col__black);
 
-                                     ╭─────╮
-               ╭─────────────────────┤▄▀▄▀▄├───────────────╮
-   ┼───────────┼ ▀ G L I M G L A M ▄ │▄▀▄▀▄│ ▄ L A N C E ▀ │
-   │ ▄ J E Z ▀ ┼──────────┼──────────┼─────┼────┼──────────┼
-   ╰───────────┼          │ ▀ L O N G S H O T ▄ │
-                          ╘═════════════════════╛
-)BITMAP");
+  bitmap const spiritualism = get__spiritualism().with__foreground(col__black);
 }
 
 effect_kind effect1(effect_input const & ei) {
@@ -62,18 +47,53 @@ effect_kind effect1(effect_input const & ei) {
       auto col0 = palette(d+time+py);
       auto col1 = palette(d+1.5F+time*0.707F+py);
       auto col = d < 0.0 ? col0 : col1;
-      col *= smoothstep(-0.5F, 0.5F, -std::cosf(time-py-0.25F*px*px));
       ei.screen.draw__pixel(
           L' '
-        , vec3{0,0,0}
+        , col
         , col
         , x
         , y
         );
     }
   }
-  ei.screen.draw__bitmap(impulse2  , time, 8, 6);
-//    screen.draw__bitmap(gerp        , time, 5, 6);
+
+  auto meditation__fade = smoothstep(music__from_nbeat(ei.beat__start+4), music__from_nbeat(ei.beat__start+5), ei.time);
+  ei.screen.draw__bitmap(meditation, ei.time, 11, 1, meditation__fade);
+
+  auto spiritualism__fade = smoothstep(music__from_nbeat(ei.beat__start+7), music__from_nbeat(ei.beat__start+8), ei.time);
+  ei.screen.draw__bitmap(spiritualism, ei.time, 9, 22, spiritualism__fade);
+
+  auto fadein   = smoothstep(music__from_nbeat(ei.beat__start), music__from_nbeat(ei.beat__start+2), ei.time);
+  auto fadeout  = linstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time);
+
+  auto love__fade = linstep(music__from_nbeat(ei.beat__start+11), music__from_nbeat(ei.beat__start+12), ei.time);
+
+  draw__border(time, ei.screen);
+
+  ei.screen.apply_to_all([&ei, fadein, fadeout, love__fade](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
+    if (love__fade > 0) {
+      auto d = dheart(p);
+
+
+      if (d < 0.F) {
+        f = (vec3 { 1-f.z,1-f.x,1-f.y })+(1-love__fade);
+        if (d > -0.066F) {
+          s = L'▓';
+        } else {
+          s = L'█';
+        }
+      }
+    }
+    
+    f += 1.0F-fadein;
+    b += 1.0F-fadein;
+
+    auto fol = (p - vec2 {0,-2}).length2();
+
+    auto fof = smoothstep(-1, 1, fol-12*fadeout);
+    f *= fof;
+    b *= fof;
+  });
 
   return ascii_effect;
 }
