@@ -19,6 +19,7 @@ float       constexpr music__subdivision_time = music__beat_time/4;
 float       constexpr music__bar_time         = music__beat_time*4;
 
 float       music__beat         (float time);
+float       music__drum         (float time);
 int         music__nbeat        (float time);
 int         music__nsubdivision (float time);
 int         music__nbar         (float time);
@@ -50,6 +51,10 @@ inline float roundf(float x) {
 
 inline float mix(float b, float e, float x) {
   return b+(e-b)*x;
+}
+
+inline float signf(float x) {
+  return x >= 0 ? 1.F : -1.F;
 }
 
 // License: Unknown, author: Unknown, found: don't remember

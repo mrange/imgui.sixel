@@ -54,7 +54,7 @@ float fade() {
 }
 
 float beat() {
-  return exp(-1.*fract(time*BPM));
+  return exp(-1.*fract(0.25+0.5*time*BPM));
 }
 #endif
 
@@ -223,7 +223,7 @@ float mb(vec3 z) {
 
 float df(vec3 p) {
   p *= g_rot;
-  float z = 1.0+0.1*beat();
+  float z = 1.0+0.2*beat();
   float d = mb(p/z)*z;
   return d; 
 } 
@@ -346,6 +346,7 @@ vec3 effect(vec2 p) {
   if (f0 < 0.) {
     p = np;
   }
+  p *= ROT(PI*length(p)*fade_out());
   const vec3 cam  = 5.0*vec3(1.0, 0.5, 1.0);
   const vec3 dcam = normalize(vec3(0.0) - cam);
   const vec3 ro = cam;
@@ -355,7 +356,7 @@ vec3 effect(vec2 p) {
   const float rdd = 2.0;
   vec3 rd = normalize(-p.x*uu + p.y*vv + rdd*ww);
   
-  vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*time),sin(0.707*time))), 0.5*time);
+  vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*time),sin(0.707*time))), time);
   //vec4 q = createQuaternion(normalize(cam.zxy), time);
   g_rot = rotationFromQuaternion(q);
   vec3 col = render(ro, rd);

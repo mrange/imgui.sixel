@@ -92,10 +92,10 @@ effect_kind effect8(effect_input const & ei) {
   );
   fp__glUniform4f(
       shader.loc__state 
-    , music__beat(ei.time)
+    , music__drum(ei.time)
     ,   smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
       + smoothstep(music__from_nbeat(168+1), music__from_nbeat(168), ei.time)*step(music__from_nbeat(168), ei.time)
-    , 0
+    , smoothstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time)
     , smoothstep(music__from_nbeat(164), music__from_nbeat(170), ei.time)
     );
 

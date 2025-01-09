@@ -11,6 +11,10 @@ float music__beat(float time) {
   return std::expf(-1.F*std::max(fractf((time+0.043)/music__beat_time), 0.F));
 }
 
+float music__drum(float time) {
+  return std::expf(-1.F*std::max(fractf((0.25F+0.5F*time)/music__beat_time), 0.F));
+}
+
 int music__nbeat(float time) {
   return static_cast<int>(std::floorf(time/music__beat_time));
 }
