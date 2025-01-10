@@ -1280,7 +1280,7 @@ void main(void) {
 }
 )SHADER";
 
-  char const fragment_shader__hand[] = R"SHADER(
+  char const fragment_shader__lotus[] = R"SHADER(
 #version 300 es
 #define USE_UNIFORMS
 
@@ -1334,64 +1334,134 @@ float beat() {
 
 #define TIME        time
 #define RESOLUTION  resolution
-
-
-#define TIME        time
-#define RESOLUTION  resolution
-#define PI          3.141592654
-#define TAU         (2.0*PI)
 #define ROT(a)      mat2(cos(a), sin(a), -sin(a), cos(a))
 
-// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
-float box(vec2 p, vec2 b) {
-  vec2 d = abs(p)-b;
-  return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+const float
+  pi    = acos(-1.)
+, tau   = pi*2.
+, phi   = (1.+sqrt(5.))*0.5
+, phi2  = phi*phi
+, phi4  = phi2*phi2
+, iphi4 = 1./phi4
+, br = 0.99
+, con = 0.5
+, conf = 1.3825
+;
+
+const vec2 
+  A = vec2(con,1.)
+, B = vec2(con,-con*conf)
+, C = vec2(-1.,-con*conf)
+;
+
+const mat2 
+  rot180 = ROT(2.*pi*0.5)
+; 
+
+
+float circle(vec2 p, float r) {
+  return length(p)-r;
 }
 
-// License: MIT OR CC-BY-NC-4.0, author: mercury, found: https://mercury.sexy/hg_sdf/
-vec2 mod2(inout vec2 p, vec2 size) {
-  vec2 c = floor((p + size*0.5)/size);
-  p = mod(p + size*0.5,size) - size*0.5;
-  return c;
+float superCircle8(vec2 p, float r) {
+  p *= p;
+  p *= p;
+  return pow(dot(p,p), 1./8.)-r;
 }
 
-// License: Unknown, author: Hexler, found: Kodelife example Grid
-float hash(vec2 uv) {
-  return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+vec3 palette(float a) {
+  return 0.5*(1.+sin(vec3(0.,1.,2.)+a));
 }
 
-// License: Unknown, author: Unknown, found: don't remember
-float tanh_approx(float x) {
-  //  Found this somewhere on the interwebs
-  //  return tanh(x);
-  float x2 = x*x;
-  return clamp(x*(27.0 + x2)/(27.0+9.0*x2), -1.0, 1.0);
+float geometric(float a, float r) {
+  return a/(1.-r);
+}
+
+float igeometric(float a, float r, float x) {
+  return log2(1.-x*(1.-r)/a)/log2(r);
+}
+
+vec2 geometric2(float a, float r, float n) {
+  float rn = pow(r, n);
+  float rn1 = rn*r;
+  return (a/(1.-r))*(1.-vec2(rn, rn1));
+}
+
+vec4 boxySpiralCoord(vec2 p, float z, out float side) {
+  float px = p.x;
+  float ax = abs(px);
+  float sx = sign(px);
+  float a = px > 0. ? phi2 : 1.;
+  a *= z;
+  float gdx     = geometric(a, iphi4); 
+  ax            -= gdx;
+  float x       = igeometric(a, iphi4, -ax);
+  float nx      = floor(x);
+  vec2  lx      = geometric2(a, iphi4, nx)-gdx;
+  float minx    = lx.x;
+  float maxx    = lx.y;
+  float radiusx = (maxx-minx)*0.5;
+  float meanx   = minx+radiusx;
+  
+  p -= vec2(-1.,1./3.)*meanx*sx;
+  side = sx;
+  return vec4(p, radiusx, 2.*nx+(sx>0.?0.:1.));
 }
 
 float dot2(vec2 p) {
-  return dot(p, p);
+  return dot(p,p);
 }
 
-vec2 df(vec2 p, float aa, out float h, out float sc) {
-  vec2 pp = p;
-  
-  float sz = 2.0;
-  
-  float r = 0.0;
-  
-  for (int i = 0; i < 5; ++i) {
-    vec2 nn = mod2(pp, vec2(sz));
-    sz /= 3.0;
-    float rr = hash(nn+123.4);
-    r += rr;
-    if (rr < 0.5) break;
-  }
-  
-  float d0 = box(pp, vec2(1.45*sz-0.75*aa))-0.05*sz;
-  float d1 = sqrt(sqrt(dot2(pp*pp)));
-  h = fract(r);
-  sc = sz;
-  return vec2(d0, d1);
+// License: MIT, author: Inigo Quilez, found: https://www.iquilezles.org/www/articles/smin/smin.htm
+float pmin(float a, float b, float k) {
+  float h = clamp(0.5+0.5*(b-a)/k, 0.0, 1.0);
+  return mix(b, a, h) - k*h*(1.0-h);
+}
+// License: CC0, author: Mårten Rånge, found: https://github.com/mrange/glsl-snippets
+float pmax(float a, float b, float k) {
+  return -pmin(-a, -b, k);
+}
+
+float pabs(float a, float k) {
+  return -pmin(a,-a,k);
+}
+
+
+float bezier(vec2 pos, vec2 A, vec2 B, vec2 C ) {    
+    vec2 a = B - A;
+    vec2 b = A - 2.0*B + C;
+    vec2 c = a * 2.0;
+    vec2 d = A - pos;
+    float kk = 1.0/dot(b,b);
+    float kx = kk * dot(a,b);
+    float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;
+    float kz = kk * dot(d,a);      
+    float res = 0.0;
+    float p = ky - kx*kx;
+    float p3 = p*p*p;
+    float q = kx*(2.0*kx*kx-3.0*ky) + kz;
+    float h = q*q + 4.0*p3;
+    if( h >= 0.0) 
+    { 
+        h = sqrt(h);
+        vec2 x = (vec2(h,-h)-q)/2.0;
+        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
+        float t = clamp( uv.x+uv.y-kx, 0.0, 1.0 );
+        res = dot2(d + (c + b*t)*t);
+    }
+    else
+    {
+        float z = sqrt(-p);
+        float v = acos( q/(p*z*2.0) ) / 3.0;
+        float m = cos(v);
+        float n = sin(v)*1.732050808;
+        vec3  t = clamp(vec3(m+m,-n-m,n-m)*z-kx,0.0,1.0);
+        res = min( dot2(d+(c+b*t.x)*t.x),
+                   dot2(d+(c+b*t.y)*t.y) );
+        // the third root cannot be the closest
+        // res = min(res,dot2(d+(c+b*t.z)*t.z));
+    }
+    return sqrt( res );
 }
 
 vec2 toSmith(vec2 p)  {
@@ -1412,36 +1482,17 @@ vec2 fromSmith(vec2 p)  {
   return vec2(x,y)/d;
 }
 
-vec2 transform(vec2 p) 
-{
-  float anim = TIME*sqrt(0.5)+10.;
-  p *= 2.0;
-  const mat2 rot0 = ROT(1.0);
-  const mat2 rot1 = ROT(-2.0);
-  vec2 off0 = 4.0*cos(vec2(1.0, sqrt(0.5))*0.23*anim);
-  vec2 off1 = 3.0*cos(vec2(1.0, sqrt(0.5))*0.13*anim);
-  vec2 sp0 = toSmith(p);
-  vec2 sp1 = toSmith((p+off0)*rot0);
-  vec2 sp2 = toSmith((p-off1)*rot1);
-  vec2 pp = fromSmith(sp0+sp1-sp2);
-  p = pp;
-  p += 0.25*anim;
-  
+
+vec2 transform(vec2 p) {
+  p.x = pabs(p.x,0.1)+0.3;
+  p *= 0.6;
+
+  float anim = TIME+20.0;
+  vec2 sp0 = toSmith(p-0.);
+  vec2 sp1 = toSmith(p+vec2(1.0)*ROT(0.12*anim));
+  vec2 sp2 = toSmith(p-vec2(1.0)*ROT(0.23*anim));
+  p = fromSmith(sp0+sp1-sp2);
   return p;
-}
-
-// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/smin
-float pmin(float a, float b, float k) {
-  float h = clamp(0.5+0.5*(b-a)/k, 0.0, 1.0);
-  return mix(b, a, h) - k*h*(1.0-h);
-}
-
-float pmax(float a, float b, float k) {
-  return -pmin(-a, -b, k);
-}
-
-float pabs(float a, float k) {
-  return -pmin(-a, a, k);
 }
 
 // http://mercury.sexy/hg_sdf/
@@ -1459,10 +1510,6 @@ float modMirror1(inout float p, float size) {
   p = mod(p + halfsize,size) - halfsize;
   p *= mod(c, 2.0)*2.0 - 1.0;
   return c;
-}
-
-float circle(vec2 p, float r) {
-  return length(p) - r;
 }
 
 // https://iquilezles.org/articles/distfunctions2d
@@ -1518,7 +1565,7 @@ float segmenty(vec2 p, float off) {
 }
 
 float eye(vec2 p) {
-  float a  = mix(0.0, 0.85, smoothstep(0.995, 1.0, cos(TAU*TIME/5.0)));
+  float a  = mix(0.0, 0.85, smoothstep(0.995, 1.0, cos(tau*TIME/5.0)));
   const float b = 4.0;
   float rr = mix(1.6, b, a);
   float dd = mix(1.12, b, a);
@@ -1648,48 +1695,256 @@ vec2 df(vec2 p) {
   return vec2(d, dh.y)*zz;
 }
 
-vec3 palette(float a) {
-  return 0.5*(1.+cos(vec3(0,1,2)+a));
-}
 
-vec3 effect(vec2 p, vec2 np, vec2 pp) {
+vec3 effect(vec3 col, vec2 p) {
   vec2 dp = p;
-  p = transform(p);
-  np = transform(np);
-  float aa = distance(p, np)*sqrt(2.0); 
+  vec2 np = p + 1.0/RESOLUTION.y;
+  vec2 tp = transform(p);
+  vec2 ntp = transform(np);
+  float aa = sqrt(2.0)*distance(tp, ntp);
+  p = tp;
 
-  float h = 0.0;
-  float sc = 0.0;
-  vec2 d2 = df(p, aa, h, sc);
+  float anim = TIME*0.5;
 
-  vec3 col = vec3(0.0);
+  float pft = fract(anim*0.25);
+  float nft = floor(anim*0.25);
+  float piz = exp2(log2(phi4)*pft);
+  float sx;
+  float sy;
+  vec4 gcx = boxySpiralCoord(p, piz,sx);
+  vec4 gcy = boxySpiralCoord(vec2(p.y,-p.x), phi*piz,sy);
 
-  vec3 rgb = ((2.0/3.0)*(cos(TAU*h+vec3(0.0, 1.0, 2.0))+vec3(1.0))-d2.y/(3.0*sc));
-  col = mix(col, rgb, smoothstep(aa, -aa, d2.x));
+  float dbx = superCircle8(gcx.xy, gcx.z*br);
+  float dby = superCircle8(gcy.xy, gcy.z*br);
+
+  float nx = 1.+2.*gcx.w+4.*nft;
+  float ny = 2.*gcy.w+4.*nft;
+
+  float db;
+  vec4 gc;
+  float n;
+  float s; 
+  if (dbx < dby) {
+    db = dbx;
+    gc = gcx;
+    n = nx;
+    s = sx;
+  } else {
+    db = dby;
+    gc = gcy;
+    n = ny;
+    s = sy;
+  }
   
-  const vec3 gcol1 = vec3(.5, 2.0, 3.0);
-  col += gcol1*tanh_approx(0.025*aa)*beat();
+  if (s == -1.) {
+    gc.xy*= rot180; 
+  }
+  
+  float sr = length(p)*0.025;
+  vec3 bcol = palette(n*tau/16.);
+  float dc = circle(gc.xy, gc.z*br)/gc.z;
+  float ds = bezier(gc.xy, gc.z*A, gc.z*B, gc.z*C);
+
+  db = pmax(db, -(ds-sr), 2.*sr);
+  col = mix(col, bcol-0.5*dc, smoothstep(aa, -aa, db));
+  col = clamp(col, 0.0, 1.0);
 
   vec2 d = df(dp);
-
-  col = clamp(col, 0.0, 1.0);
   float daa = sqrt(2.)/RESOLUTION.y; 
+
   col = mix(col, vec3(0.0), smoothstep(daa, -daa, d.y));
-  col = mix(col, (palette(dp.y+log(1.+p.y*p.y)/log(2.)+0.5*time+PI).zyx+aa*aa*mix(0.1,2.,beat())), smoothstep(daa, -daa, d.x));
-  col = clamp(col,0,1);
-  col += fade_in();
-  col = sqrt(col);
-  
+  col = mix(col, (palette(dp.y+log(1.+p.y*p.y)/log(4.)+0.5*time+pi).zyx+aa*aa*mix(0.1,2.,beat())), smoothstep(daa, -daa, d.x));
+
   return col;
 }
 
 void main() {
   vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
   vec2 p = -1. + 2. * q;
-  vec2 pp = p;
   p.x *= RESOLUTION.x/RESOLUTION.y;
-  vec2 np = p+1.0/RESOLUTION.y;
-  vec3 col = effect(p, np, pp);
+
+  vec3 col = vec3(0.0);
+  col = effect(col, p);
+
+  col = sqrt(col);
+  
+  fragColor = vec4(col, 1.0);
+}
+)SHADER";
+
+  char const fragment_shader__apollo[] = R"SHADER(
+#version 300 es
+#define USE_UNIFORMS
+
+precision highp float;
+
+uniform float time;
+uniform vec2 resolution;
+
+out vec4 fragColor;
+
+const float bpm = 145.0;
+
+#ifdef USE_UNIFORMS
+uniform vec4 state;
+
+float beat() {
+  return state.x;
+}
+
+float fade_in() {
+  return state.y;
+}
+
+float fade_out() {
+  return state.z;
+}
+
+float fade() {
+  return state.w;
+}
+
+#else
+
+float fade_in() {
+  return 0.;
+}
+
+float fade_out() {
+  return smoothstep(-0.707, 0.707, sin(time));
+}
+
+float fade() {
+  return 1.0;
+}
+
+float beat() {
+  return exp(-1.*fract(time*bpm/60.));
+}
+#endif
+
+
+#define TIME        time
+#define RESOLUTION  resolution
+
+#define PI          3.141592654
+#define TAU         (2.0*PI)
+#define ROT(a)      mat2(cos(a), sin(a), -sin(a), cos(a))
+
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+const vec4 hsv2rgb_K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+vec3 hsv2rgb(vec3 c) {
+  vec3 p = abs(fract(c.xxx + hsv2rgb_K.xyz) * 6.0 - hsv2rgb_K.www);
+  return c.z * mix(hsv2rgb_K.xxx, clamp(p - hsv2rgb_K.xxx, 0.0, 1.0), c.y);
+}
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+//  Macro version of above to enable compile-time constants
+#define HSV2RGB(c)  (c.z * mix(hsv2rgb_K.xxx, clamp(abs(fract(c.xxx + hsv2rgb_K.xyz) * 6.0 - hsv2rgb_K.www) - hsv2rgb_K.xxx, 0.0, 1.0), c.y))
+
+float apollonian(vec3 p, float s) {
+  vec3 op = p;
+  float scale = 1.;
+  float sc = 0.55*s;
+  float tsc = sc;
+  float ssc = 1.;
+  for(int i=0; i < 5; ++i) {
+    p = -1.0 + 2.0*fract(0.5*p+0.5);
+//    p = sin(p/ssc)*ssc;
+    float r2 = tanh(dot(p,p)/tsc)*tsc;
+    float k  = s/r2;
+    p       *= k;
+    scale   *= k;
+  }
+  
+  vec3 ap = abs(p/scale);
+//#define XX;  
+#ifdef XX  
+  float d = ap.x;
+  d = min(d, length(ap.yz));
+#else
+  float d = ap.x;
+  d = min(d, ap.y);
+  d = min(d, ap.z);
+#endif
+  return d;
+}
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/noacos/
+mat3 rot(vec3 d, vec3 z) {
+  vec3  v = cross( z, d );
+  float c = dot( z, d );
+  float k = 1.0/(1.0+c);
+
+  return mat3( v.x*v.x*k + c,     v.y*v.x*k - v.z,    v.z*v.x*k + v.y,
+               v.x*v.y*k + v.z,   v.y*v.y*k + c,      v.z*v.y*k - v.x,
+               v.x*v.z*k - v.y,   v.y*v.z*k + v.x,    v.z*v.z*k + c    );
+}
+
+float dfeffect3(vec2 p) {
+  float anim = TIME-120.;
+  float aa = sqrt(2.)/RESOLUTION.y;
+  float a = anim*TAU/123.0;
+  vec3 r0 = vec3(1.0, sin(vec2(sqrt(0.5), 1.0)*a));
+  vec3 r1 = vec3(cos(vec2(sqrt(0.5), 1.0)*0.913*a), 1.0);
+  mat3 rot = rot(normalize(r0), normalize(r1));
+  float fz = mix(0.75, 1., smoothstep(-0.9, 0.9, cos(TAU*anim/300.0)));
+  float z = 2.*fz;
+  p /= z;
+  vec3 p3 = vec3(p,0.1);
+  p3 *= rot;
+  float ifz = 1.0/fz;
+  float d = apollonian(p3, ifz);
+  d *= z;
+  return d-5E-4;
+}
+
+
+float df(vec2 p) {
+  vec2 ap = abs(p);
+  float d0 = min(ap.x, ap.y) -0.001;
+  float d1 = dfeffect3(p);
+  float d = d1;
+  /*
+  d = max(d, -(d0-0.001));
+  d = min(d, d0);
+  */
+  return d1;
+}
+
+// License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
+vec3 aces_approx(vec3 v) {
+  v = max(v, 0.0);
+  v *= 0.6f;
+  float a = 2.51f;
+  float b = 0.03f;
+  float c = 2.43f;
+  float d = 0.59f;
+  float e = 0.14f;
+  return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0f, 1.0f);
+
+}
+
+vec3 effect(vec2 p) {
+  float aa = sqrt(2.)/RESOLUTION.y;
+  float d = df(p);
+  const vec3 glowCol = HSV2RGB(vec3(0.6, 0.5, 1E-3));
+  
+  vec3 col = vec3(0.);
+  col += glowCol/max(d, 1E-4);
+
+  col = aces_approx(col);
+  col += fade_in();
+  col = sqrt(col);
+  return col;
+}
+
+void main() {
+  vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
+  vec2 p = -1. + 2. * q;
+  p.x *= RESOLUTION.x/RESOLUTION.y;
+  vec3 col = effect(p);
+  col = floor(vec3(8,8,4)*col)/vec3(8,8,4);  
+  
   fragColor = vec4(col, 1.0);
 }
 )SHADER";

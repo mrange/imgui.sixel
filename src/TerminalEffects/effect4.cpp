@@ -83,11 +83,11 @@ effect_kind effect4(effect_input const & ei) {
 
   { 
     float start = music__from_nbeat(ei.beat__start);
-    float end   = music__from_nbeat(ei.beat__start+16);
-    float fade  = smoothstep(start, end, time);
+    float end   = music__from_nbeat(ei.beat__start+1);
+    float fade  = smoothstep(end, start, time);
     ei.screen.apply_to_all([fade](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
-      f *= fade;
-      b *= fade;
+      f += fade;
+      b += fade;
     });
   }
 

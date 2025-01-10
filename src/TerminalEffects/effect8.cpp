@@ -22,12 +22,13 @@ namespace {
   char debug__log[0xFFFF];  // 65535 characters
 #endif
 
-  const std::size_t no_shaders = 4;
+  const std::size_t no_shaders = 5;
   char const * fragment_shader_sources[no_shaders]={
     fragment_shader__mandelbox
   , fragment_shader__bw
   , fragment_shader__psychedelic
-  , fragment_shader__hand
+  , fragment_shader__lotus
+  , fragment_shader__apollo
   };
 
   struct t_shader {
@@ -137,6 +138,15 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
         );
       break;
     case 3:
+      fp__glUniform4f(
+          shader.loc__state 
+        , music__beat(ei.time)
+        , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
+        , 0.
+        , 0.
+        );
+      break;
+    case 4:
       fp__glUniform4f(
           shader.loc__state 
         , music__beat(ei.time)
