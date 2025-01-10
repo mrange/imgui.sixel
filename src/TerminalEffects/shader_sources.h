@@ -1241,8 +1241,8 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
   }
 
   vec3 col = alphaBlend(skyCol, acol);
-  col = pow(col+0.25*palette(time*TAU)*fo*fo*fo, vec3(mix(1.0, 0.125, fo)));
-  col *= smoothstep(mix(4.0, 0.0, fo*fo*fo), 0.0, lp);
+  col = pow(col+0.25*fo*fo*fo*fo, vec3(mix(1.0, 0.125, fo*fo)));
+  col *= smoothstep(mix(4.0, 0.0, fo*fo), 0.0, lp);
   return col;
 }
 

@@ -131,7 +131,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
         , music__beat(ei.time)
         , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
           + smoothstep(music__from_nbeat(296+1), music__from_nbeat(296), ei.time)*step(music__from_nbeat(296), ei.time)
-        , smoothstep(music__from_nbeat(ei.beat__end-9), music__from_nbeat(ei.beat__end), ei.time)
+        , smoothstep(music__from_nbeat(ei.beat__end-10), music__from_nbeat(ei.beat__end), ei.time)
         , step(music__from_nbeat(296), ei.time)
         );
       break;
