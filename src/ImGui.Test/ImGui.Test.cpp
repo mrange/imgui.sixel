@@ -41,6 +41,10 @@
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32.lib")
 
+#define USE_BACKGROUND_WRITER_THREAD
+#define USE_MMX
+
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #define CHECK(expr, ret, message)                                   \
@@ -141,12 +145,12 @@ namespace {
     inline explicit ticks__timer(DWORD64 * p) noexcept 
       : p(p)
       , b(__rdtsc()) {
+      assert(p);
     }
 
     inline ~ticks__timer() noexcept {
-      if (p) {
-        *p += __rdtsc()-b;
-      }
+      assert(p);
+      *p += __rdtsc()-b;
     }
   private:
     DWORD64 * p;
@@ -161,15 +165,15 @@ namespace {
 
     inline explicit hires__timer(LONGLONG * p) noexcept 
       : p(p) {
+      assert(p);
       QueryPerformanceCounter(&b);
     }
 
     inline ~hires__timer() noexcept {
-      if (p) {
-        LARGE_INTEGER e;
-        QueryPerformanceCounter(&e);
-        *p += (e.QuadPart-b.QuadPart);
-      }
+      assert(p);
+      LARGE_INTEGER e;
+      QueryPerformanceCounter(&e);
+      *p += (e.QuadPart-b.QuadPart);
     }
   private:
     LONGLONG      * p ;
@@ -293,8 +297,6 @@ namespace {
     buffer.insert(buffer.end(), n ,v);
   }
 
-#define USE_BACKGROUND_WRITER_THREAD
-
 #ifdef USE_BACKGROUND_WRITER_THREAD
   struct background_writer {
     background_writer() 
@@ -361,6 +363,7 @@ namespace {
     , std::vector<char8_t> &        buffer
     , ticks__write_pixel_as_sixels  & ticks
     ) {
+    ticks__timer time__sixel_pixel(&ticks.write_file);
     bkg_writer.enqueue(buffer);
   }
 #else
@@ -468,11 +471,10 @@ namespace {
           }
         }
 
-#define USE_MMX
         {
           // Convert colors in use to sixels
           for (std::size_t current_col = 0; current_col < 256; ++current_col) {
-            if (!used_colors[current_col]) {
+            if (!used_colors[current_col]) [[likely]] {
               continue;
             }
 
@@ -505,11 +507,11 @@ namespace {
               char sixel_char = sixel_base + sixel;
 
               // Handle run-length encoding
-              if (repeated_sixel == sixel_char) {
+              if (repeated_sixel == sixel_char) [[likely]] {
                 ++sixel_reps;
               } else {
                 // Output previous run
-                if (sixel_reps > 3) {
+                if (sixel_reps > 3) [[unlikely]] {
                   // Use RLE for runs longer than 3
 
                   append(buffer, sixel__reps[sixel_reps], ticks);
@@ -526,8 +528,8 @@ namespace {
             }
 
             // Output final run if not empty
-            if (repeated_sixel != sixel_base) {
-              if (sixel_reps > 3) {
+            if (repeated_sixel != sixel_base) [[unlikely]] {
+              if (sixel_reps > 3) [[unlikely]] {
                 // Use RLE for runs longer than 3
 
                 append(buffer, sixel__reps[sixel_reps], ticks);
@@ -762,19 +764,24 @@ int main() {
   auto result__rect= AdjustWindowRect(&window_rect, dw_style, 0);
   CHECK(result__rect, 1, "AdjustWindowRect Failed");
 
+  auto wnd__width   = window_rect.right-window_rect.left;
+  auto wnd__height  = window_rect.bottom-window_rect.top;
+  auto wnd__x       = GetSystemMetrics(SM_CXSCREEN) - wnd__width;
+  auto wnd__y       = 0;
+
   auto hwnd = CreateWindowEx(
-    0                                   // Extended style
-  , windows_class_name                  // Window class name
-  , windows_class_name                  // Window title
-  , dw_style                            // Window style
-  , CW_USEDEFAULT                       // StartPosition X
-  , CW_USEDEFAULT                       // StartPosition Y
-  , window_rect.right-window_rect.left  // Width
-  , window_rect.bottom-window_rect.top  // Height
-  , nullptr                             // Parent
-  , nullptr                             // Menu
-  , hinstance                           // Instance
-  , nullptr                             // additional params
+    0                 // Extended style
+  , windows_class_name// Window class name
+  , windows_class_name// Window title
+  , dw_style          // Window style
+  , wnd__x            // StartPosition X
+  , wnd__y            // StartPosition Y
+  , wnd__width        // Width
+  , wnd__height       // Height
+  , nullptr           // Parent
+  , nullptr           // Menu
+  , hinstance         // Instance
+  , nullptr           // additional params
   );
 
   CHECK(hwnd, 1, "Window Creation Failed");
@@ -847,6 +854,9 @@ int main() {
   buffer0.reserve(1<<20);
   buffer1.reserve(1<<20);
 
+  LONGLONG total__hires = 0;
+  LONGLONG total__frames= 0;
+
   auto before = GetTickCount64();
   auto done = false;
   MSG msg = {};
@@ -886,6 +896,10 @@ int main() {
     if (QueryPerformanceFrequency(&hires_freq)) {
       auto ms = (1.0*ticks.total__hires) /hires_freq.QuadPart;
       ImGui::LabelText("Potential FPS" , "%0.1f"  , 1.0/ms);
+      total__hires += ticks.total__hires;
+      ++total__frames;
+      auto tms = (1.0*total__hires) /hires_freq.QuadPart;
+      ImGui::LabelText("Average FPS" , "%0.1f"  , (1.0+total__frames)/tms);
     }
 
     ImGui::LabelText("#Malloc calls"   , "%d"      , calls__malloc);

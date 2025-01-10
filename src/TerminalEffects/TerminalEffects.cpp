@@ -66,7 +66,7 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 252*music__beat_time;
+  auto const start_time = 280*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7                                                 , L"Running INTRO.COM"}
@@ -386,12 +386,12 @@ namespace {
     inline explicit ticks__timer(DWORD64 * p) noexcept 
       : p(p)
       , b(__rdtsc()) {
+      assert(p);
     }
 
     inline ~ticks__timer() noexcept {
-      if (p) {
-        *p += __rdtsc()-b;
-      }
+      assert(p);
+      *p += __rdtsc()-b;
     }
   private:
     DWORD64 * p;
@@ -406,15 +406,15 @@ namespace {
 
     inline explicit hires__timer(LONGLONG * p) noexcept 
       : p(p) {
+      assert(p);
       QueryPerformanceCounter(&b);
     }
 
     inline ~hires__timer() noexcept {
-      if (p) {
-        LARGE_INTEGER e;
-        QueryPerformanceCounter(&e);
-        *p += (e.QuadPart-b.QuadPart);
-      }
+      assert(p);
+      LARGE_INTEGER e;
+      QueryPerformanceCounter(&e);
+      *p += (e.QuadPart-b.QuadPart);
     }
   private:
     LONGLONG      * p ;
@@ -584,6 +584,7 @@ namespace {
     , std::vector<char8_t> &        output
     , ticks__write_pixel_as_sixels  & ticks
     ) {
+    ticks__timer time__sixel_pixel(&ticks.write_file);
     bkg_writer.enqueue(output);
   }
 #else
@@ -691,7 +692,7 @@ namespace {
         {
           // Convert colors in use to sixels
           for (std::size_t current_col = 0; current_col < 256; ++current_col) {
-            if (!used_colors[current_col]) {
+            if (!used_colors[current_col]) [[likely]] {
               continue;
             }
 
@@ -724,11 +725,11 @@ namespace {
               char sixel_char = sixel_base + sixel;
 
               // Handle run-length encoding
-              if (repeated_sixel == sixel_char) {
+              if (repeated_sixel == sixel_char) [[likely]] {
                 ++sixel_reps;
               } else {
                 // Output previous run
-                if (sixel_reps > 3) {
+                if (sixel_reps > 3) [[unlikely]] {
                   // Use RLE for runs longer than 3
 
                   append(buffer, sixel__reps[sixel_reps], ticks);
@@ -745,8 +746,8 @@ namespace {
             }
 
             // Output final run if not empty
-            if (repeated_sixel != sixel_base) {
-              if (sixel_reps > 3) {
+            if (repeated_sixel != sixel_base) [[unlikely]] {
+              if (sixel_reps > 3) [[unlikely]] {
                 // Use RLE for runs longer than 3
 
                 append(buffer, sixel__reps[sixel_reps], ticks);
