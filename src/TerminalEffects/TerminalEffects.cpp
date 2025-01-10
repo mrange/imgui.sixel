@@ -78,7 +78,8 @@ namespace {
   , {260, effect5                                                 , L"This star scroller sucks!"}
   , {264, [](effect_input const & ei) { return effect8(ei, 2); }  , L"Trippy tunneling"}
   , {324, effect5                                                 , L"This star scroller still sucks!"}
-  , {328, effect0                                                 , L"FITB"}
+  , {328, [](effect_input const & ei) { return effect8(ei, 3); }  , L"The hand"}
+  , {360, effect0                                                 , L"FITB"}
   });
 
   script_part get__script_part(std::size_t i) {

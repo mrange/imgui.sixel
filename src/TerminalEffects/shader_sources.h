@@ -1279,4 +1279,418 @@ void main(void) {
   fragColor = vec4(col, 1.0);
 }
 )SHADER";
+
+  char const fragment_shader__hand[] = R"SHADER(
+#version 300 es
+#define USE_UNIFORMS
+
+precision highp float;
+
+uniform float time;
+uniform vec2 resolution;
+
+out vec4 fragColor;
+
+const float bpm = 145.0;
+
+#ifdef USE_UNIFORMS
+uniform vec4 state;
+
+float beat() {
+  return state.x;
+}
+
+float fade_in() {
+  return state.y;
+}
+
+float fade_out() {
+  return state.z;
+}
+
+float fade() {
+  return state.w;
+}
+
+#else
+
+float fade_in() {
+  return 0.;
+}
+
+float fade_out() {
+  return smoothstep(-0.707, 0.707, sin(time));
+}
+
+float fade() {
+  return 1.0;
+}
+
+float beat() {
+  return exp(-1.*fract(time*bpm/60.));
+}
+#endif
+
+
+#define TIME        time
+#define RESOLUTION  resolution
+
+
+#define TIME        time
+#define RESOLUTION  resolution
+#define PI          3.141592654
+#define TAU         (2.0*PI)
+#define ROT(a)      mat2(cos(a), sin(a), -sin(a), cos(a))
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
+float box(vec2 p, vec2 b) {
+  vec2 d = abs(p)-b;
+  return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+}
+
+// License: MIT OR CC-BY-NC-4.0, author: mercury, found: https://mercury.sexy/hg_sdf/
+vec2 mod2(inout vec2 p, vec2 size) {
+  vec2 c = floor((p + size*0.5)/size);
+  p = mod(p + size*0.5,size) - size*0.5;
+  return c;
+}
+
+// License: Unknown, author: Hexler, found: Kodelife example Grid
+float hash(vec2 uv) {
+  return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+// License: Unknown, author: Unknown, found: don't remember
+float tanh_approx(float x) {
+  //  Found this somewhere on the interwebs
+  //  return tanh(x);
+  float x2 = x*x;
+  return clamp(x*(27.0 + x2)/(27.0+9.0*x2), -1.0, 1.0);
+}
+
+float dot2(vec2 p) {
+  return dot(p, p);
+}
+
+vec2 df(vec2 p, float aa, out float h, out float sc) {
+  vec2 pp = p;
+  
+  float sz = 2.0;
+  
+  float r = 0.0;
+  
+  for (int i = 0; i < 5; ++i) {
+    vec2 nn = mod2(pp, vec2(sz));
+    sz /= 3.0;
+    float rr = hash(nn+123.4);
+    r += rr;
+    if (rr < 0.5) break;
+  }
+  
+  float d0 = box(pp, vec2(1.45*sz-0.75*aa))-0.05*sz;
+  float d1 = sqrt(sqrt(dot2(pp*pp)));
+  h = fract(r);
+  sc = sz;
+  return vec2(d0, d1);
+}
+
+vec2 toSmith(vec2 p)  {
+  // z = (p + 1)/(-p + 1)
+  // (x,y) = ((1+x)*(1-x)-y*y,2y)/((1-x)*(1-x) + y*y)
+  float d = (1.0 - p.x)*(1.0 - p.x) + p.y*p.y;
+  float x = (1.0 + p.x)*(1.0 - p.x) - p.y*p.y;
+  float y = 2.0*p.y;
+  return vec2(x,y)/d;
+}
+
+vec2 fromSmith(vec2 p)  {
+  // z = (p - 1)/(p + 1)
+  // (x,y) = ((x+1)*(x-1)+y*y,2y)/((x+1)*(x+1) + y*y)
+  float d = (p.x + 1.0)*(p.x + 1.0) + p.y*p.y;
+  float x = (p.x + 1.0)*(p.x - 1.0) + p.y*p.y;
+  float y = 2.0*p.y;
+  return vec2(x,y)/d;
+}
+
+vec2 transform(vec2 p) 
+{
+  float anim = TIME*sqrt(0.5)+10.;
+  p *= 2.0;
+  const mat2 rot0 = ROT(1.0);
+  const mat2 rot1 = ROT(-2.0);
+  vec2 off0 = 4.0*cos(vec2(1.0, sqrt(0.5))*0.23*anim);
+  vec2 off1 = 3.0*cos(vec2(1.0, sqrt(0.5))*0.13*anim);
+  vec2 sp0 = toSmith(p);
+  vec2 sp1 = toSmith((p+off0)*rot0);
+  vec2 sp2 = toSmith((p-off1)*rot1);
+  vec2 pp = fromSmith(sp0+sp1-sp2);
+  p = pp;
+  p += 0.25*anim;
+  
+  return p;
+}
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/smin
+float pmin(float a, float b, float k) {
+  float h = clamp(0.5+0.5*(b-a)/k, 0.0, 1.0);
+  return mix(b, a, h) - k*h*(1.0-h);
+}
+
+float pmax(float a, float b, float k) {
+  return -pmin(-a, -b, k);
+}
+
+float pabs(float a, float k) {
+  return -pmin(-a, a, k);
+}
+
+// http://mercury.sexy/hg_sdf/
+float mod1(inout float p, float size) {
+  float halfsize = size*0.5;
+  float c = floor((p + halfsize)/size);
+  p = mod(p + halfsize, size) - halfsize;
+  return c;
+}
+
+// License: MIT OR CC-BY-NC-4.0, author: mercury, found: https://mercury.sexy/hg_sdf/
+float modMirror1(inout float p, float size) {
+  float halfsize = size*0.5;
+  float c = floor((p + halfsize)/size);
+  p = mod(p + halfsize,size) - halfsize;
+  p *= mod(c, 2.0)*2.0 - 1.0;
+  return c;
+}
+
+float circle(vec2 p, float r) {
+  return length(p) - r;
+}
+
+// https://iquilezles.org/articles/distfunctions2d
+float vesica(vec2 p, float r, float d) {
+  p = abs(p);
+  float b = sqrt(r*r-d*d);
+  return ((p.y-b)*d>p.x*b) ? length(p-vec2(0.0,b))
+                           : length(p-vec2(-d,0.0))-r;
+}
+vec2 toPolar(vec2 p) {
+  return vec2(length(p), atan(p.y, p.x));
+}
+
+
+vec2 toRect(vec2 p) {
+  return vec2(p.x*cos(p.y), p.x*sin(p.y));
+}
+
+// https://iquilezles.org/articles/distfunctions2d
+float unevenCapsule(vec2 p, float r1, float r2, float h) {
+  p.x = abs(p.x);
+  float b = (r1-r2)/h;
+  float a = sqrt(1.0-b*b);
+  float k = dot(p,vec2(-b,a));
+  if( k < 0.0 ) return length(p) - r1;
+  if( k > a*h ) return length(p-vec2(0.0,h)) - r2;
+  return dot(p, vec2(a,b) ) - r1;
+}
+
+// https://iquilezles.org/articles/distfunctions2d
+float parabola(vec2 pos, float wi, float he) {
+  pos.x = abs(pos.x);
+  float ik = wi*wi/he;
+  float p = ik*(he-pos.y-0.5*ik)/3.0;
+  float q = pos.x*ik*ik*0.25;
+  float h = q*q - p*p*p;
+  float r = sqrt(abs(h));
+  float x = (h>0.0) ? 
+      pow(q+r,1.0/3.0) - pow(abs(q-r),1.0/3.0)*sign(r-q) :
+      2.0*cos(atan(r/q)/3.0)*sqrt(p);
+  x = min(x,wi);
+  return length(pos-vec2(x,he-x*x/ik)) * 
+         sign(ik*(pos.y-he)+pos.x*pos.x);
+}
+
+
+float segmenty(vec2 p, float off) {
+  p.y = abs(p.y);
+  p.y -= off;
+  float d0 = abs(p.x);
+  float d1 = length(p);
+  return p.y > 0.0 ? d1 : d0;
+}
+
+float eye(vec2 p) {
+  float a  = mix(0.0, 0.85, smoothstep(0.995, 1.0, cos(TAU*TIME/5.0)));
+  const float b = 4.0;
+  float rr = mix(1.6, b, a);
+  float dd = mix(1.12, b, a);
+  
+  vec2 p0 = p;
+  p0 = p0.yx;
+  float d0 =  vesica(p0, rr, dd);
+  float d5 = d0;
+
+  vec2 p1 = p;
+  p1.y -= 0.28;
+  float d1 = circle(p1, 0.622);
+  d1 = max(d1,d0);
+
+  vec2 p2 = p;
+  p2 -= vec2(-0.155, 0.35);
+  float d2 = circle(p2, 0.065);
+
+  vec2 p3 = p;
+  p3.y -= 0.28;
+  p3 = toPolar(p3);
+  float n3 = mod1(p3.x, 0.05);
+  float d3 = abs(p3.x)-0.0125*(1.0-length(p1));
+
+  vec2 p4 = p;
+  p4.y -= 0.28;
+  float d4 = circle(p4, 0.285);
+
+  d3 = max(d3,-d4);
+
+  d1 = pmax(d1,-d2, 0.0125);
+  d1 = max(d1,-d3);
+
+  float t0 = abs(0.9*p.x);
+  t0 *= t0;
+  t0 *= t0;
+  t0 *= t0;
+  t0 = clamp(t0, 0.0, 1.0);
+  d0 = abs(d0)-mix(0.0125, -0.0025, t0);
+
+
+  float d = d0;
+  d = pmin(d, d1, 0.0125);
+  return d;
+}
+
+
+float starn(vec2 p, float r, float n, float m) {
+  // next 4 lines can be precomputed for a given shape
+  float an = 3.141593/float(n);
+  float en = 3.141593/m;  // m is between 2 and n
+  vec2  acs = vec2(cos(an),sin(an));
+  vec2  ecs = vec2(cos(en),sin(en)); // ecs=vec2(0,1) for regular polygon
+
+  float bn = mod(atan(p.x,p.y),2.0*an) - an;
+  p = length(p)*vec2(cos(bn),abs(sin(bn)));
+  p -= r*acs;
+  p += ecs*clamp( -dot(p,ecs), 0.0, r*acs.y/ecs.y);
+  return length(p)*sign(p.x);
+}
+
+
+vec2 hand(vec2 p) {
+  p.x = abs(p.x);
+  vec2 p0 = p;
+  p0 -= vec2(0.0, 0.180+0.00);
+  float d0 = segmenty(p0, 0.61)-0.1;
+  vec2 p1 = p;
+  p1 -= vec2(0.2, 0.125);
+  float d1 = segmenty(p1,0.55)-0.09;
+  vec2 p2 = p;
+  p2 -= vec2(0.0, -0.38+0.3);
+  p2.y = -p2.y;
+  float d2 = unevenCapsule(p2, 0.3, 0.38, 0.3);
+  vec2 p3 = p;
+  p3 -= vec2(0.47, -0.31);
+  float d3 = parabola(p3, 0.37, 0.5);
+
+  vec2 p4 = p;
+  p4 -= vec2(0.99, -0.4);
+  float d4 = circle(p4, 0.61);
+  d3 = max(d3, -d4);
+
+  vec2 p5 = p;
+  p5 -= vec2(0.0, -0.45);
+//  float d5 = vesica(p5.yx, 0.175, 0.1)-0.2;
+  float d5 = starn(p5.yx, 0.33, 10.0, 3.5);
+  float d6 = abs(d5-0.005)-0.005;
+
+
+  d0 = min(d0, d1);  
+  d3 = p.y > -0.40 ? d3 : d2;
+
+  float dd = d3;
+  dd = min(dd, d0);
+  dd -= 0.02;
+  
+  float d = d3;
+  d = min(d, d2);
+  d = pmax(d, -(d0-0.01), 0.025);
+  d = min(d, d0);
+  float ds = max(min(d0, d3), -d5);
+  d = max(d, -d6);
+  
+  float od = d;
+  od = abs(od-0.02)-0.0075;
+  
+  d = min(d, od);
+  d = pmin(d, d5, 0.01);
+  return vec2(d, dd);
+}
+
+vec2 df(vec2 p) {
+  const float zz = 1.0;
+  p/=zz;
+  p.y -= -0.05;
+  vec2 dh = hand(p);
+  const float ze = 0.28;
+  vec2 pe = p;
+  pe -= vec2(0.0, -0.45);
+  pe /= ze;
+  float de = eye(pe);
+  de *= ze;
+  
+  float d = dh.x;
+  d = max(d, -de);
+  return vec2(d, dh.y)*zz;
+}
+
+vec3 palette(float a) {
+  return 0.5*(1.+cos(vec3(0,1,2)+a));
+}
+
+vec3 effect(vec2 p, vec2 np, vec2 pp) {
+  vec2 dp = p;
+  p = transform(p);
+  np = transform(np);
+  float aa = distance(p, np)*sqrt(2.0); 
+
+  float h = 0.0;
+  float sc = 0.0;
+  vec2 d2 = df(p, aa, h, sc);
+
+  vec3 col = vec3(0.0);
+
+  vec3 rgb = ((2.0/3.0)*(cos(TAU*h+vec3(0.0, 1.0, 2.0))+vec3(1.0))-d2.y/(3.0*sc));
+  col = mix(col, rgb, smoothstep(aa, -aa, d2.x));
+  
+  const vec3 gcol1 = vec3(.5, 2.0, 3.0);
+  col += gcol1*tanh_approx(0.025*aa)*beat();
+
+  vec2 d = df(dp);
+
+  col = clamp(col, 0.0, 1.0);
+  float daa = sqrt(2.)/RESOLUTION.y; 
+  col = mix(col, vec3(0.0), smoothstep(daa, -daa, d.y));
+  col = mix(col, (palette(dp.y+log(1.+p.y*p.y)/log(2.)+0.5*time+PI).zyx+aa*aa*mix(0.1,2.,beat())), smoothstep(daa, -daa, d.x));
+  col = clamp(col,0,1);
+  col += fade_in();
+  col = sqrt(col);
+  
+  return col;
+}
+
+void main() {
+  vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
+  vec2 p = -1. + 2. * q;
+  vec2 pp = p;
+  p.x *= RESOLUTION.x/RESOLUTION.y;
+  vec2 np = p+1.0/RESOLUTION.y;
+  vec3 col = effect(p, np, pp);
+  fragColor = vec4(col, 1.0);
+}
+)SHADER";
 }

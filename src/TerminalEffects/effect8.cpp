@@ -22,11 +22,12 @@ namespace {
   char debug__log[0xFFFF];  // 65535 characters
 #endif
 
-  const std::size_t no_shaders = 3;
+  const std::size_t no_shaders = 4;
   char const * fragment_shader_sources[no_shaders]={
     fragment_shader__mandelbox
   , fragment_shader__bw
   , fragment_shader__psychedelic
+  , fragment_shader__hand
   };
 
   struct t_shader {
@@ -133,6 +134,15 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
           + smoothstep(music__from_nbeat(296+1), music__from_nbeat(296), ei.time)*step(music__from_nbeat(296), ei.time)
         , smoothstep(music__from_nbeat(ei.beat__end-10), music__from_nbeat(ei.beat__end), ei.time)
         , step(music__from_nbeat(296), ei.time)
+        );
+      break;
+    case 3:
+      fp__glUniform4f(
+          shader.loc__state 
+        , music__beat(ei.time)
+        , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
+        , 0.
+        , 0.
         );
       break;
   }  
