@@ -66,7 +66,7 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 280*music__beat_time;
+  auto const start_time = 320*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7                                                 , L"Running INTRO.COM"}
