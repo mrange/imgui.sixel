@@ -696,6 +696,7 @@ vec3 effect(vec2 p, vec2 q) {
   vec3 vv = normalize(cross(ww, uu));
 
   vec3 col = color(ww, uu, vv, ro, p);
+  col += fade_in();
   col = sqrt(col);
   return col;
 }
@@ -706,7 +707,6 @@ void main() {
   p.x *= RESOLUTION.x/RESOLUTION.y;
 
   vec3 col = effect(p, q);
-  col += fade_in();
 //  col = floor(vec3(8,8,4)*col)/vec3(8,8,4);  
 
   fragColor = vec4(col, 1.0);
