@@ -4,7 +4,7 @@
 
 namespace {
   bitmap const gerp = make_bitmap(col__white, LR"BITMAP(
-                    I M P U L S E ♥ G O E S ♥ T O 
+                    I M P U L S E ♥ G O E S ♥ T O
                    ────────────○○○○○○○────────────
 
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -14,7 +14,7 @@ namespace {
 ███████  ████  ████████  ██████████████  ███  █████████  █████████████
 ████████      █████████        ████████  ████  ████████  █████████████
 ██████████████████████████████████████████████████████████████████████
-)BITMAP");          
+)BITMAP");
 
   vec2 mandelmap(vec2 p, vec2 c) {
     auto z = p;
@@ -115,7 +115,7 @@ effect_kind effect7(effect_input const & ei) {
 
   draw__border(time, ei.screen);
 
-  { 
+  {
     float start = music__from_nbeat(ei.beat__start+2);
     float end   = music__from_nbeat(ei.beat__start+32);
     float fade  = smoothstep(start, end, time);

@@ -10,10 +10,10 @@ namespace {
   ╔╗╔╧╗╔╩╗╔═╩╗╔╗╔╗╔╗ ╔╧═╗╔═╩╗╔╗
   ╠╣║:╚╝:║║╔╗║║║║║║║ ║╔═╝║╔═╝║║
   ╢║║:**:║║╚╝║║║║║║║ ║╚═╗║╚═╗║║
-  ║║║╔╗╔╗║║╔╤╝║║║║║║ ╚═╗║║╔═╝║╠ 
+  ║║║╔╗╔╗║║╔╤╝║║║║║║ ╚═╗║║╔═╝║╠
   ╢║║║╚╝║║║║  ║╚╝║║╚╗╔═╝║║╚═╗╠╣
   ╚╝╚╝  ╚╝╚╝  ╚╤═╝╚╦╝╚═╦╝╚╤═╝╚╝
-)BITMAP");          
+)BITMAP");
   bitmap const qc__impulse_1 = make_bitmap(col__white, LR"BITMAP(
   ┌╮┌┴╮╭╨┐┌─╨╮┌╮╭┐┌╮ ╭──┐╭─╨┐╭┐
   ├┤│:╰╯:││╭╮│││││││ │╭─╯│╭─╯││
@@ -21,7 +21,7 @@ namespace {
   │││╭╮╭╮││╭┬╯│││││├╯╰─╮││╭─╯│╞
   ┤│││└╯││││  │└╯││└╮╭─┘││└─╮├┤
   └╯└╯  ╰┘└╯  └┬─╯└╥╯└─╥╯╰┬─┘╰┘
-)BITMAP");          
+)BITMAP");
 
 
   struct cell {
@@ -127,14 +127,14 @@ namespace {
     float       type__begin ;
     float       type__end   ;
 
-    qc() 
+    qc()
       : freedom     (0)
       , shape       (0)
       , x           (0)
       , y           (0)
       , type        (qc__null)
       , type__begin (end__time)
-      , type__end   (end__time) 
+      , type__end   (end__time)
     {
     }
   };
@@ -228,7 +228,7 @@ namespace {
     }
 
     auto neighbour  = res[x+y*screen__width];
-    
+
     return neighbour.shape == 0 ? 1 : 0;
 
   }
@@ -401,7 +401,7 @@ namespace {
     , int   y
     , bool  allow__fade
     , float off
-    ) 
+    )
     {
     if (x < 0 || x > screen__width - 1) {
       return;
@@ -456,7 +456,7 @@ effect_kind effect3(effect_input const & ei) {
 ╔╗╔╧╗╔╩╗╔═╩╗╔╗╔╗╔╗ ╔╧═╗╔═╩╗╔╗
 ╠╣║ ╚╝ ║║╔╗║║║║║║║ ║╔═╝║╔═╝║║
 ╢║║ ** ║║╚╝║║║║║║║ ║╚═╗║╚═╗║║
-║║║╔╗╔╗║║╔╤╝║║║║║║ ╚═╗║║╔═╝║╠ 
+║║║╔╗╔╗║║╔╤╝║║║║║║ ╚═╗║║╔═╝║╠
 ╢║║║╚╝║║║║  ║╚╝║║╚╗╔═╝║║╚═╗╠╣
 ╚╝╚╝  ╚╝╚╝  ╚╤═╝╚╦╝╚═╦╝╚╤═╝╚╝
 ┌╮┌┴╮╭╨┐┌─╨╮┌╮╭┐┌╮ ╭──┐╭─╨┐╭┐
@@ -580,7 +580,7 @@ Bend elements:    ╭ ╯ ╮ ╰
       auto px = (-1.F*ei.screen.width+2.F*(x+0.5F))/(2*ei.screen.height);
       auto & qc = board[x+y__off];
       auto col = col__rainbow(time, x, y);
-      float grid__fade = mix(0.25F, 0.00, tanh_approxf(length2f(px,py))); 
+      float grid__fade = mix(0.25F, 0.00, tanh_approxf(length2f(px,py)));
       switch (qc.type) {
       case qc__grid:
         col *= grid__fade;

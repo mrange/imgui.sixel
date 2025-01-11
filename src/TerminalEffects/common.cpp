@@ -28,15 +28,15 @@ int music__nbar(float time) {
 }
 
 float music__fbeat(float time) {
-  return fractf(time/music__beat_time); 
+  return fractf(time/music__beat_time);
 }
 
 float music__fsubdivision(float time) {
-  return fractf(time/music__subdivision_time); 
+  return fractf(time/music__subdivision_time);
 }
 
 float music__fbar(float time) {
-  return fractf(time/music__bar_time); 
+  return fractf(time/music__bar_time);
 }
 
 float music__from_nbeat (int nbeat) {

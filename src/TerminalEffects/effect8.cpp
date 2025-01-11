@@ -110,7 +110,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
   switch (shader_id) {
     case 0:
       fp__glUniform4f(
-          shader.loc__state 
+          shader.loc__state
         , music__drum(ei.time)
         ,   smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
           + smoothstep(music__from_nbeat(168+1), music__from_nbeat(168), ei.time)*step(music__from_nbeat(168), ei.time)
@@ -120,7 +120,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
       break;
     case 1:
       fp__glUniform4f(
-          shader.loc__state 
+          shader.loc__state
         , music__drum(ei.time)
         , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
         , smoothstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time)
@@ -129,7 +129,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
       break;
     case 2:
       fp__glUniform4f(
-          shader.loc__state 
+          shader.loc__state
         , music__beat(ei.time)
         , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
           + smoothstep(music__from_nbeat(296+1), music__from_nbeat(296), ei.time)*step(music__from_nbeat(296), ei.time)
@@ -139,7 +139,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
       break;
     case 3:
       fp__glUniform4f(
-          shader.loc__state 
+          shader.loc__state
         , music__beat(ei.time)
         , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
         , 0.
@@ -148,14 +148,14 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
       break;
     case 4:
       fp__glUniform4f(
-          shader.loc__state 
+          shader.loc__state
         , music__beat(ei.time)
         , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
         , 0.
         , 0.
         );
       break;
-  }  
+  }
 
   glRects(-1, -1, 1, 1);
 

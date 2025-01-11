@@ -84,7 +84,7 @@ effect_kind effect1(effect_input const & ei) {
         }
       }
     }
-    
+
     f += 1.0F-fadein;
     b += 1.0F-fadein;
 

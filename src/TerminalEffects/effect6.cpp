@@ -5,7 +5,7 @@
 namespace {
 
   float r(float th, vec3 n, vec3 q) {
-    return std::powf(powf(std::fabsf(1.0F/q.y*std::cosf(q.x*th*0.25F)), n.y) + std::powf(std::fabsf(1.0F/q.z*std::sinf(q.x*th*0.25F)), n.z), -1.0F/n.x); 
+    return std::powf(powf(std::fabsf(1.0F/q.y*std::cosf(q.x*th*0.25F)), n.y) + std::powf(std::fabsf(1.0F/q.z*std::sinf(q.x*th*0.25F)), n.z), -1.0F/n.x);
   }
 
   struct shape {
@@ -32,12 +32,12 @@ namespace {
     ) {
     p -= 0.5;
     p *= scale;
-  
-    float r0    = mix(shape__0.r0   , shape__1.r0  , m1); 
-    vec3  r1_0  = mix(shape__0.r1_0 , shape__1.r1_0, m1); 
-    vec3  r1_1  = mix(shape__0.r1_1 , shape__1.r1_1, m1); 
-    vec3  r2_0  = mix(shape__0.r2_0 , shape__1.r2_0, m1); 
-    vec3  r2_1  = mix(shape__0.r2_1 , shape__1.r2_1, m1); 
+
+    float r0    = mix(shape__0.r0   , shape__1.r0  , m1);
+    vec3  r1_0  = mix(shape__0.r1_0 , shape__1.r1_0, m1);
+    vec3  r1_1  = mix(shape__0.r1_1 , shape__1.r1_1, m1);
+    vec3  r2_0  = mix(shape__0.r2_0 , shape__1.r2_0, m1);
+    vec3  r2_1  = mix(shape__0.r2_1 , shape__1.r2_1, m1);
 
     float r1    = r(p.x, r1_0, r1_1);
     float r2    = r(p.y, r2_0, r2_1);
@@ -57,7 +57,7 @@ namespace {
     , vec3(0.2, 1.7, 1.7)
     , vec3(7.0, 1.0, 1.0)
   };
-  
+
   shape const Pollen = shape {
       3.0
     , vec3(60.0 , 30.0, 30.0)
@@ -65,7 +65,7 @@ namespace {
     , vec3(10.0 , 10.0, 10.0)
     , vec3(2.0  , 1.0 , 1.0 )
   };
-  
+
   shape const HexBox = shape {
       3.0
     , vec3(60.0 , 25.0  , 25.0  )
@@ -73,7 +73,7 @@ namespace {
     , vec3(250.0, 100.0 , 100.0 )
     , vec3(6.0  , 1.0   , 1.0   )
   };
-  
+
   shape const Saucer = shape {
       6.0
     , vec3(0.2, 1.7, 1.7)
@@ -81,7 +81,7 @@ namespace {
     , vec3(0.5, 0.2, 0.2)
     , vec3(1.0, 1.0, 1.0)
   };
-  
+
   shape const Plankton = shape {
       4.0
     , vec3(0.1, 1.0, 2.5)
@@ -89,7 +89,7 @@ namespace {
     , vec3(3.0, 0.2, 1.0)
     , vec3(3.0, 1.0, 1.0)
   };
-  
+
   shape const FlatFish = shape {
       4.0
     , vec3(0.7  , 0.3   , 0.2 )
@@ -97,7 +97,7 @@ namespace {
     , vec3(100.0, 100.0 , 20.0)
     , vec3(2.0  , 1.0   , 1.0 )
   };
-  
+
   shape const Lantern = shape {
       8.0
     , vec3(0.2  , 1.7, 1.7)
@@ -105,7 +105,7 @@ namespace {
     , vec3(0.5  , 0.2, 0.2)
     , vec3(6.0  , 1.0, 1.0)
   };
-  
+
   shape const Hedgehog = shape {
       3.0
     , vec3(60.0, 25.0, 25.0)
@@ -113,7 +113,7 @@ namespace {
     , vec3(250.0, 100.0, 100.0)
     , vec3(40.0, 1.0, 1.0)
   };
-  
+
   shape const Starflake = shape {
       5.0
     , vec3(0.5, 1.0, 1.0)
@@ -121,7 +121,7 @@ namespace {
     , vec3(0.2, 1.0, 1.0)
     , vec3(5.0, 1.0, 1.0)
   };
-  
+
   shape const Crystal = shape {
       5.0
     , vec3(0.8, 0.8, 0.8)

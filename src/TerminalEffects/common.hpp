@@ -86,7 +86,7 @@ float pmax(float a, float b, float k);
 struct rotator {
   float const c;
   float const s;
-  explicit rotator(float a) 
+  explicit rotator(float a)
   : c(std::cosf(a))
   , s(std::sinf(a)) {
   }

@@ -3,8 +3,8 @@
 #include "effect.hpp"
 
 namespace {
-  auto gen__col = [](float & fade) { 
-    return [&fade](float time, std::size_t x, std::size_t y) -> vec3 { 
+  auto gen__col = [](float & fade) {
+    return [&fade](float time, std::size_t x, std::size_t y) -> vec3 {
       if (fade <= 0.F) {
         return vec3();
       }
@@ -45,7 +45,7 @@ effect_kind effect9(effect_input const & ei) {
           , std::clamp(1.0F-p.y, 0.F, 1.F)
           );
         col += std::expf(-4.F*std::max(heart__fade-0.125F,0.F));
-        f = col;     
+        f = col;
         if (d > -0.066F) {
           s = L'▓';
           f *= f;

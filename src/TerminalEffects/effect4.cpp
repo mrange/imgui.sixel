@@ -9,11 +9,11 @@ namespace {
 ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌
 ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌
 ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒
-░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄ 
+░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄
 ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒
  ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░
  ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░
- ░         ░               ░         ░  ░      ░     ░  ░ ░   
+ ░         ░               ░         ░  ░      ░     ░  ░ ░
                                      ╭─────╮
                ╭─────────────────────┤▄▀▄▀▄├───────────────╮
    ┼───────────┼ ▀ G L I M G L A M ▄ │▄▀▄▀▄│ ▄ L A N C E ▀ │
@@ -23,8 +23,80 @@ namespace {
 
 
 
-                    ▄▀▄▀ P R E S E N T S ▄▀▄▀
+               ▄▀▄▀  SEND OUR GREETINGS TO ▄▀▄▀
 )BITMAP");
+
+  bitmap const greetings = make_bitmap(col__black, LR"BITMAP(
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+░░░░░      ░░░       ░░░        ░░        ░░        ░░░      ░░░░░
+▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒
+▓▓▓▓  ▓▓▓   ▓▓       ▓▓▓      ▓▓▓▓      ▓▓▓▓▓▓▓  ▓▓▓▓▓▓      ▓▓▓▓▓
+████  ████  ██  ███  ███  ████████  ███████████  ███████████  ████
+█████      ███  ████  ██        ██        █████  ██████      █████
+██████████████████████████████████████████████████████████████████
+
+                              ♥ ♥ ♥
+
+        ▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄                                              ▀▄
+        ▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄
+)BITMAP");
+  bitmap const greetings_0 = make_bitmap(col__black, LR"BITMAP(
+ 
+ 
+ 
+            Brainless Institute              
+               Fisk Kompaniet                
+                  NewCore                    
+                   NoCrew                    
+                    ICE                      
+                                             
+                  and XiA                    
+                      ───                    
+ 
+)BITMAP");
+
+  bitmap const greetings_1 = make_bitmap(col__black, LR"BITMAP(
+                                            
+              The Twitch Tribe              
+                                            
+  h0ffman, essenbee, fieldfxdemo, lug00ber, 
+  ggn2, proton, styxColor, TheCaptainCoder, 
+  TheGrumpyGameDev and Thindal              
+                                            
+             Shader Superheroes             
+                                            
+  Big Wings, Byt3 M3chanic, Dave Hoskins,   
+  EvilRyu, Evvvil, IQ, Kali, Kishimisu,     
+  msm01, Nimitz, Shane, Totetmatt and XorDev
+                                            
+)BITMAP");
+
+  bitmap const greetings_2 = make_bitmap(col__black, LR"BITMAP(
+                                            
+      Finally, greetings to everyone at:
+
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+░░      ░░░░░        ░░░░       ░░░░░       ░░
+▒  ▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒  ▒▒▒▒  ▒
+▓  ▓▓▓   ▓▓▓▓      ▓▓▓▓▓▓       ▓▓▓▓▓       ▓▓
+█  ████  ████  ██████████  ███  █████  ███████
+██      █████        ████  ████  ████  ███████
+██████████████████████████████████████████████
+)BITMAP");
+
 }
 
 effect_kind effect4(effect_input const & ei) {
@@ -43,8 +115,8 @@ effect_kind effect4(effect_input const & ei) {
       auto l = p.length();
       auto r = rotator {time-l};
       r(p.x, p.y);
-      
-      auto const pcol = palette(0.707F*time+l).sqrt()*mix(0.0, 1.0, music__beat(time));
+
+      auto const pcol = palette(0.707F*time+l+music__beat(time)).sqrt()*mix(0.0, 1.0, music__beat(time));
       auto ang= std::atan2(p.y, p.x);
 
       auto col = vec3 {0,0,0};
@@ -79,9 +151,34 @@ effect_kind effect4(effect_input const & ei) {
         );
     }
   }
-  ei.screen.draw__bitmap(impulse2  , time, 8, 6);
 
-  { 
+  {
+    auto bmp_sel = ((music__nbeat(time)-ei.beat__start)/16)%4;
+    switch(bmp_sel) {
+    case 0:
+      ei.screen.draw__bitmap(impulse2   , time, 8, 6);
+      break;
+    default:
+      ei.screen.draw__bitmap(greetings, time, 8, 2);
+      break;
+    }
+
+    switch(bmp_sel) {
+    case 0:
+      break;
+    case 1:
+      ei.screen.draw__bitmap(greetings_0, time, 18, 13);
+      break;
+    case 2:
+      ei.screen.draw__bitmap(greetings_1, time, 18, 13);
+      break;
+    case 3:
+      ei.screen.draw__bitmap(greetings_2, time, 18, 13);
+      break;
+    }
+  }
+
+  {
     float fadein  = smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), time);
     ei.screen.apply_to_all([&ei, time, fadein](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
       f += fadein;

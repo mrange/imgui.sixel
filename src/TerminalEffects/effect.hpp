@@ -36,20 +36,20 @@ vec3 palette(float a);
 f__generate_color const col__white    = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {1,1,1}; };
 f__generate_color const col__black    = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {0,0,0}; };
 f__generate_color const col__gray     = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {0.5,0.5,0.5}; };
-f__generate_color const col__graybar  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
+f__generate_color const col__graybar  = [](float time, std::size_t x, std::size_t y) -> vec3 {
   auto c = std::sqrtf(std::clamp<float>(y/10.0F, 0, 1));
   c = 1-c;
-  return vec3 {c,c,c}; 
+  return vec3 {c,c,c};
 };
 f__generate_color const col__magenta  = [](float time, std::size_t x, std::size_t y) -> vec3 { return vec3 {1,0,1}; };
 
-f__generate_color const col__rainbow  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
+f__generate_color const col__rainbow  = [](float time, std::size_t x, std::size_t y) -> vec3 {
   return palette(time-(x+2.0F*y)/20.F);
 };
 
-f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t y) -> vec3 { 
+f__generate_color const col__flame  = [](float time, std::size_t x, std::size_t y) -> vec3 {
   auto c = std::clamp<float>(1-y/10.0F, 0, 1);
-  return hsv2rgb_approx(0.05,0.5F,c); 
+  return hsv2rgb_approx(0.05,0.5F,c);
 };
 
 float vnoise(vec2 p);

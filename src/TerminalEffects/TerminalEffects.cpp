@@ -18,7 +18,8 @@
 #define USE_MMX
 #define MUSIC_TIME
 
-//#define SHOW_WINDOW
+#define SHOW_WINDOW
+//#define INFO_TEXT
 
 void init__effect8();
 
@@ -35,37 +36,37 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id);
 effect_kind effect9(effect_input const & ei);
 
 namespace {
-  std::wstring const info_text = L"\x1B[2J\x1B[H" LR"INFO(╔══════════════════════════════════════════════════════════════════════════════╗ 
-║                                                                              ║ 
-║        ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌         ║ 
-║       ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌         ║ 
-║       ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌         ║ 
-║       ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒         ║ 
-║       ░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄          ║ 
-║       ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒         ║ 
-║        ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░         ║ 
-║        ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░         ║ 
-║        ░         ░               ░         ░  ░      ░     ░  ░ ░            ║ 
-║                                                                              ║ 
-║                               ♥ G O E S ♥ T O ♥                              ║ 
-║                                                                              ║ 
-║    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    ║ 
-║    ░░░░░░░░      ░░░░░░░░░        ░░░░░░░░       ░░░░░░░░░       ░░░░░░░░    ║ 
-║    ▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒    ║ 
-║    ▓▓▓▓▓▓▓  ▓▓▓   ▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓    ║ 
-║    ███████  ████  ████████  ██████████████  ███  █████████  █████████████    ║ 
-║    ████████      █████████        ████████  ████  ████████  █████████████    ║ 
-║    ██████████████████████████████████████████████████████████████████████    ║ 
-║                                                                              ║ 
-║    Music by amazing Astroboy and licensed under CC BY-NC-ND 3.0              ║ 
-║                                    https://sampleswap.org/artist/astroboy    ║ 
-║                                                                              ║ 
-║    This demo requires a Sixel compatible terminal such as:                   ║ 
-║     * Windows Terminal Preview version 1.22.3232.0                           ║ 
-║                                                                              ║ 
-║    Make sure the entire border is visible in the terminal.                   ║ 
-║                                                                              ║ 
-╚══════════════════ When ready hit any key to start the demo ══════════════════╝ 
+  std::wstring const info_text = L"\x1B[2J\x1B[H" LR"INFO(╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║        ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌         ║
+║       ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌         ║
+║       ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌         ║
+║       ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒         ║
+║       ░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄          ║
+║       ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒         ║
+║        ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░         ║
+║        ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░         ║
+║        ░         ░               ░         ░  ░      ░     ░  ░ ░            ║
+║                                                                              ║
+║                               ♥ G O E S ♥ T O ♥                              ║
+║                                                                              ║
+║    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    ║
+║    ░░░░░░░░      ░░░░░░░░░        ░░░░░░░░       ░░░░░░░░░       ░░░░░░░░    ║
+║    ▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒    ║
+║    ▓▓▓▓▓▓▓  ▓▓▓   ▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓    ║
+║    ███████  ████  ████████  ██████████████  ███  █████████  █████████████    ║
+║    ████████      █████████        ████████  ████  ████████  █████████████    ║
+║    ██████████████████████████████████████████████████████████████████████    ║
+║                                                                              ║
+║    Music by amazing Astroboy and licensed under CC BY-NC-ND 3.0              ║
+║                                    https://sampleswap.org/artist/astroboy    ║
+║                                                                              ║
+║    This demo requires a Sixel compatible terminal such as:                   ║
+║     * Windows Terminal Preview version 1.22.3232.0                           ║
+║                                                                              ║
+║    Make sure the entire border is visible in the terminal.                   ║
+║                                                                              ║
+╚══════════════════ When ready hit any key to start the demo ══════════════════╝
 )INFO";
   std::size_t const desired__width  = 800;
   std::size_t const desired__height = 600;
@@ -82,7 +83,7 @@ namespace {
   std::u8string const reset__colors        = u8"\x1B[0m";
   std::u8string const prelude__foreground  = u8"\x1B[38;2";
   std::u8string const prelude__background  = u8"\x1B[48;2";
-  
+
   using f__effect = std::function<effect_kind (
       effect_input const & ei
     )>;
@@ -100,23 +101,23 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 0*music__beat_time;
+  auto const start_time = 392*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
-    {0  , effect7                                                 , L"Running INTRO.COM"}
-  , {64 , effect2                                                 , L"Gfx by Glimglam, Code by Lance"}
-  , {120, effect9                                                 , L"With Love from Impulse"}
-  , {136, [](effect_input const & ei) { return effect8(ei, 0); }  , L"An approximation of a cube"}
-  , {196, effect1                                                 , L"With Love from Impulse - Encore!"}
+    {0  , effect7                                                 , L"Running INTRO.COM"                  }
+  , {64 , effect2                                                 , L"Gfx by Glimglam, Code by Lance"     }
+  , {120, effect9                                                 , L"With Love from Impulse"             }
+  , {136, [](effect_input const & ei) { return effect8(ei, 0); }  , L"An approximation of a cube"         }
+  , {196, effect1                                                 , L"With Love from Impulse - Encore!"   }
   , {232, [](effect_input const & ei) { return effect8(ei, 1); }  , L"It doesn't matter if you are B or W"}
-  , {260, effect5                                                 , L"This star scroller sucks!"}
-  , {264, [](effect_input const & ei) { return effect8(ei, 2); }  , L"Trippy tunneling"}
-  , {324, effect5                                                 , L"This star scroller still sucks!"}
-  , {328, [](effect_input const & ei) { return effect8(ei, 3); }  , L"The Lotus challenge"}
-  , {360, [](effect_input const & ei) { return effect8(ei, 4); }  , L"Another approximative cube"}
-  , {392, effect4                                                 , L"Let's greet some people"}
-  , {456, effect3                                                 , L"That's all from Impulse folks!"}
-  , {528, effect0                                                 , L"FITB"}
+  , {260, effect5                                                 , L"This star scroller sucks!"          }
+  , {264, [](effect_input const & ei) { return effect8(ei, 2); }  , L"Trippy tunneling"                   }
+  , {324, effect5                                                 , L"This star scroller still sucks!"    }
+  , {328, [](effect_input const & ei) { return effect8(ei, 3); }  , L"The Lotus challenge"                }
+  , {360, [](effect_input const & ei) { return effect8(ei, 4); }  , L"Another approximative cube"         }
+  , {392, effect4                                                 , L"Let's greet some people"            }
+  , {456, effect3                                                 , L"That's all from Impulse folks!"     }
+  , {528, effect0                                                 , L"FITB"                               }
   });
 
   script_part get__script_part(std::size_t i) {
@@ -241,9 +242,9 @@ namespace {
     , effective_script_part const & part
     ) {
     /*⣀⣤⣶⣿ */
-    wchar_t fg__red[]     = L"\x1B[38;2;255;85;85m";  
-    wchar_t fg__orange[]  = L"\x1B[38;2;255;165;85m"; 
-    wchar_t fg__yellow[]  = L"\x1B[38;2;255;255;85m"; 
+    wchar_t fg__red[]     = L"\x1B[38;2;255;85;85m";
+    wchar_t fg__orange[]  = L"\x1B[38;2;255;165;85m";
+    wchar_t fg__yellow[]  = L"\x1B[38;2;255;255;85m";
     wchar_t fg__muted[]   = L"\x1B[38;2;80;80;120m";
     wchar_t fg__hilight[] = L"\x1B[38;2;160;160;220m";
     wchar_t fg__cyan[]    = L"\x1B[38;2;85;255;255m";
@@ -421,7 +422,7 @@ namespace {
     ticks__timer& operator=(ticks__timer const &)   = delete;
     ticks__timer& operator=(ticks__timer &&)        = delete;
 
-    inline explicit ticks__timer(DWORD64 * p) noexcept 
+    inline explicit ticks__timer(DWORD64 * p) noexcept
       : p(p)
       , b(__rdtsc()) {
       assert(p);
@@ -442,7 +443,7 @@ namespace {
     hires__timer& operator=(hires__timer const &)   = delete;
     hires__timer& operator=(hires__timer &&)        = delete;
 
-    inline explicit hires__timer(LONGLONG * p) noexcept 
+    inline explicit hires__timer(LONGLONG * p) noexcept
       : p(p) {
       assert(p);
       QueryPerformanceCounter(&b);
@@ -558,7 +559,7 @@ namespace {
 
 #ifdef USE_BACKGROUND_WRITER_THREAD
   struct background_writer {
-    background_writer() 
+    background_writer()
       : done    (false)
       , pbuffer (nullptr)
       , thread  ([this]{thread_proc();}){
@@ -949,10 +950,10 @@ int main() {
     IMFPMediaPlayer * player = nullptr;
     CHECK_HRESULT(MFPCreateMediaPlayer(
       LR"PATH(D:\assets\astroboy--my-head-is-spiritualism.wav)PATH"
-    , FALSE   
-    , 0       
-    , nullptr 
-    , hwnd 
+    , FALSE
+    , 0
+    , nullptr
+    , hwnd
     , &player
     ));
     assert(player);
@@ -960,7 +961,7 @@ int main() {
 
     auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
     CHECK_CONDITION(hstdout != INVALID_HANDLE_VALUE);
-  
+
     CHECK_CONDITION(SetConsoleOutputCP(CP_UTF8));
 
     DWORD consoleMode;
@@ -983,6 +984,7 @@ int main() {
     output0.reserve(1<<20);
     output1.reserve(1<<20);
 
+#ifdef INFO_TEXT
     {
       ticks__write_pixel_as_sixels ticks = {};
       wchars_to_utf8(output1, info_text);
@@ -993,6 +995,7 @@ int main() {
       );
       std::getchar();
     }
+#endif
 
     CHECK_HRESULT(player->Play());
     auto onexit__stop_player = on_exit([player]{ player->Stop(); });
@@ -1043,10 +1046,10 @@ int main() {
       auto & part = effective_script[nbeat];
 
       auto ei = effect_input {
-          time        
-        , part.beat__start 
-        , part.beat__end   
-        , screen      
+          time
+        , part.beat__start
+        , part.beat__end
+        , screen
         , viewport__width
         , viewport__height
       };
@@ -1057,7 +1060,7 @@ int main() {
       assert(result__swap_buffers);
 
       buffer_selector = !buffer_selector;
-      std::vector<char8_t> & output = 
+      std::vector<char8_t> & output =
         buffer_selector
         ? output0
         : output1
