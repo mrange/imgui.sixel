@@ -18,6 +18,8 @@
 #define USE_MMX
 #define MUSIC_TIME
 
+//#define SHOW_WINDOW
+
 void init__effect8();
 
 
@@ -45,9 +47,7 @@ namespace {
 ║        ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░         ║ 
 ║        ░         ░               ░         ░  ░      ░     ░  ░ ░            ║ 
 ║                                                                              ║ 
-║                                                                              ║ 
 ║                               ♥ G O E S ♥ T O ♥                              ║ 
-║                                                                              ║ 
 ║                                                                              ║ 
 ║    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    ║ 
 ║    ░░░░░░░░      ░░░░░░░░░        ░░░░░░░░       ░░░░░░░░░       ░░░░░░░░    ║ 
@@ -57,13 +57,15 @@ namespace {
 ║    ████████      █████████        ████████  ████  ████████  █████████████    ║ 
 ║    ██████████████████████████████████████████████████████████████████████    ║ 
 ║                                                                              ║ 
+║    Music by amazing Astroboy and licensed under CC BY-NC-ND 3.0              ║ 
+║                                    https://sampleswap.org/artist/astroboy    ║ 
+║                                                                              ║ 
 ║    This demo requires a Sixel compatible terminal such as:                   ║ 
-║     Windows Terminal Preview version 1.22.3232.0                             ║ 
+║     * Windows Terminal Preview version 1.22.3232.0                           ║ 
+║                                                                              ║ 
 ║    Make sure the entire border is visible in the terminal.                   ║ 
 ║                                                                              ║ 
-║    When reading hit any key to start the demo                                ║ 
-║                                                                              ║ 
-╚══════════════════════════════════════════════════════════════════════════════╝ 
+╚══════════════════ When ready hit any key to start the demo ══════════════════╝ 
 )INFO";
   std::size_t const desired__width  = 800;
   std::size_t const desired__height = 600;
@@ -880,8 +882,12 @@ int main() {
     CHECK_CONDITION(hinstance);
 
     wnd_class_ex.hInstance = hinstance;
-    auto dw_style   = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
+
+    auto dw_style   = WS_OVERLAPPEDWINDOW | WS_POPUP;
     auto dw_exstyle = WS_EX_NOACTIVATE ;
+#ifdef SHOW_WINDOW
+    dw_style |= WS_VISIBLE;
+#endif
 
     auto result__register_class = RegisterClassEx(&wnd_class_ex);
     CHECK_CONDITION(result__register_class);
@@ -915,7 +921,11 @@ int main() {
     auto on_exit__destroy_window = on_exit([hwnd]{ DestroyWindow(hwnd); });
 
     // Intentionally ignore return value
+#ifdef SHOW_WINDOW
     ShowWindow(hwnd, SW_SHOWNORMAL);
+#else
+    ShowWindow(hwnd, SW_HIDE);
+#endif
     auto result__update_window = UpdateWindow(hwnd);
     assert(result__update_window);
 
