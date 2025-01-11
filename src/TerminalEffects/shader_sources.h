@@ -1772,7 +1772,7 @@ void main() {
 }
 )SHADER";
 
-  char const fragment_shader__apollo[] = R"SHADER(
+  char const fragment_shader__reflections[] = R"SHADER(
 #version 300 es
 #define USE_UNIFORMS
 
@@ -1819,7 +1819,7 @@ float fade() {
 }
 
 float beat() {
-  return exp(-1.*fract(time*bpm/60.));
+  return exp(-2.*fract(0.5*time*bpm/60.));
 }
 #endif
 
@@ -1827,114 +1827,513 @@ float beat() {
 #define TIME        time
 #define RESOLUTION  resolution
 
-#define PI          3.141592654
-#define TAU         (2.0*PI)
-#define ROT(a)      mat2(cos(a), sin(a), -sin(a), cos(a))
+float g_beat;
+mat3 g_rot;
 
-// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
-const vec4 hsv2rgb_K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-vec3 hsv2rgb(vec3 c) {
-  vec3 p = abs(fract(c.xxx + hsv2rgb_K.xyz) * 6.0 - hsv2rgb_K.www);
-  return c.z * mix(hsv2rgb_K.xxx, clamp(p - hsv2rgb_K.xxx, 0.0, 1.0), c.y);
-}
-// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
-//  Macro version of above to enable compile-time constants
+const vec4 hsv2rgb_K = vec4(1., 2. / 3., 1. / 3., 3.);
 #define HSV2RGB(c)  (c.z * mix(hsv2rgb_K.xxx, clamp(abs(fract(c.xxx + hsv2rgb_K.xyz) * 6.0 - hsv2rgb_K.www) - hsv2rgb_K.xxx, 0.0, 1.0), c.y))
 
-float apollonian(vec3 p, float s) {
-  vec3 op = p;
-  float scale = 1.;
-  float sc = 0.55*s;
-  float tsc = sc;
-  float ssc = 1.;
-  for(int i=0; i < 5; ++i) {
-    p = -1.0 + 2.0*fract(0.5*p+0.5);
-//    p = sin(p/ssc)*ssc;
-    float r2 = tanh(dot(p,p)/tsc)*tsc;
-    float k  = s/r2;
-    p       *= k;
-    scale   *= k;
+#define INNER_REFLECTION
+
+//#define INNER_SPHERE
+//#define INNER_CAPSULE
+
+#define TIME        time
+#define RESOLUTION  resolution
+
+#define TOLERANCE       1E-4
+#define MAX_RAY_LENGTH  10.0
+#define MAX_RAY_MARCHES 60
+#define NORM_OFF        1E-3
+#define ROT(a)          mat2(cos(a), sin(a), -sin(a), cos(a))
+#define MAX_BOUNCES     6
+
+const float
+  pi            = acos(-1.)
+, tau           = 2.*pi
+, poly_U        = 1.
+, poly_V        = 1.
+, poly_W        = 0.
+, poly_type     = 5.
+, zoom          = 3.
+, refraction    = .8
+, inner_factor  = 1.
+, soft_factor   = .25
+, poly_cospin   = cos(pi/float(poly_type))
+, poly_scospin  = sqrt(.75-poly_cospin*poly_cospin)
+, initt         = .125 
+;
+
+const vec2 impulse_sca0 = vec2(0.,1.);
+
+const vec3 
+  skyCol     = HSV2RGB(vec3(.6, .86, 1.))
+, lightCol   = HSV2RGB(vec3(0.6, 0.5, 2.0))
+, bounceCol0 = HSV2RGB(vec3(0.0, 0.8, 0.8))
+, bounceCol1 = HSV2RGB(vec3(0.6, 0.5, 0.8))
+, poly_nc    = vec3(-0.5, -poly_cospin, poly_scospin)
+, poly_pab   = vec3(0., 0., 1.)
+, poly_pbc_  = vec3(poly_scospin, 0., 0.5)
+, poly_pca_  = vec3(0., poly_scospin, poly_cospin)
+, poly_p     = normalize((poly_U*poly_pab+poly_V*poly_pbc_+poly_W*poly_pca_))
+, poly_pbc   = normalize(poly_pbc_)
+, poly_pca   = normalize(poly_pca_)
+, ro         = vec3(0., 0., 6.)
+, la         = vec3(0., 0., 0.)
+, up         = vec3(0., 1., 0.)
+, ww         = normalize(la - ro)
+, uu         = normalize(cross(up, ww ))
+, vv         = normalize(cross(ww,uu))
+;
+
+vec3 aces_approx(vec3 v) {
+  v = max(v, 0.0);
+  v *= 0.6;
+  const float 
+    a = 2.51
+  , b = 0.03
+  , c = 2.43
+  , d = 0.59
+  , e = 0.14
+  ;
+  return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0f, 1.0f);
+}
+
+float dot2(vec3 p) {
+  return dot(p, p);
+}
+
+float pmin(float a, float b, float k) {
+  float h = clamp(0.5+0.5*(b-a)/k, 0.0, 1.0);
+  return mix(b, a, h) - k*h*(1.0-h);
+}
+
+float pmax(float a, float b, float k) {
+  return -pmin(-a, -b, k);
+}
+
+float capsule(vec3 p, float h, float r ) {
+  p.y = abs(p.y);
+  p.y -= clamp(p.y, 0.0, h);
+  return length(p) - r;
+}
+
+float box(vec2 p, vec2 b) {
+  vec2 d = abs(p)-b;
+  return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+}
+
+float rayPlane(vec3 ro, vec3 rd, vec4 p) {
+  return -(dot(ro,p.xyz)+p.w)/dot(rd,p.xyz);
+}
+
+void poly_fold(inout vec3 pos) {
+  vec3 p = pos;
+
+  for(float i = 0.; i < poly_type; ++i){
+    p.xy  = abs(p.xy);
+    p    -= 2.*min(0., dot(p,poly_nc)) * poly_nc;
   }
   
-  vec3 ap = abs(p/scale);
-//#define XX;  
-#ifdef XX  
-  float d = ap.x;
-  d = min(d, length(ap.yz));
-#else
-  float d = ap.x;
-  d = min(d, ap.y);
-  d = min(d, ap.z);
+  pos = p;
+}
+
+float poly_plane(vec3 pos) {
+  float d0 = dot(pos, poly_pab);
+  float d1 = dot(pos, poly_pbc);
+  float d2 = dot(pos, poly_pca);
+  float d = d0;
+  d = max(d, d1);
+  d = max(d, d2);
+  return d;
+  
+}
+
+float poly_corner(vec3 pos) {
+  float d = length(pos) - .05;
+  return d;
+}
+
+float poly_edge(vec3 pos) {
+  float dla = dot2(pos-min(0., pos.x)*vec3(1., 0., 0.));
+  float dlb = dot2(pos-min(0., pos.y)*vec3(0., 1., 0.));
+  float dlc = dot2(pos-min(0., dot(pos, poly_nc))*poly_nc);
+  return sqrt(min(min(dla, dlb), dlc))-0.025;
+}
+
+float poly_planes(vec3 pos, out vec3 pp) {
+  poly_fold(pos);
+  pos -= poly_p;
+
+  pp = pos;
+  return poly_plane(pos);
+}
+
+float poly_edges(vec3 pos, out vec3 pp) {
+  poly_fold(pos);
+  pos -= poly_p;
+
+  pp = pos;
+  return poly_edge(pos);
+}
+
+
+vec3 skyColor(vec3 ro, vec3 rd) {
+  vec3 col = vec3(0.);
+  
+  float tp0  = rayPlane(ro, rd, vec4(vec3(0.0, 1.0, 0.0), 4.0));
+  float tp1  = rayPlane(ro, rd, vec4(vec3(0.0, -1.0, 0.0), 6.0));
+  float tp = tp1;
+  tp = max(tp0,tp1);
+
+
+  if (tp1 > 0.0) {
+    vec3 pos  = ro + tp1*rd;
+    vec2 pp = pos.xz;
+    float db = box(pp, vec2(6.0, 9.0))-1.0;
+    
+    col += vec3(4.0)*skyCol*rd.y*rd.y*smoothstep(0.25, 0.0, db);
+    col += vec3(0.8)*skyCol*exp(-0.5*max(db, 0.0));
+  }
+
+  if (tp0 > 0.0) {
+    vec3 pos  = ro + tp0*rd;
+    vec2 pp = pos.xz;
+    float ds = length(pp) - 0.5;
+    
+    col += vec3(0.25)*skyCol*exp(-.5*max(ds, 0.0));
+  }
+
+
+  return col;
+}
+
+float dfExclusion(vec3 p, out vec3 pp) {
+  p*= g_rot;
+  p /= zoom;
+  float d0 = -poly_edges(p, pp);
+  float d = d0;
+  return d*zoom;
+}
+
+float shape(vec3 p) {
+  vec3 pp;
+  p /= zoom;
+
+  float d0 = poly_planes(p, pp);
+  float d = d0;
+
+  return d*zoom;
+}
+
+float df0(vec3 p) {
+  p*= g_rot;
+  float d0 = shape(p);
+  float d = d0;
+  return d;
+}
+
+float df1(vec3 p) {
+  p*= g_rot;
+  float d0 = -shape(p);
+  float d = d0;
+#if defined(INNER_SPHERE)
+  float d1 = length(p) - (2.0*inner_factor);
+  d = min(d, d1);
+#elif defined(INNER_CAPSULE)
+  float d1 = capsule(p, .95*inner_factor, 1.25*inner_factor);
+  d = min(d, d1);
 #endif
   return d;
 }
 
-// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/noacos/
-mat3 rot(vec3 d, vec3 z) {
-  vec3  v = cross( z, d );
-  float c = dot( z, d );
-  float k = 1.0/(1.0+c);
-
-  return mat3( v.x*v.x*k + c,     v.y*v.x*k - v.z,    v.z*v.x*k + v.y,
-               v.x*v.y*k + v.z,   v.y*v.y*k + c,      v.z*v.y*k - v.x,
-               v.x*v.z*k - v.y,   v.y*v.z*k + v.x,    v.z*v.z*k + c    );
+vec3 normal1(vec3 pos) {
+  vec2  eps = vec2(NORM_OFF,0.0);
+  vec3 nor;
+  nor.x = df1(pos+eps.xyy) - df1(pos-eps.xyy);
+  nor.y = df1(pos+eps.yxy) - df1(pos-eps.yxy);
+  nor.z = df1(pos+eps.yyx) - df1(pos-eps.yyx);
+  return normalize(nor);
 }
 
-float dfeffect3(vec2 p) {
-  float anim = TIME-120.;
-  float aa = sqrt(2.)/RESOLUTION.y;
-  float a = anim*TAU/123.0;
-  vec3 r0 = vec3(1.0, sin(vec2(sqrt(0.5), 1.0)*a));
-  vec3 r1 = vec3(cos(vec2(sqrt(0.5), 1.0)*0.913*a), 1.0);
-  mat3 rot = rot(normalize(r0), normalize(r1));
-  float fz = mix(0.75, 1., smoothstep(-0.9, 0.9, cos(TAU*anim/300.0)));
-  float z = 2.*fz;
-  p /= z;
-  vec3 p3 = vec3(p,0.1);
-  p3 *= rot;
-  float ifz = 1.0/fz;
-  float d = apollonian(p3, ifz);
-  d *= z;
-  return d-5E-4;
+float rayMarch1(vec3 ro, vec3 rd) {
+  float t = 0.0;
+  for (int i = 0; i < MAX_RAY_MARCHES; i++) {
+    if (t > MAX_RAY_LENGTH) {
+      t = MAX_RAY_LENGTH;    
+      break;
+    }
+    float d = df1(ro + rd*t);
+    if (d < TOLERANCE) {
+      break;
+    }
+    t  += d;
+  }
+  return t;
+}
+
+vec3 normal0(vec3 pos) {
+  vec2  eps = vec2(NORM_OFF,0.0);
+  vec3 nor;
+  nor.x = df0(pos+eps.xyy) - df0(pos-eps.xyy);
+  nor.y = df0(pos+eps.yxy) - df0(pos-eps.yxy);
+  nor.z = df0(pos+eps.yyx) - df0(pos-eps.yyx);
+  return normalize(nor);
+}
+
+float rayMarch0(vec3 ro, vec3 rd) {
+  float t = 0.0;
+  for (int i = 0; i < MAX_RAY_MARCHES; i++) {
+    if (t > MAX_RAY_LENGTH) {
+      t = MAX_RAY_LENGTH;    
+      break;
+    }
+    float d = df0(ro + rd*t);
+    if (d < TOLERANCE) {
+      break;
+    }
+    t  += d;
+  }
+  return t;
+}
+
+vec3 render1(vec3 ro, vec3 rd) {
+  vec3 agg = vec3(0.0, 0.0, 0.0);
+  float tagg = initt;
+  vec3 ragg = vec3(1.0);
+
+  for (int bounce = 0; bounce < MAX_BOUNCES; ++bounce) {
+    float mragg = max(max(ragg.x, ragg.y), ragg.z);
+    if (mragg < 0.1) break;
+    float st = rayMarch1(ro, rd);
+    tagg += st;
+    vec3 sp = ro+rd*st;
+    vec3 spp;
+    float de = dfExclusion(sp, spp);
+    vec3 sn = normal1(sp);
+    float fre = 1.0+dot(rd, sn);
+  
+    
+    float si = cos(2.0*tau*zoom*spp.z-0.5*sp.y);
+    float lf = mix(0.0, 1.0, smoothstep(0., 0.9, si));
+    
+    vec3 gcol = ragg*lightCol*exp(8.0*(min(de-0.2, 0.0)));
+    if (de < 0.0) {
+      agg += gcol;
+      ragg *= mix(bounceCol1, bounceCol0, fre);
+    } else {
+      agg += gcol*lf;
+      agg += ragg*lightCol*1.5*lf;
+      ragg = vec3(0.0);
+    }
+    
+    rd = reflect(rd, sn);
+    ro = sp+initt*rd;
+    tagg += initt;
+  }
+  return agg*exp(-mix(1.,-1., g_beat)*vec3(0.1, 0.2, 0.15)*tagg);
+}
+
+vec3 render0(vec3 ro, vec3 rd) {
+  vec3 skyCol = skyColor(ro, rd);
+
+  vec3 col = vec3(0.0);
+
+  float st = rayMarch0(ro, rd);
+  vec3 sp = ro+rd*st;
+  vec3 sn = normal0(sp);
+  vec3 spp;
+  float de = dfExclusion(sp, spp);
+  float ptime = mod(TIME, 30.0);
+  if (st < MAX_RAY_LENGTH) {
+    float sfre = 1.0+dot(rd, sn);
+    sfre *= sfre;
+    sfre = mix(0.1, 1.0, sfre); 
+    vec3 sref   = reflect(rd, sn);
+    vec3 srefr  = refract(rd, sn, refraction);
+    vec3 ssky = sfre*skyColor(sp, sref);
+
+    if (de > 0.0) {
+      col = ssky;
+    } else {
+      col = 0.5*sfre*ssky;
+      vec3 col1 = (1.0-sfre)*render1(sp+srefr*initt, srefr);
+      col += col1;
+    }
+  }
+    
+
+  return col;
+}
+
+
+float circle(vec2 p, float r) {
+  return length(p) - r;
+}
+
+float horseshoe(vec2 p, vec2 c, float r, vec2 w) {
+  p.x = abs(p.x);
+  float l = length(p);
+  p = mat2(-c.x, c.y,
+            c.y, c.x)*p;
+  p = vec2((p.y>0.0)?p.x:l*sign(-c.x),
+            (p.x>0.0)?p.y:l );
+  p = vec2(p.x,abs(p.y-r))-w;
+  return length(max(p,0.0)) + min(0.0,max(p.x,p.y));
+}
+
+float impulse_e(inout vec2 pp, float off) {
+  vec2 p = pp;
+  pp.x -= 1.05+off;
+  p -= vec2(0.5, 0.5);
+  return min(box(p, vec2(0.4, 0.1)), max(circle(p, 0.5), -circle(p, 0.3)));
+}
+
+float impulse_I(inout vec2 pp, float off) {
+  vec2 p = pp;
+  pp.x -= 0.25+off;
+  p -= vec2(0.125, 0.75);
+  return box(p, vec2(0.125, 0.75));
+}
+
+float impulse_l(inout vec2 pp, float off) {
+  vec2 p = pp;
+  pp.x -= 0.2+off;
+  p -= vec2(0.10, 0.5);
+  return box(p, vec2(0.1, 0.666));
+}
+
+float impulse_m(inout vec2 pp, float off) {
+  vec2 p = pp;
+  pp.x -= 2.2+off;
+  p -= vec2(1.1, 0.5);
+  p.y = -p.y;
+  p.x = abs(p.x);
+  p -= vec2(0.5, 0.0);
+  float d = horseshoe(p, impulse_sca0, 0.5, vec2(0.5, 0.1));
+  return d;
+}
+
+float impulse_p(inout vec2 pp, float off) {
+  vec2 p = pp;
+  pp.x -= 1.05+off;
+  p -= vec2(0.55, 0.5);
+  float b = box(p - vec2(-0.45, -0.25), vec2(0.1, 0.75));
+  float c = abs(circle(p, 0.4)) - 0.1;
+  return min(b, c);
+}
+
+float impulse_s(inout vec2 pp, float off) {
+  const mat2 
+    rots1 = ROT(-2.*pi/3.0)
+  , rots2 = ROT(pi)
+  ;
+  vec2 p = pp;
+  pp.x -= 0.875+off;
+  p -= vec2(0.435, 0.5);
+  p *= rots1;
+  float u = horseshoe(p - vec2(-0.25*3.0/4.0, -0.125/2.0), impulse_sca0, 0.375, vec2(0.2, 0.1));
+  p *= rots2;
+  float l = horseshoe(p - vec2(-0.25*3.0/4.0, -0.125/2.0), impulse_sca0, 0.375, vec2(0.2, 0.1));
+  return min(u,l);
+}
+
+float impulse_u(inout vec2 pp, float off) {
+  vec2 p = pp;
+  pp.x -= 1.2+off;
+  p -= vec2(0.6, 0.475);
+  return horseshoe(p - vec2(0.0, 0.125), impulse_sca0, 0.5, vec2(0.4, 0.1));
+}
+
+float impulse(vec2 p, float off) {
+  p += vec2(3.385+3.0*off, 0.5);
+
+  float d = 1E6;
+  d = min(d, impulse_I(p, off));
+  d = min(d, impulse_m(p, off));
+  d = min(d, impulse_p(p, off));
+  d = min(d, impulse_u(p, off));
+  d = min(d, impulse_l(p, off));
+  d = min(d, impulse_s(p, off));
+  d = min(d, impulse_e(p, off));
+
+  return d;
+}
+
+float dfcos(float x) {
+  return sqrt(x*x+1.0)*0.8-1.8;
+}
+
+float dfcos(vec2 p, float freq) {
+  float x = p.x;
+  float y = p.y;
+  x *= freq;
+
+  float x1 = abs(mod(x+pi,tau)-pi);
+  float x2 = abs(mod(x   ,tau)-pi);
+
+  float a = 0.18*freq;
+
+  x1 /= max( y*a+1.0-a,1.0);
+  x2 /= max(-y*a+1.0-a,1.0);
+  return (mix(-dfcos(x2)-1.0,dfcos(x1)+1.0,clamp(y*0.5+0.5,0.0,1.0)))/max(freq*0.8,1.0)+max(abs(y)-1.0,0.0)*sign(y);
 }
 
 
 float df(vec2 p) {
-  vec2 ap = abs(p);
-  float d0 = min(ap.x, ap.y) -0.001;
-  float d1 = dfeffect3(p);
-  float d = d1;
-  /*
-  d = max(d, -(d0-0.001));
-  d = min(d, d0);
-  */
-  return d1;
+  const float 
+    z0 = 0.25
+  , z1 = 0.05
+  ;
+  float b = fract(0.5*bpm*time/60.+0.125*p.x)-0.5;
+  b *= b;
+  vec2 p0 = p;
+  p0 /= z0;
+  vec2 p1 = p;
+  p1 /= z1;
+  p1.x += TIME*2.;
+  
+  float d0 = impulse(p0,0.25)*z0;
+  float d1 = abs(dfcos(p1, z1*tau))*z1-mix(0.01, 0.002, p.x*p.x);
+  
+  float d = d0;
+  d = pmax(d,-(d1-0.01), 0.02);
+  d = min(d,d1);
+  return d;
 }
 
-// License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
-vec3 aces_approx(vec3 v) {
-  v = max(v, 0.0);
-  v *= 0.6f;
-  float a = 2.51f;
-  float b = 0.03f;
-  float c = 2.43f;
-  float d = 0.59f;
-  float e = 0.14f;
-  return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0f, 1.0f);
+mat3 rot(float time) {
+  float 
+    angle1 = time * 0.5       
+  , angle2 = time * 0.707     
+  , angle3 = time * 0.33     
+  , c1 = cos(angle1); float s1 = sin(angle1)
+  , c2 = cos(angle2); float s2 = sin(angle2)
+  , c3 = cos(angle3); float s3 = sin(angle3)
+  ;
 
+  return mat3(
+      c1 * c2,                
+      c1 * s2 * s3 - c3 * s1, 
+      s1 * s3 + c1 * c3 * s2, 
+
+      c2 * s1,                
+      c1 * c3 + s1 * s2 * s3, 
+      c3 * s1 * s2 - c1 * s3, 
+
+      -s2,                   
+      c2 * s3,               
+      c2 * c3                
+  );
 }
 
 vec3 effect(vec2 p) {
-  float aa = sqrt(2.)/RESOLUTION.y;
-  float d = df(p);
-  const vec3 glowCol = HSV2RGB(vec3(0.6, 0.5, 1E-3));
-  
-  vec3 col = vec3(0.);
-  col += glowCol/max(d, 1E-4);
+  g_rot = rot(TIME);
+  g_beat = beat();
+  vec3 rd = normalize(-p.x*uu + p.y*vv + 1.41*ww);
 
-  col = aces_approx(col);
-  col += fade_in();
-  col = sqrt(col);
+  vec3 col = render0(ro, rd);
+ 
   return col;
 }
 
@@ -1942,9 +2341,15 @@ void main() {
   vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
   vec2 p = -1. + 2. * q;
   p.x *= RESOLUTION.x/RESOLUTION.y;
-  vec3 col = effect(p);
-  col = floor(vec3(8,8,4)*col)/vec3(8,8,4);  
+  vec3 col = vec3(0.0);
+  col = effect(p);
+  col = aces_approx(col); 
+  float d = df(p);
+  float aa = sqrt(2.)/RESOLUTION.y;
   
+  col = mix(col, vec3(1.0), smoothstep(aa, -aa, d));
+  col += fade_in();
+  col = sqrt(col);
   fragColor = vec4(col, 1.0);
 }
 )SHADER";

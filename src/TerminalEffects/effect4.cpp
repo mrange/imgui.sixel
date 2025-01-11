@@ -44,7 +44,7 @@ effect_kind effect4(effect_input const & ei) {
       auto r = rotator {time-l};
       r(p.x, p.y);
       
-      auto const pcol = palette(0.707F*time+l).sqrt();
+      auto const pcol = palette(0.707F*time+l).sqrt()*mix(0.0, 1.0, music__beat(time));
       auto ang= std::atan2(p.y, p.x);
 
       auto col = vec3 {0,0,0};
@@ -82,12 +82,13 @@ effect_kind effect4(effect_input const & ei) {
   ei.screen.draw__bitmap(impulse2  , time, 8, 6);
 
   { 
-    float start = music__from_nbeat(ei.beat__start);
-    float end   = music__from_nbeat(ei.beat__start+1);
-    float fade  = smoothstep(end, start, time);
-    ei.screen.apply_to_all([fade](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
-      f += fade;
-      b += fade;
+    float fadein  = smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), time);
+    ei.screen.apply_to_all([&ei, time, fadein](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
+      f += fadein;
+      b += fadein;
+      float fadeout = smoothstep(music__from_nbeat(ei.beat__end-16), music__from_nbeat(ei.beat__end), time+p.length2());
+      f *= 1.F-fadeout;
+      b *= 1.F-fadeout;
     });
   }
 

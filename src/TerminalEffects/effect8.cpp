@@ -28,7 +28,7 @@ namespace {
   , fragment_shader__bw
   , fragment_shader__psychedelic
   , fragment_shader__lotus
-  , fragment_shader__apollo
+  , fragment_shader__reflections
   };
 
   struct t_shader {

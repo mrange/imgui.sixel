@@ -66,7 +66,7 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 0*music__beat_time;
+  auto const start_time = 456*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7                                                 , L"Running INTRO.COM"}
@@ -79,7 +79,7 @@ namespace {
   , {264, [](effect_input const & ei) { return effect8(ei, 2); }  , L"Trippy tunneling"}
   , {324, effect5                                                 , L"This star scroller still sucks!"}
   , {328, [](effect_input const & ei) { return effect8(ei, 3); }  , L"The Lotus challenge"}
-  , {360, [](effect_input const & ei) { return effect8(ei, 4); }  , L"The apollonian"}
+  , {360, [](effect_input const & ei) { return effect8(ei, 4); }  , L"Another approximative cube"}
   , {392, effect4                                                 , L"FITB"}
   , {456, effect3                                                 , L"FITB"}
   , {528, effect0                                                 , L"FITB"}

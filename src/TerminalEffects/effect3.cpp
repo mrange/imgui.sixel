@@ -610,5 +610,19 @@ Bend elements:    ╭ ╯ ╮ ╰
     }
   }
 
+  {
+    auto luma = vec3 { 0.299F, 0.587F, 0.114F };
+    float fadein   = smoothstep(music__from_nbeat(ei.beat__start), music__from_nbeat(ei.beat__start+8), time);
+    float fadeout  = smoothstep(music__from_nbeat(ei.beat__end-32), music__from_nbeat(ei.beat__end), time);
+    ei.screen.apply_to_all([luma, fadein ,fadeout](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
+      float flum = luma.dot(f);
+      float blum = luma.dot(b);
+      f *= fadein;
+      b *= fadein;
+      f *= smoothstep(flum, flum-0.25F, fadeout);
+      b *= smoothstep(blum, blum-0.25F, fadeout);
+    });
+  }
+
   return ascii_effect;
 }
