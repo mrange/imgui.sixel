@@ -33,6 +33,38 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id);
 effect_kind effect9(effect_input const & ei);
 
 namespace {
+  std::wstring const info_text = L"\x1B[2J\x1B[H" LR"INFO(╔══════════════════════════════════════════════════════════════════════════════╗ 
+║                                                                              ║ 
+║        ██▓ ███▄ ▄███▓ ██▓███   █    ██  ██▓      ██████ ▓█████  ▐██▌         ║ 
+║       ▓██▒▓██▒▀█▀ ██▒▓██░  ██▒ ██  ▓██▒▓██▒    ▒██    ▒ ▓█   ▀  ▐██▌         ║ 
+║       ▒██▒▓██    ▓██░▓██░ ██▓▒▓██  ▒██░▒██░    ░ ▓██▄   ▒███    ▐██▌         ║ 
+║       ░██░▒██    ▒██ ▒██▄█▓▒ ▒▓▓█  ░██░▒██░      ▒   ██▒▒▓█  ▄  ▓██▒         ║ 
+║       ░██░▒██▒   ░██▒▒██▒ ░  ░▒▒█████▓ ░██████▒▒██████▒▒░▒████▒ ▒▄▄          ║ 
+║       ░▓  ░ ▒░   ░  ░▒▓▒░ ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ▒▓▒ ▒ ░░░ ▒░ ░ ░▀▀▒         ║ 
+║        ▒ ░░  ░      ░░▒ ░     ░░▒░ ░ ░ ░ ░ ▒  ░░ ░▒  ░ ░ ░ ░  ░ ░  ░         ║ 
+║        ▒ ░░      ░   ░░        ░░░ ░ ░   ░ ░   ░  ░  ░     ░       ░         ║ 
+║        ░         ░               ░         ░  ░      ░     ░  ░ ░            ║ 
+║                                                                              ║ 
+║                                                                              ║ 
+║                               ♥ G O E S ♥ T O ♥                              ║ 
+║                                                                              ║ 
+║                                                                              ║ 
+║    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    ║ 
+║    ░░░░░░░░      ░░░░░░░░░        ░░░░░░░░       ░░░░░░░░░       ░░░░░░░░    ║ 
+║    ▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒    ║ 
+║    ▓▓▓▓▓▓▓  ▓▓▓   ▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓    ║ 
+║    ███████  ████  ████████  ██████████████  ███  █████████  █████████████    ║ 
+║    ████████      █████████        ████████  ████  ████████  █████████████    ║ 
+║    ██████████████████████████████████████████████████████████████████████    ║ 
+║                                                                              ║ 
+║    This demo requires a Sixel compatible terminal such as:                   ║ 
+║     Windows Terminal Preview version 1.22.3232.0                             ║ 
+║    Make sure the entire border is visible in the terminal.                   ║ 
+║                                                                              ║ 
+║    When reading hit any key to start the demo                                ║ 
+║                                                                              ║ 
+╚══════════════════════════════════════════════════════════════════════════════╝ 
+)INFO";
   std::size_t const desired__width  = 800;
   std::size_t const desired__height = 600;
   wchar_t const windows_class_name[]= L"TerminalEffects";
@@ -66,7 +98,7 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 456*music__beat_time;
+  auto const start_time = 0*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7                                                 , L"Running INTRO.COM"}
@@ -80,8 +112,8 @@ namespace {
   , {324, effect5                                                 , L"This star scroller still sucks!"}
   , {328, [](effect_input const & ei) { return effect8(ei, 3); }  , L"The Lotus challenge"}
   , {360, [](effect_input const & ei) { return effect8(ei, 4); }  , L"Another approximative cube"}
-  , {392, effect4                                                 , L"FITB"}
-  , {456, effect3                                                 , L"FITB"}
+  , {392, effect4                                                 , L"Let's greet some people"}
+  , {456, effect3                                                 , L"That's all from Impulse folks!"}
   , {528, effect0                                                 , L"FITB"}
   });
 
@@ -848,7 +880,8 @@ int main() {
     CHECK_CONDITION(hinstance);
 
     wnd_class_ex.hInstance = hinstance;
-    auto dw_style = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
+    auto dw_style   = WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_POPUP;
+    auto dw_exstyle = WS_EX_NOACTIVATE ;
 
     auto result__register_class = RegisterClassEx(&wnd_class_ex);
     CHECK_CONDITION(result__register_class);
@@ -865,7 +898,7 @@ int main() {
     auto wnd__y       = 0;
 
     auto hwnd = CreateWindowEx(
-      0                   // Extended style
+      dw_exstyle          // Extended style
     , windows_class_name  // Window class name
     , windows_class_name  // Window title
     , dw_style            // Window style
@@ -933,12 +966,23 @@ int main() {
 
     std::vector<ABGR>     pixels          ;
     std::vector<GLubyte>  sixel_pixels    ;
-    std::vector<char8_t> output0          ;
-    std::vector<char8_t> output1          ;
+    std::vector<char8_t>  output0         ;
+    std::vector<char8_t>  output1         ;
     auto buffer_selector                  = false;
 
     output0.reserve(1<<20);
     output1.reserve(1<<20);
+
+    {
+      ticks__write_pixel_as_sixels ticks = {};
+      wchars_to_utf8(output1, info_text);
+      write__output(
+        hstdout
+      , output1
+      , ticks
+      );
+      std::getchar();
+    }
 
     CHECK_HRESULT(player->Play());
     auto onexit__stop_player = on_exit([player]{ player->Stop(); });
