@@ -32,7 +32,7 @@ effect_kind effect9(effect_input const & ei) {
 
   auto fadeout = smoothstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time);
   auto heart__fade = linstep(music__from_nbeat(ei.beat__start+7), music__from_nbeat(ei.beat__start+12), ei.time);
-  if (music__nbeat(ei.time) > ei.beat__start + 7) {
+  if (music__nbeat(ei.time) > static_cast<int>(ei.beat__start) + 7) {
     ei.screen.apply_to_all([&ei, fadeout, heart__fade](auto x, auto y, auto p, auto& s, auto& f, auto& b) {
       //auto h = hash(p);
 

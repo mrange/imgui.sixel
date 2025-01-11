@@ -8,7 +8,7 @@ namespace {
 
 
 float music__beat(float time) {
-  return std::expf(-1.F*std::max(fractf((time+0.043)/music__beat_time), 0.F));
+  return std::expf(-1.F*std::max(fractf((time+0.043F)/music__beat_time), 0.F));
 }
 
 float music__drum(float time) {

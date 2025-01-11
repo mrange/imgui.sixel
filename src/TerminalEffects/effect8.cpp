@@ -61,13 +61,14 @@ namespace {
       assert(shader.loc__time > -1);
       assert(shader.loc__resolution > -1);
       assert(shader.loc__state > -1);
-    }
 
 #ifdef _DEBUG
-    auto glGetProgramInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
-    glGetProgramInfoLog(shader.program, sizeof(debug__log), NULL, debug__log);
-    printf(debug__log);
+      auto glGetProgramInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
+      glGetProgramInfoLog(shader.program, sizeof(debug__log), NULL, debug__log);
+      printf(debug__log);
 #endif
+    }
+
   }
 
   void deinit_effect() {

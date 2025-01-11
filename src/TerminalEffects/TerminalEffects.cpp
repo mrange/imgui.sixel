@@ -7,7 +7,6 @@
 #include <gl/GL.h>
 #include "glext.h"
 
-
 #pragma comment(lib, "mf.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")
@@ -18,11 +17,10 @@
 #define USE_MMX
 #define MUSIC_TIME
 
-//#define SHOW_WINDOW
+#define SHOW_WINDOW
 #define INFO_TEXT
 
 void init__effect8();
-
 
 effect_kind effect0(effect_input const & ei);
 effect_kind effect1(effect_input const & ei);
@@ -858,6 +856,8 @@ namespace {
 int main() {
   try {
     {
+      auto setdpi__result = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+      assert(setdpi__result);
       // Create effective script
       std::size_t idx = 0;
       auto current    = get__script_part(idx);
@@ -1041,7 +1041,7 @@ int main() {
 #endif
 
       auto nbeat = music__nbeat(time);
-      done |= nbeat >= effective_script.size();
+      done |= nbeat >= static_cast<int>(effective_script.size());
       nbeat = std::clamp<std::size_t>(nbeat, 0, effective_script.size()-1);
 
       screen.clear();
