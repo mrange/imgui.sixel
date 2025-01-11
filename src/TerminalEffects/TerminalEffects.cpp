@@ -18,8 +18,8 @@
 #define USE_MMX
 #define MUSIC_TIME
 
-#define SHOW_WINDOW
-//#define INFO_TEXT
+//#define SHOW_WINDOW
+#define INFO_TEXT
 
 void init__effect8();
 
@@ -101,7 +101,7 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 392*music__beat_time;
+  auto const start_time = 0*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7                                                 , L"Running INTRO.COM"                  }
