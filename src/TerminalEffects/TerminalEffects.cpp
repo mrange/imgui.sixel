@@ -68,6 +68,9 @@ namespace {
 ║                                                                              ║
 ╚══════════════════ When ready hit any key to start the demo ══════════════════╝
 )INFO";
+
+  std::wstring const end_text = L"\x1B[2J\x1B[H\x1B[?25h";
+
   std::size_t const desired__width  = 800;
   std::size_t const desired__height = 600;
   wchar_t const windows_class_name[]= L"TerminalEffects";
@@ -113,7 +116,7 @@ namespace {
   , {260, effect5                                                 , L"This star scroller sucks!"          }
   , {264, [](effect_input const & ei) { return effect8(ei, 2); }  , L"Trippy tunneling"                   }
   , {324, effect5                                                 , L"This star scroller still sucks!"    }
-  , {328, [](effect_input const & ei) { return effect8(ei, 3); }  , L"The Lotus challenge"                }
+  , {328, [](effect_input const & ei) { return effect8(ei, 3); }  , L"The other Lotus challenge"          }
   , {360, [](effect_input const & ei) { return effect8(ei, 4); }  , L"Another approximative cube"         }
   , {392, effect4                                                 , L"Let's greet some people"            }
   , {456, effect3                                                 , L"That's all from Impulse folks!"     }
@@ -1097,6 +1100,25 @@ int main() {
       , ticks
       );
 
+    }
+
+    {
+      buffer_selector = !buffer_selector;
+      std::vector<char8_t> & output =
+        buffer_selector
+        ? output0
+        : output1
+        ;
+
+      output.clear();
+
+      ticks__write_pixel_as_sixels ticks = {};
+      wchars_to_utf8(output, end_text);
+      write__output(
+        hstdout
+      , output
+      , ticks
+      );
     }
 
     return 0;

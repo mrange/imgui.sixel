@@ -61,7 +61,7 @@ effect_kind effect1(effect_input const & ei) {
   ei.screen.draw__bitmap(meditation, ei.time, 11, 1, meditation__fade);
 
   auto spiritualism__fade = smoothstep(music__from_nbeat(ei.beat__start+7), music__from_nbeat(ei.beat__start+8), ei.time);
-  ei.screen.draw__bitmap(spiritualism, ei.time, 9, 22, spiritualism__fade);
+  ei.screen.draw__bitmap(spiritualism, ei.time, 9, 23, spiritualism__fade);
 
   auto fadein   = smoothstep(music__from_nbeat(ei.beat__start), music__from_nbeat(ei.beat__start+2), ei.time);
   auto fadeout  = linstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time);

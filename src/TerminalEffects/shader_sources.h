@@ -526,7 +526,7 @@ float circle(vec2 p, float r) {
 
 vec3 offset(float z) {
   float a = z;
-  vec2 p = -0.075*(vec2(cos(a), sin(a*sqrt(2.0))) + vec2(cos(a*sqrt(0.75)), sin(a*sqrt(0.5))));
+  vec2 p = -0.1*(vec2(cos(a), sin(a*sqrt(2.0))) + vec2(cos(a*sqrt(0.75)), sin(a*sqrt(0.5))));
   return vec3(p, z);
 }
 
@@ -635,6 +635,9 @@ vec3 skyColor(vec3 ro, vec3 rd) {
 float psin(float x) {
   return 0.5+0.5*sin(x);
 }
+
+const float planeDist = 0.707;
+
 vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
   const float per = 40.;
   float lp = length(p);
@@ -646,7 +649,6 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
 
   const vec3 errorCol = vec3(1.0, 0.0, 0.0);
 
-  float planeDist = 1.0;
   const int furthest = 6;
   const int fadeFrom = max(furthest-4, 0);
 
@@ -688,7 +690,7 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
 }
 
 vec3 effect(vec2 p, vec2 q) {
-  float tm  = TIME*0.5*BPM/60.+0.25;
+  float tm  = planeDist*TIME*0.5*BPM/60.+0.25;
   vec3 ro   = offset(tm);
   vec3 dro  = doffset(tm);
   vec3 ddro = ddoffset(tm);
@@ -1765,7 +1767,7 @@ void main() {
 
   vec3 col = vec3(0.0);
   col = effect(col, p);
-
+  col += fade_in();
   col = sqrt(col);
   
   fragColor = vec4(col, 1.0);
