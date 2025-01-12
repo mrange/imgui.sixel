@@ -118,6 +118,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
   , static_cast<GLfloat>(ei.viewport__width)
   , static_cast<GLfloat>(ei.viewport__height)
   );
+  auto quad = [](float x) { return x*x; };
   switch (shader_id) {
     case 0:
       fp__glUniform4f(
@@ -125,7 +126,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
         , music__drum(ei.time)
         ,   smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
           + smoothstep(music__from_nbeat(168+1), music__from_nbeat(168), ei.time)*step(music__from_nbeat(168), ei.time)
-        , linstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time)
+        , quad(linstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time))
         , smoothstep(music__from_nbeat(164), music__from_nbeat(170), ei.time)
         );
       break;
@@ -134,7 +135,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
           shader.loc__state
         , music__drum(ei.time)
         , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
-        , smoothstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time)
+        , quad(linstep(music__from_nbeat(ei.beat__end-4), music__from_nbeat(ei.beat__end), ei.time))
         , smoothstep(music__from_nbeat(164), music__from_nbeat(170), ei.time)
         );
       break;
@@ -144,7 +145,7 @@ effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
         , music__beat(ei.time)
         , smoothstep(music__from_nbeat(ei.beat__start+1), music__from_nbeat(ei.beat__start), ei.time)
           + smoothstep(music__from_nbeat(296+1), music__from_nbeat(296), ei.time)*step(music__from_nbeat(296), ei.time)
-        , smoothstep(music__from_nbeat(ei.beat__end-10), music__from_nbeat(ei.beat__end), ei.time)
+        , quad(linstep(music__from_nbeat(ei.beat__end-12), music__from_nbeat(ei.beat__end), ei.time))
         , step(music__from_nbeat(296), ei.time)
         );
       break;

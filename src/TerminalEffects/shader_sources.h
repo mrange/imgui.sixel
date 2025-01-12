@@ -630,8 +630,7 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
   const float per = 40.;
   float lp = length(p);
   vec2 np = p + 1.0/RESOLUTION.xy;
-  float rdd = (2.0+0.5*lp*tanh(lp+0.9*psin(per*p.x)*psin(per*p.y)));
-//  float rdd = (2.0+1.5*tanh(lp));
+  float rdd = (mix(2.,4., fade_out())+0.5*lp*tanh(lp+0.9*psin(per*p.x)*psin(per*p.y)));
   vec3 rd = normalize(p.x*uu + p.y*vv + rdd*ww);
   vec3 nrd = normalize(np.x*uu + np.y*vv + rdd*ww);
 
