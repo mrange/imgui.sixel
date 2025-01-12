@@ -7,6 +7,8 @@
 #include <gl/GL.h>
 #include "glext.h"
 
+#include <conio.h>
+
 #pragma comment(lib, "mf.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")
@@ -852,11 +854,63 @@ namespace {
     }
   }
 
+  bool terminal_supports_sixel() {
+    // Clear any buffered input
+    while (_kbhit()) {
+      _getch();
+    }
+    // Ask the terminal for its capabilities
+    std::printf("\x1B[c");
+
+    // Wait for the terminal to respond
+    Sleep(100);
+
+    std::string input;
+    input.reserve(128);
+
+    while (_kbhit()) {
+      auto ch = static_cast<char>(_getch());
+      input.push_back(ch);
+    }
+
+    // 4 is magic constant for Sixel support
+    std::string sixel_flag = "4";
+    std::string flag;
+    flag.reserve(128);
+
+    auto check_flag = [&flag, &sixel_flag]() {
+      return flag == sixel_flag;
+    };
+
+    // Read response, it's flags that are semi-colon 
+    //  separated so run check_flag after each flag is read
+    for (auto ch : input) {
+      if (ch == ';') {
+        if (check_flag()) {
+          return true;
+        }
+        flag.clear();
+      } else {
+        flag.push_back(ch);
+      }
+    }
+
+    if (check_flag()) {
+      return true;
+    }
+
+    return false;
+  }
 }
 
 int main() {
   try {
     {
+      if (!terminal_supports_sixel()) {
+        std::printf("This demo requires a Sixel compatible terminal such as :\n * Windows Terminal Preview version 1.22.3232.0\n");
+        return 97;
+      }
+
       CHECK_CONDITION(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE));
       // Create effective script
       std::size_t idx = 0;
