@@ -105,7 +105,7 @@ namespace {
     std::wstring  name        ;
   };
 
-  auto const start_time = 0*music__beat_time;
+  auto const start_time = 520*music__beat_time;
   std::array<effective_script_part, music__beat_length> effective_script;
   auto script = std::to_array<script_part>({
     {0  , effect7                                                 , L"Running INTRO.COM"                  }
@@ -1172,6 +1172,38 @@ int main() {
 
       ticks__write_pixel_as_sixels ticks = {};
       wchars_to_utf8(output, end_text);
+
+      auto sixel__handle = CreateFileA(
+        R"PATH(D:\assets\gerp.txt)PATH"
+      , GENERIC_READ
+      , FILE_SHARE_READ
+      , nullptr
+      , OPEN_EXISTING
+      , FILE_ATTRIBUTE_NORMAL
+      , nullptr
+      );
+      CHECK_CONDITION(sixel__handle != INVALID_HANDLE_VALUE);
+      auto onexit__close_sixel = on_exit([sixel__handle]{ CloseHandle(sixel__handle); });
+
+      LARGE_INTEGER sixel__size;
+      CHECK_CONDITION(GetFileSizeEx(sixel__handle, &sixel__size));
+
+      if (sixel__size.QuadPart > 0) {
+        std::vector<char8_t> buffer;
+        auto size = static_cast<std::size_t>(sixel__size.QuadPart);
+        buffer.resize(size);
+        DWORD sixel__read = 0;
+        CHECK_CONDITION(ReadFile(
+            sixel__handle
+          , &buffer.front()
+          , size
+          , &sixel__read
+          , nullptr
+          ));
+
+        output.insert(output.end(), buffer.begin(), buffer.begin() + sixel__read);
+      }
+
       write__output(
         hstdout
       , output
