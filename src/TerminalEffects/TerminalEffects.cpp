@@ -21,6 +21,7 @@
 #define INFO_TEXT
 
 void init__effect8();
+void deinit__effect8();
 
 effect_kind effect0(effect_input const & ei);
 effect_kind effect1(effect_input const & ei);
@@ -856,8 +857,7 @@ namespace {
 int main() {
   try {
     {
-      auto setdpi__result = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
-      assert(setdpi__result);
+      CHECK_CONDITION(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE));
       // Create effective script
       std::size_t idx = 0;
       auto current    = get__script_part(idx);
@@ -977,6 +977,8 @@ int main() {
     CHECK_CONDITION(SetConsoleMode(hstdout, consoleMode));
 
     init__effect8();
+    auto on_exit__deinit__effect8 = on_exit([]{ deinit__effect8(); });
+    
 
     std::vector<ABGR>     pixels          ;
     std::vector<GLubyte>  sixel_pixels    ;

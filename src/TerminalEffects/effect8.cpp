@@ -72,6 +72,12 @@ namespace {
   }
 
   void deinit_effect() {
+    auto fp__glDeleteProgram = (PFNGLDELETEPROGRAMPROC)wglGetProcAddress("glDeleteProgram");
+    assert(fp__glDeleteProgram);
+    for (std::size_t i = 0; i < no_shaders; ++i) {
+      auto & shader = shaders[i];
+      fp__glDeleteProgram(shader.program);
+    }
   }
 
 }
@@ -79,6 +85,10 @@ namespace {
 
 void init__effect8() {
   init_effect();
+}
+
+void deinit__effect8() {
+  deinit_effect();
 }
 
 effect_kind effect8(effect_input const & ei, std::size_t shader_id) {
