@@ -54,38 +54,38 @@ namespace {
         ▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄
 )BITMAP");
   bitmap const greetings_0 = make_bitmap(col__black, LR"BITMAP(
- 
- 
- 
-            Brainless Institute              
-               Fisk Kompaniet                
-                  NewCore                    
-                   NoCrew                    
-                    ICE                      
-                                             
-                  and XiA                    
-                      ───                    
- 
+
+
+
+            Brainless Institute
+               Fisk Kompaniet
+                  NewCore
+                   NoCrew
+                    ICE
+
+                  and XiA
+                      ───
+
 )BITMAP");
 
   bitmap const greetings_1 = make_bitmap(col__black, LR"BITMAP(
-                                            
-              The Twitch Tribe              
-                                            
-  h0ffman, essenbee, fieldfxdemo, lug00ber, 
-  ggn2, proton, styxColor, TheCaptainCoder, 
-  TheGrumpyGameDev and Thindal              
-                                            
-             Shader Superheroes             
-                                            
-  Big Wings, Byt3 M3chanic, Dave Hoskins,   
-  EvilRyu, Evvvil, IQ, Kali, Kishimisu,     
+
+              The Twitch Tribe
+           ────────○○○○○○────────
+  h0ffman, essenbee, fieldfxdemo, lug00ber,
+  ggn2, proton, styxColor, TheCaptainCoder,
+  TheGrumpyGameDev and Thindal
+
+             Shader Superheroes
+          ─────────○○○○○○─────────
+  Big Wings, Byt3 M3chanic, Dave Hoskins,
+  EvilRyu, Evvvil, IQ, Kali, Kishimisu,
   msm01, Nimitz, Shane, Totetmatt and XorDev
-                                            
+
 )BITMAP");
 
   bitmap const greetings_2 = make_bitmap(col__black, LR"BITMAP(
-                                            
+
       Finally, greetings to everyone at:
 
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
