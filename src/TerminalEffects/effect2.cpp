@@ -56,7 +56,7 @@ effect_kind effect2(effect_input const & ei) {
       auto px = (-1.F*ei.screen.width+2.F*(x+0.5F))/(2*ei.screen.height);
 
       auto p = vec2 {px, py};
-      auto h0 = hash(p+std::floorf(-0.25F*time+py*py+0.33F*hash(p)));
+      auto h0 = hash(p+std::floorf(-0.125F-0.125F*time/music__beat_time+py*py+0.33F*hash(p)));
 
       auto shape = L'╳';
       if (h0 > 0.55) {

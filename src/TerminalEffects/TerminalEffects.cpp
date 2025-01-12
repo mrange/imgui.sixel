@@ -60,7 +60,7 @@ namespace {
 ║    ██████████████████████████████████████████████████████████████████████    ║
 ║                                                                              ║
 ║    Music by amazing Astroboy and licensed under CC BY-NC-ND 3.0              ║
-║                                    https://sampleswap.org/artist/astroboy    ║
+║                         ╰────────→ https://sampleswap.org/artist/astroboy    ║
 ║                                                                              ║
 ║    This demo requires a Sixel compatible terminal such as:                   ║
 ║     * Windows Terminal Preview version 1.22.3232.0                           ║
