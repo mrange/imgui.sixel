@@ -44,7 +44,7 @@ float fade() {
 const float BPM = 145.0/60.;
 
 float fade_in() {
-  return 0.;
+  return 0.0;
 }
 
 float fade_out() {
@@ -136,43 +136,6 @@ float pmin(float a, float b, float k) {
 // License: CC0, author: Mårten Rånge, found: https://github.com/mrange/glsl-snippets
 float pmax(float a, float b, float k) {
   return -pmin(-a, -b, k);
-}
-
-// Create a quaternion from axis and angle
-vec4 createQuaternion(vec3 axis, float angle) {
-  float halfAngle = angle * 0.5;
-  float s = sin(halfAngle);
-  return vec4(axis * s, cos(halfAngle));
-}
-
-// Quaternion multiplication
-vec4 multiplyQuaternions(vec4 q1, vec4 q2) {
-  return vec4(
-    q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,
-    q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x,
-    q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w,
-    q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z
-  );
-}
-
-// Rotate a vector using a quaternion
-mat3 rotationFromQuaternion(vec4 q) {
-  // Convert quaternion to a rotation matrix
-  mat3 rotationMatrix = mat3(
-    1.0 - 2.0 * (q.y * q.y + q.z * q.z),
-    2.0 * (q.x * q.y - q.w * q.z),
-    2.0 * (q.x * q.z + q.w * q.y),
-
-    2.0 * (q.x * q.y + q.w * q.z),
-    1.0 - 2.0 * (q.x * q.x + q.z * q.z),
-    2.0 * (q.y * q.z - q.w * q.x),
-
-    2.0 * (q.x * q.z - q.w * q.y),
-    2.0 * (q.y * q.z + q.w * q.x),
-    1.0 - 2.0 * (q.x * q.x + q.y * q.y)
-  );
-
-  return rotationMatrix;
 }
 
 // -------------------------------------------------
@@ -338,36 +301,30 @@ vec3 palette(float a) {
   return 0.5*(1.+sin(vec3(0,1,2)+a));
 }
 
+mat3 rot(float time) {
+  float
+    angle1 = time * 0.5
+  , angle2 = time * 0.707
+  , angle3 = time * 0.33
+  , c1 = cos(angle1); float s1 = sin(angle1)
+  , c2 = cos(angle2); float s2 = sin(angle2)
+  , c3 = cos(angle3); float s3 = sin(angle3)
+  ;
 
-vec3 effect(vec2 p) {
-  g_beat = beat();
-  const vec2 csz = 1.0/vec2(80.,30.);
-  vec2 np = round(p/csz)*csz;
-  float fade = fade();
-  float h0 = hash(np);
-  float f0 = -0.1*h0+0.5*(np.y*np.y+np.x*np.x)+mix(-1.4, 0.6, fade);
-  if (f0 < 0.) {
-    p = np;
-  }
-  p *= ROT(-PI*length(p)*fade_out());
-  const vec3 cam  = 5.0*vec3(1.0, 0.5, 1.0);
-  const vec3 dcam = normalize(vec3(0.0) - cam);
-  const vec3 ro = cam;
-  const vec3 ww = dcam;
-  const vec3 uu = normalize(cross(vec3(0.0,1.0,0.0), ww));
-  const vec3 vv = cross(ww,uu);
-  const float rdd = 2.0;
-  vec3 rd = normalize(-p.x*uu + p.y*vv + rdd*ww);
+  return mat3(
+      c1 * c2,
+      c1 * s2 * s3 - c3 * s1,
+      s1 * s3 + c1 * c3 * s2,
 
-  vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*time),sin(0.707*time))), time);
-  //vec4 q = createQuaternion(normalize(cam.zxy), time);
-  g_rot = rotationFromQuaternion(q);
-  vec3 col = render(ro, rd);
-  col += 3.*(palette(time+(np.x+np.y)*PI/2.+PI)+f0)*exp(-10.*f0)*step(0.,f0);
+      c2 * s1,
+      c1 * c3 + s1 * s2 * s3,
+      c3 * s1 * s2 - c1 * s3,
 
-  return col+3.*fade_in();
+      -s2,
+      c2 * s3,
+      c2 * c3
+  );
 }
-
 // License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
 vec3 aces_approx(vec3 v) {
   v = max(v, 0.0);
@@ -380,14 +337,45 @@ vec3 aces_approx(vec3 v) {
   return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0, 1.0);
 }
 
-void main() {
-  vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
+
+vec3 effect(vec2 q) {
+  g_beat = beat();
+  const vec2 csz = 1.0/vec2(80.,30.);
+
+  vec2 nq = floor(q/csz)*csz;
+  vec2 np = -1.+2.*nq;
+  float fade = fade();
+  float h0 = hash(nq);
+  float f0 = -0.1*h0+0.5*(np.y*np.y+np.x*np.x)+mix(-1.4, 0.6, fade);
+  if (f0 < 0.) {
+    q = nq;
+  }
   vec2 p = -1.0 + 2.0*q;
   p.x *= RESOLUTION.x/RESOLUTION.y;
-  vec3 col = effect(p);
+
+  const vec3 cam  = 5.0*vec3(1.0, 0.5, 1.0);
+  const vec3 dcam = normalize(vec3(0.0) - cam);
+  const vec3 ro = cam;
+  const vec3 ww = dcam;
+  const vec3 uu = normalize(cross(vec3(0.0,1.0,0.0), ww));
+  const vec3 vv = cross(ww,uu);
+  const float rdd = 2.0;
+  vec3 rd = normalize(-p.x*uu + p.y*vv + rdd*ww);
+
+  g_rot = rot(-5.+(time+3.*length(p)*fade_out()));
+  vec3 col = render(ro, rd);
+  col += 3.*(palette(time+(np.x+np.y)*PI/2.+PI)+f0)*exp(-10.*f0)*step(0.,f0);
+
   col = aces_approx(col);
+  col +=3.*fade_in();
   col = sqrt(col);
 
+  return col;
+}
+
+void main() {
+  vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
+  vec3 col = effect(q);
   fragColor = vec4(col, 1.0);
 }
 )SHADER";
@@ -1566,7 +1554,7 @@ float segmenty(vec2 p, float off) {
   return p.y > 0.0 ? d1 : d0;
 }
 
-float eye(vec2 p) {
+vec2 eye(vec2 p) {
   float a  = mix(0.0, 0.85, smoothstep(0.995, 1.0, cos(tau*TIME/5.0)));
   const float b = 4.0;
   float rr = mix(1.6, b, a);
@@ -1611,7 +1599,7 @@ float eye(vec2 p) {
 
   float d = d0;
   d = pmin(d, d1, 0.0125);
-  return d;
+  return vec2(d, d5);
 }
 
 
@@ -1630,7 +1618,7 @@ float starn(vec2 p, float r, float n, float m) {
 }
 
 
-vec2 hand(vec2 p) {
+vec2 lotus(vec2 p) {
   p.x = abs(p.x);
   vec2 p0 = p;
   p0 -= vec2(0.0, 0.180+0.00);
@@ -1653,7 +1641,6 @@ vec2 hand(vec2 p) {
 
   vec2 p5 = p;
   p5 -= vec2(0.0, -0.45);
-//  float d5 = vesica(p5.yx, 0.175, 0.1)-0.2;
   float d5 = starn(p5.yx, 0.33, 10.0, 3.5);
   float d6 = abs(d5-0.005)-0.005;
 
@@ -1680,21 +1667,21 @@ vec2 hand(vec2 p) {
   return vec2(d, dd);
 }
 
-vec2 df(vec2 p) {
+vec3 df(vec2 p) {
   const float zz = 1.0;
   p/=zz;
   p.y -= -0.05;
-  vec2 dh = hand(p);
+  vec2 dh = lotus(p);
   const float ze = 0.28;
   vec2 pe = p;
   pe -= vec2(0.0, -0.45);
   pe /= ze;
-  float de = eye(pe);
+  vec2 de = eye(pe);
   de *= ze;
 
   float d = dh.x;
-  d = max(d, -de);
-  return vec2(d, dh.y)*zz;
+  d = max(d, -de.x);
+  return vec3(d, dh.y, de.y)*zz;
 }
 
 
@@ -1751,11 +1738,13 @@ vec3 effect(vec3 col, vec2 p) {
   col = mix(col, bcol-0.5*dc, smoothstep(aa, -aa, db));
   col = clamp(col, 0.0, 1.0);
 
-  vec2 d = df(dp);
+  vec3 d = df(dp);
   float daa = sqrt(2.)/RESOLUTION.y;
 
+  vec3 lotusCol = (palette(dp.y+log(1.+p.y*p.y)/log(4.)+0.5*time+pi).zyx+aa*aa*mix(0.1,2.,beat()));
+  lotusCol = mix(lotusCol, vec3(1.), smoothstep(daa, -daa, d.z));
   col = mix(col, vec3(0.0), smoothstep(daa, -daa, d.y));
-  col = mix(col, (palette(dp.y+log(1.+p.y*p.y)/log(4.)+0.5*time+pi).zyx+aa*aa*mix(0.1,2.,beat())), smoothstep(daa, -daa, d.x));
+  col = mix(col, lotusCol, smoothstep(daa, -daa, d.x));
 
   return col;
 }
