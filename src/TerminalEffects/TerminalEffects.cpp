@@ -62,7 +62,7 @@ namespace {
 ║    Music by amazing Astroboy and licensed under CC BY-NC-ND 3.0              ║
 ║                         ╰────────→ https://sampleswap.org/artist/astroboy    ║
 ║                                                                              ║
-║    This demo requires a Sixel compatible terminal such as:                   ║
+║    This demo requires a Sixel (tech from 1970s) compatible terminal such as: ║
 ║     * Windows Terminal Preview version 1.22.3232.0                           ║
 ║                                                                              ║
 ║    Make sure the entire border is visible in the terminal.                   ║
@@ -905,13 +905,12 @@ namespace {
 
 int main() {
   try {
-    {
-      if (!terminal_supports_sixel()) {
-        std::printf("This demo requires a Sixel compatible terminal such as :\n * Windows Terminal Preview version 1.22.3232.0\n");
-        return 97;
-      }
+    if (!terminal_supports_sixel()) {
+      std::printf("This demo requires a Sixel (tech from 1970s) compatible terminal such as :\n * Windows Terminal Preview version 1.22.3232.0\n");
+      return 97;
+    }
 
-      CHECK_CONDITION(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE));
+    {
       // Create effective script
       std::size_t idx = 0;
       auto current    = get__script_part(idx);
@@ -930,6 +929,9 @@ int main() {
         };
       }
     }
+
+    CHECK_CONDITION(SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE));
+
     CHECK_HRESULT(CoInitialize(0));
     auto onexit__counitialize = on_exit([]{ CoUninitialize(); });
 
