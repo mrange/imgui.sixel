@@ -39,11 +39,11 @@
 #include <type_traits>
 #include <vector>
 
-#pragma warning(disable : 4100) 
+#pragma warning(disable : 4100)
 
 #ifdef _DEBUG
 #else
 // Because assert conditions are not evaluated in release
-#pragma warning(disable : 4189) 
+#pragma warning(disable : 4189)
 #endif
 

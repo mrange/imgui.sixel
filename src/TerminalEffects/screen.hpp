@@ -147,7 +147,7 @@ struct screen {
 screen make_screen(std::size_t w, std::size_t h);
 bitmap make_bitmap(
     f__generate_color foreground
-  , std::wstring      pixels    
+  , std::wstring      pixels
   );
 
 using ABGR = std::uint32_t;

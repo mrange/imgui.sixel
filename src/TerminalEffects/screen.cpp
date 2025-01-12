@@ -52,7 +52,7 @@ namespace {
 
 bitmap make_bitmap(
     f__generate_color foreground
-  , std::wstring      pixels    
+  , std::wstring      pixels
   ) {
   std::size_t max__width      = 0;
   std::size_t max__height     = 0;

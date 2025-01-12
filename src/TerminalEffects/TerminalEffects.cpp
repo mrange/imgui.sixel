@@ -978,7 +978,7 @@ int main() {
 
     init__effect8();
     auto on_exit__deinit__effect8 = on_exit([]{ deinit__effect8(); });
-    
+
 
     std::vector<ABGR>     pixels          ;
     std::vector<GLubyte>  sixel_pixels    ;

@@ -1350,15 +1350,15 @@ const float
 , conf = 1.3825
 ;
 
-const vec2 
+const vec2
   A = vec2(con,1.)
 , B = vec2(con,-con*conf)
 , C = vec2(-1.,-con*conf)
 ;
 
-const mat2 
+const mat2
   rot180 = ROT(2.*pi*0.5)
-; 
+;
 
 
 float circle(vec2 p, float r) {
@@ -1395,7 +1395,7 @@ vec4 boxySpiralCoord(vec2 p, float z, out float side) {
   float sx = sign(px);
   float a = px > 0. ? phi2 : 1.;
   a *= z;
-  float gdx     = geometric(a, iphi4); 
+  float gdx     = geometric(a, iphi4);
   ax            -= gdx;
   float x       = igeometric(a, iphi4, -ax);
   float nx      = floor(x);
@@ -1404,7 +1404,7 @@ vec4 boxySpiralCoord(vec2 p, float z, out float side) {
   float maxx    = lx.y;
   float radiusx = (maxx-minx)*0.5;
   float meanx   = minx+radiusx;
-  
+
   p -= vec2(-1.,1./3.)*meanx*sx;
   side = sx;
   return vec4(p, radiusx, 2.*nx+(sx>0.?0.:1.));
@@ -1429,7 +1429,7 @@ float pabs(float a, float k) {
 }
 
 
-float bezier(vec2 pos, vec2 A, vec2 B, vec2 C ) {    
+float bezier(vec2 pos, vec2 A, vec2 B, vec2 C ) {
     vec2 a = B - A;
     vec2 b = A - 2.0*B + C;
     vec2 c = a * 2.0;
@@ -1437,14 +1437,14 @@ float bezier(vec2 pos, vec2 A, vec2 B, vec2 C ) {
     float kk = 1.0/dot(b,b);
     float kx = kk * dot(a,b);
     float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;
-    float kz = kk * dot(d,a);      
+    float kz = kk * dot(d,a);
     float res = 0.0;
     float p = ky - kx*kx;
     float p3 = p*p*p;
     float q = kx*(2.0*kx*kx-3.0*ky) + kz;
     float h = q*q + 4.0*p3;
-    if( h >= 0.0) 
-    { 
+    if( h >= 0.0)
+    {
         h = sqrt(h);
         vec2 x = (vec2(h,-h)-q)/2.0;
         vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
@@ -1549,11 +1549,11 @@ float parabola(vec2 pos, float wi, float he) {
   float q = pos.x*ik*ik*0.25;
   float h = q*q - p*p*p;
   float r = sqrt(abs(h));
-  float x = (h>0.0) ? 
+  float x = (h>0.0) ?
       pow(q+r,1.0/3.0) - pow(abs(q-r),1.0/3.0)*sign(r-q) :
       2.0*cos(atan(r/q)/3.0)*sqrt(p);
   x = min(x,wi);
-  return length(pos-vec2(x,he-x*x/ik)) * 
+  return length(pos-vec2(x,he-x*x/ik)) *
          sign(ik*(pos.y-he)+pos.x*pos.x);
 }
 
@@ -1571,7 +1571,7 @@ float eye(vec2 p) {
   const float b = 4.0;
   float rr = mix(1.6, b, a);
   float dd = mix(1.12, b, a);
-  
+
   vec2 p0 = p;
   p0 = p0.yx;
   float d0 =  vesica(p0, rr, dd);
@@ -1658,23 +1658,23 @@ vec2 hand(vec2 p) {
   float d6 = abs(d5-0.005)-0.005;
 
 
-  d0 = min(d0, d1);  
+  d0 = min(d0, d1);
   d3 = p.y > -0.40 ? d3 : d2;
 
   float dd = d3;
   dd = min(dd, d0);
   dd -= 0.02;
-  
+
   float d = d3;
   d = min(d, d2);
   d = pmax(d, -(d0-0.01), 0.025);
   d = min(d, d0);
   float ds = max(min(d0, d3), -d5);
   d = max(d, -d6);
-  
+
   float od = d;
   od = abs(od-0.02)-0.0075;
-  
+
   d = min(d, od);
   d = pmin(d, d5, 0.01);
   return vec2(d, dd);
@@ -1691,7 +1691,7 @@ vec2 df(vec2 p) {
   pe /= ze;
   float de = eye(pe);
   de *= ze;
-  
+
   float d = dh.x;
   d = max(d, -de);
   return vec2(d, dh.y)*zz;
@@ -1725,7 +1725,7 @@ vec3 effect(vec3 col, vec2 p) {
   float db;
   vec4 gc;
   float n;
-  float s; 
+  float s;
   if (dbx < dby) {
     db = dbx;
     gc = gcx;
@@ -1737,11 +1737,11 @@ vec3 effect(vec3 col, vec2 p) {
     n = ny;
     s = sy;
   }
-  
+
   if (s == -1.) {
-    gc.xy*= rot180; 
+    gc.xy*= rot180;
   }
-  
+
   float sr = length(p)*0.025;
   vec3 bcol = palette(n*tau/16.);
   float dc = circle(gc.xy, gc.z*br)/gc.z;
@@ -1752,7 +1752,7 @@ vec3 effect(vec3 col, vec2 p) {
   col = clamp(col, 0.0, 1.0);
 
   vec2 d = df(dp);
-  float daa = sqrt(2.)/RESOLUTION.y; 
+  float daa = sqrt(2.)/RESOLUTION.y;
 
   col = mix(col, vec3(0.0), smoothstep(daa, -daa, d.y));
   col = mix(col, (palette(dp.y+log(1.+p.y*p.y)/log(4.)+0.5*time+pi).zyx+aa*aa*mix(0.1,2.,beat())), smoothstep(daa, -daa, d.x));
@@ -1769,7 +1769,7 @@ void main() {
   col = effect(col, p);
   col += fade_in();
   col = sqrt(col);
-  
+
   fragColor = vec4(col, 1.0);
 }
 )SHADER";
@@ -1863,12 +1863,12 @@ const float
 , soft_factor   = .25
 , poly_cospin   = cos(pi/float(poly_type))
 , poly_scospin  = sqrt(.75-poly_cospin*poly_cospin)
-, initt         = .125 
+, initt         = .125
 ;
 
 const vec2 impulse_sca0 = vec2(0.,1.);
 
-const vec3 
+const vec3
   skyCol     = HSV2RGB(vec3(.6, .86, 1.))
 , lightCol   = HSV2RGB(vec3(0.6, 0.5, 2.0))
 , bounceCol0 = HSV2RGB(vec3(0.0, 0.8, 0.8))
@@ -1891,7 +1891,7 @@ const vec3
 vec3 aces_approx(vec3 v) {
   v = max(v, 0.0);
   v *= 0.6;
-  const float 
+  const float
     a = 2.51
   , b = 0.03
   , c = 2.43
@@ -1936,7 +1936,7 @@ void poly_fold(inout vec3 pos) {
     p.xy  = abs(p.xy);
     p    -= 2.*min(0., dot(p,poly_nc)) * poly_nc;
   }
-  
+
   pos = p;
 }
 
@@ -1948,7 +1948,7 @@ float poly_plane(vec3 pos) {
   d = max(d, d1);
   d = max(d, d2);
   return d;
-  
+
 }
 
 float poly_corner(vec3 pos) {
@@ -1982,7 +1982,7 @@ float poly_edges(vec3 pos, out vec3 pp) {
 
 vec3 skyColor(vec3 ro, vec3 rd) {
   vec3 col = vec3(0.);
-  
+
   float tp0  = rayPlane(ro, rd, vec4(vec3(0.0, 1.0, 0.0), 4.0));
   float tp1  = rayPlane(ro, rd, vec4(vec3(0.0, -1.0, 0.0), 6.0));
   float tp = tp1;
@@ -1993,7 +1993,7 @@ vec3 skyColor(vec3 ro, vec3 rd) {
     vec3 pos  = ro + tp1*rd;
     vec2 pp = pos.xz;
     float db = box(pp, vec2(6.0, 9.0))-1.0;
-    
+
     col += vec3(4.0)*skyCol*rd.y*rd.y*smoothstep(0.25, 0.0, db);
     col += vec3(0.8)*skyCol*exp(-0.5*max(db, 0.0));
   }
@@ -2002,7 +2002,7 @@ vec3 skyColor(vec3 ro, vec3 rd) {
     vec3 pos  = ro + tp0*rd;
     vec2 pp = pos.xz;
     float ds = length(pp) - 0.5;
-    
+
     col += vec3(0.25)*skyCol*exp(-.5*max(ds, 0.0));
   }
 
@@ -2062,7 +2062,7 @@ float rayMarch1(vec3 ro, vec3 rd) {
   float t = 0.0;
   for (int i = 0; i < MAX_RAY_MARCHES; i++) {
     if (t > MAX_RAY_LENGTH) {
-      t = MAX_RAY_LENGTH;    
+      t = MAX_RAY_LENGTH;
       break;
     }
     float d = df1(ro + rd*t);
@@ -2087,7 +2087,7 @@ float rayMarch0(vec3 ro, vec3 rd) {
   float t = 0.0;
   for (int i = 0; i < MAX_RAY_MARCHES; i++) {
     if (t > MAX_RAY_LENGTH) {
-      t = MAX_RAY_LENGTH;    
+      t = MAX_RAY_LENGTH;
       break;
     }
     float d = df0(ro + rd*t);
@@ -2114,11 +2114,11 @@ vec3 render1(vec3 ro, vec3 rd) {
     float de = dfExclusion(sp, spp);
     vec3 sn = normal1(sp);
     float fre = 1.0+dot(rd, sn);
-  
-    
+
+
     float si = cos(2.0*tau*zoom*spp.z-0.5*sp.y);
     float lf = mix(0.0, 1.0, smoothstep(0., 0.9, si));
-    
+
     vec3 gcol = ragg*lightCol*exp(8.0*(min(de-0.2, 0.0)));
     if (de < 0.0) {
       agg += gcol;
@@ -2128,7 +2128,7 @@ vec3 render1(vec3 ro, vec3 rd) {
       agg += ragg*lightCol*1.5*lf;
       ragg = vec3(0.0);
     }
-    
+
     rd = reflect(rd, sn);
     ro = sp+initt*rd;
     tagg += initt;
@@ -2150,7 +2150,7 @@ vec3 render0(vec3 ro, vec3 rd) {
   if (st < MAX_RAY_LENGTH) {
     float sfre = 1.0+dot(rd, sn);
     sfre *= sfre;
-    sfre = mix(0.1, 1.0, sfre); 
+    sfre = mix(0.1, 1.0, sfre);
     vec3 sref   = reflect(rd, sn);
     vec3 srefr  = refract(rd, sn, refraction);
     vec3 ssky = sfre*skyColor(sp, sref);
@@ -2163,7 +2163,7 @@ vec3 render0(vec3 ro, vec3 rd) {
       col += col1;
     }
   }
-    
+
 
   return col;
 }
@@ -2226,7 +2226,7 @@ float impulse_p(inout vec2 pp, float off) {
 }
 
 float impulse_s(inout vec2 pp, float off) {
-  const mat2 
+  const mat2
     rots1 = ROT(-2.*pi/3.0)
   , rots2 = ROT(pi)
   ;
@@ -2283,7 +2283,7 @@ float dfcos(vec2 p, float freq) {
 
 
 float df(vec2 p) {
-  const float 
+  const float
     z0 = 0.25
   , z1 = 0.05
   ;
@@ -2294,10 +2294,10 @@ float df(vec2 p) {
   vec2 p1 = p;
   p1 /= z1;
   p1.x += TIME*2.;
-  
+
   float d0 = impulse(p0,0.25)*z0;
   float d1 = abs(dfcos(p1, z1*tau))*z1-mix(0.01, 0.002, p.x*p.x);
-  
+
   float d = d0;
   d = pmax(d,-(d1-0.01), 0.02);
   d = min(d,d1);
@@ -2305,27 +2305,27 @@ float df(vec2 p) {
 }
 
 mat3 rot(float time) {
-  float 
-    angle1 = time * 0.5       
-  , angle2 = time * 0.707     
-  , angle3 = time * 0.33     
+  float
+    angle1 = time * 0.5
+  , angle2 = time * 0.707
+  , angle3 = time * 0.33
   , c1 = cos(angle1); float s1 = sin(angle1)
   , c2 = cos(angle2); float s2 = sin(angle2)
   , c3 = cos(angle3); float s3 = sin(angle3)
   ;
 
   return mat3(
-      c1 * c2,                
-      c1 * s2 * s3 - c3 * s1, 
-      s1 * s3 + c1 * c3 * s2, 
+      c1 * c2,
+      c1 * s2 * s3 - c3 * s1,
+      s1 * s3 + c1 * c3 * s2,
 
-      c2 * s1,                
-      c1 * c3 + s1 * s2 * s3, 
-      c3 * s1 * s2 - c1 * s3, 
+      c2 * s1,
+      c1 * c3 + s1 * s2 * s3,
+      c3 * s1 * s2 - c1 * s3,
 
-      -s2,                   
-      c2 * s3,               
-      c2 * c3                
+      -s2,
+      c2 * s3,
+      c2 * c3
   );
 }
 
@@ -2335,7 +2335,7 @@ vec3 effect(vec2 p) {
   vec3 rd = normalize(-p.x*uu + p.y*vv + 1.41*ww);
 
   vec3 col = render0(ro, rd);
- 
+
   return col;
 }
 
@@ -2345,10 +2345,10 @@ void main() {
   p.x *= RESOLUTION.x/RESOLUTION.y;
   vec3 col = vec3(0.0);
   col = effect(p);
-  col = aces_approx(col); 
+  col = aces_approx(col);
   float d = df(p);
   float aa = sqrt(2.)/RESOLUTION.y;
-  
+
   col = mix(col, vec3(1.0), smoothstep(aa, -aa, d));
   col += fade_in();
   col = sqrt(col);
