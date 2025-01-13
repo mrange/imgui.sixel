@@ -265,7 +265,7 @@ namespace {
     };
 
     wchar_t   info__buffer[2048];
-    auto      beat__i         = music__nsubdivision(time)%4;
+    auto      beat__i         = 3-(music__nsubdivision(time)%4);
     wchar_t   beat__progress  = L"⣀⣤⣶⣿"[beat__i];
     wchar_t*  beat__color     = beat__colors[beat__i];
 
@@ -1008,7 +1008,7 @@ int main() {
 
     IMFPMediaPlayer * player = nullptr;
     CHECK_HRESULT(MFPCreateMediaPlayer(
-      LR"PATH(D:\assets\astroboy--my-head-is-spiritualism.wav)PATH"
+      LR"PATH(D:\assets\astroboy--my-head-is-spiritualism.mp3)PATH"
     , FALSE
     , 0
     , nullptr
