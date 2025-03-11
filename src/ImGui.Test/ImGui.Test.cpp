@@ -42,7 +42,7 @@
 #pragma comment(lib, "gdi32.lib")
 
 #define USE_BACKGROUND_WRITER_THREAD
-#define USE_MMX
+//#define USE_MMX
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -414,8 +414,8 @@ namespace {
     assert(pixels.size() > 0);
     assert(pixels.size() == total_size);
 
-    // +8 to handle any potential overruns from using AVX or MMX
-    sixel_pixels.resize(total_size+8);
+    // +16 to handle any potential overruns from using AVX or MMX
+    sixel_pixels.resize(2*total_size+16);
 
     {
       // Does a few things
@@ -439,11 +439,17 @@ namespace {
             *ptr__output      = sixel_pixel;
 
             ++ptr__output;
+
+            // Transparency
+            *ptr__output      = (abgr >> 24)&0xFF;
+
+            ++ptr__output;
+
             y_off -= width;
           }
         }
       }
-      assert(ptr__output == &sixel_pixels.front()+total_size);
+      assert(ptr__output == &sixel_pixels.front()+2*total_size);
     }
 
     buffer.clear();
@@ -458,7 +464,7 @@ namespace {
       ticks__timer time__sixel_pixel(&ticks.sixel_buffer);
       bool used_colors[256];
       for (std::size_t y6 = 0; y6 < height; y6 += 6) {
-        auto y6_off = y6*width;
+        auto y6_off = y6*width*2;
         {
           ticks__timer time__used_colors(&ticks.used_colors);
           // Find colors used in this group of 6 lines
@@ -467,6 +473,9 @@ namespace {
           for (std::size_t x = 0; x < 6*width; ++x) {
             auto sixel_pixel = *ptr__input;
             used_colors[sixel_pixel] = true;
+            ++ptr__input;
+
+            // Skip transparency
             ++ptr__input;
           }
         }
@@ -497,11 +506,14 @@ namespace {
               ptr__input += 6;
 #else
               for (std::size_t i = 0; i < 6; ++i) {
-                auto sixel_pixel = *ptr__input;
-                if (current_col == sixel_pixel) {
+                auto sixel_pixel  = *ptr__input;
+                ++ptr__input;
+                auto transparency = *ptr__input;
+                ++ptr__input;
+                if (current_col == sixel_pixel && transparency > 0x7F) {
                   sixel |= 1U << i;
                 }
-                ++ptr__input;
+
               }
 #endif
               char sixel_char = sixel_base + sixel;
