@@ -42,7 +42,7 @@
 #pragma comment(lib, "gdi32.lib")
 
 #define USE_BACKGROUND_WRITER_THREAD
-//#define USE_MMX
+#define USE_SSE
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -487,8 +487,8 @@ namespace {
               continue;
             }
 
-#ifdef USE_MMX
-            auto current_col6 = _mm_set1_pi8(static_cast<char>(current_col));
+#ifdef USE_SSE
+            auto current_col6 = _mm_set1_epi16(static_cast<short>((current_col<<8) + 0xFF));
 #endif
 
             append(buffer, sixel__col_selectors[current_col], ticks);
@@ -499,10 +499,13 @@ namespace {
             auto ptr__input = &sixel_pixels.front() + y6_off;
             for (std::size_t x = 0; x < width; ++x) {
               GLubyte sixel = 0;
-#ifdef USE_MMX
-              auto sixel_pixel6 = *reinterpret_cast<__m64 const *>(ptr__input);
-              auto cmpeq6 = _mm_cmpeq_pi8(sixel_pixel6, current_col6);
-              sixel = (_mm_movemask_pi8(cmpeq6))&0x3F;
+#ifdef USE_SSE
+              auto sixel_pixel6 = *reinterpret_cast<__m128i const *>(ptr__input);
+              auto cmpeq12        = _mm_cmpeq_epi8(sixel_pixel6, current_col6);
+              auto shifted        = _mm_srli_epi16(cmpeq12, 8);
+              auto unpacked       = _mm_and_si128(cmpeq12, shifted);
+              auto packed         = _mm_packus_epi16 (unpacked, _mm_setzero_si128());
+              sixel = (_mm_movemask_epi8(packed))&0x3F;
               ptr__input += 6;
 #else
               for (std::size_t i = 0; i < 6; ++i) {
@@ -559,10 +562,6 @@ namespace {
 
       }
     }
-
-#ifdef USE_MMX
-    _mm_empty();
-#endif
 
     append(buffer, sixel__epilogue, ticks);
 
