@@ -42,7 +42,7 @@
 #pragma comment(lib, "gdi32.lib")
 
 #define USE_BACKGROUND_WRITER_THREAD
-#define USE_MMX
+#define USE_SSE
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -346,7 +346,7 @@ namespace {
           );
           assert(writeOk);
           auto flushOk = FlushFileBuffers(hstdout);
-          assert(flushOk);
+          // assert(flushOk);
         }
       }
     }
@@ -395,7 +395,7 @@ namespace {
     , std::size_t                   width
     , std::size_t                   height
     , std::vector<ABGR> const &     pixels
-    , std::vector<GLubyte> &        sixel_pixels
+    , std::vector<std::uint16_t> &  sixel_pixels
     , std::vector<char8_t> &        buffer
     , ticks__write_pixel_as_sixels &ticks
     ) {
@@ -414,7 +414,7 @@ namespace {
     assert(pixels.size() > 0);
     assert(pixels.size() == total_size);
 
-    // +8 to handle any potential overruns from using AVX or MMX
+    // +8 to handle any potential overruns from using AVX, SSE or MMX
     sixel_pixels.resize(total_size+8);
 
     {
@@ -432,11 +432,12 @@ namespace {
             // 3 bits for red
             // 3 bits for green
             // 2 bits for blue
-            auto red          = (abgr           )&(0x7<<5);
-            auto green        = (abgr >> (8+5-2))&(0x7<<2);
-            auto blue         = (abgr >> (8+8+6))&(0x3   );
-            auto sixel_pixel  = red|green|blue;
-            *ptr__output      = sixel_pixel;
+            auto red            = (abgr           )&(0x7<<5);
+            auto green          = (abgr >> (8+5-2))&(0x7<<2);
+            auto blue           = (abgr >> (8+8+6))&(0x3   );
+            auto alpha          = (abgr >> 16     )&0xFF00  ;
+            auto sixel_pixel    = red|green|blue|alpha;
+            *ptr__output        = sixel_pixel;
 
             ++ptr__output;
             y_off -= width;
@@ -466,7 +467,11 @@ namespace {
           auto ptr__input = &sixel_pixels.front() + y6_off;
           for (std::size_t x = 0; x < 6*width; ++x) {
             auto sixel_pixel = *ptr__input;
-            used_colors[sixel_pixel] = true;
+
+            // Check alpha
+            if (sixel_pixel & 0xFF00) {
+              used_colors[sixel_pixel&0xFF] = true;
+            }
             ++ptr__input;
           }
         }
@@ -478,8 +483,8 @@ namespace {
               continue;
             }
 
-#ifdef USE_MMX
-            auto current_col6 = _mm_set1_pi8(static_cast<char>(current_col));
+#ifdef USE_SSE
+            auto current_col6 = _mm_set1_epi16(static_cast<short>(0xFF00|current_col));
 #endif
 
             append(buffer, sixel__col_selectors[current_col], ticks);
@@ -490,15 +495,21 @@ namespace {
             auto ptr__input = &sixel_pixels.front() + y6_off;
             for (std::size_t x = 0; x < width; ++x) {
               GLubyte sixel = 0;
-#ifdef USE_MMX
-              auto sixel_pixel6 = *reinterpret_cast<__m64 const *>(ptr__input);
-              auto cmpeq6 = _mm_cmpeq_pi8(sixel_pixel6, current_col6);
-              sixel = (_mm_movemask_pi8(cmpeq6))&0x3F;
+#ifdef USE_SSE
+              auto sixel_pixel6 = *reinterpret_cast<__m128i const *>(ptr__input);
+              auto cmpeq6 = _mm_cmpeq_epi16(sixel_pixel6, current_col6);
+              auto cast6i = _mm256_cvtepi16_epi32(cmpeq6);
+              auto cast6s = _mm256_castsi256_ps(cast6i);
+              sixel = (_mm256_movemask_ps(cast6s))&0x3F;
               ptr__input += 6;
 #else
               for (std::size_t i = 0; i < 6; ++i) {
                 auto sixel_pixel = *ptr__input;
-                if (current_col == sixel_pixel) {
+                if (
+                      // Check alpha
+                      (0xFF00 & sixel_pixel)
+                  &&  current_col == (0xFF & sixel_pixel) 
+                  ) {
                   sixel |= 1U << i;
                 }
                 ++ptr__input;
@@ -547,10 +558,6 @@ namespace {
 
       }
     }
-
-#ifdef USE_MMX
-    _mm_empty();
-#endif
 
     append(buffer, sixel__epilogue, ticks);
 
@@ -832,6 +839,12 @@ int main() {
   CHECK(imgui__opengl_init, 1, "ImGui_ImplOpenGL2_Init Failed");
   auto on_exit__shutdown_imgui_opengl = on_exit([]{ ImGui_ImplOpenGL2_Shutdown(); });
 
+  ImGuiStyle& imgui__style = ImGui::GetStyle();
+  imgui__style.Alpha = 1.0f;
+  for (int i = 0; i < ImGuiCol_COUNT; i++) {
+      imgui__style.Colors[i].w = 1.0f;
+  }
+
   glEnable(GL_DEPTH_TEST);
 #ifdef _DEBUG
   glDisable(GL_DEBUG_OUTPUT);
@@ -845,11 +858,11 @@ int main() {
 
   ticks__write_pixel_as_sixels ticks = {};
 
-  std::vector<ABGR>     pixels          ;
-  std::vector<GLubyte>  sixel_pixels    ;
-  std::vector<char8_t>  buffer0         ;
-  std::vector<char8_t>  buffer1         ;
-  bool                  buffer_selector = false;
+  std::vector<ABGR>           pixels          ;
+  std::vector<std::uint16_t>  sixel_pixels    ;
+  std::vector<char8_t>        buffer0         ;
+  std::vector<char8_t>        buffer1         ;
+  bool                        buffer_selector = false;
   // Reserve 1MiB
   buffer0.reserve(1<<20);
   buffer1.reserve(1<<20);

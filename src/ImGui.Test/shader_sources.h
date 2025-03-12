@@ -231,12 +231,11 @@ float softShadow(in vec3 pos, in vec3 ld, in float ll, float mint, float k) {
   return clamp(res,minShadow,1.0);
 }
 
-vec3 render(vec3 ro, vec3 rd) {
+vec4 render(vec3 ro, vec3 rd) {
   const vec3 lightPos0  = 2.5*vec3(1.0, 1.0, 1.0);
   const vec3 lightPos1  = vec3(0.0);
 
   const vec3 scol = HSV2RGB(vec3(0.0, 0.95, 0.005));
-  vec3 skyCol = vec3(0.0);
   float a = atan(rd.x, rd.z);
 
   int iter = 0;
@@ -253,12 +252,12 @@ vec3 render(vec3 ro, vec3 rd) {
   const vec3 bcol0 = HSV2RGB(vec3(0.6, 0.6, 3.0));
   const vec3 bcol1 = HSV2RGB(vec3(0.55, 0.8, 7.0));
   vec3 bcol   = mix(bcol0, bcol1, beat);
-  vec3 gcol   = lsd1*bcol;
 
   if (t >= MAX_RAY_LENGTH) {
-    return skyCol+gcol;
+    return vec4(bcol, lsd1);
   }
 
+  vec3 gcol   = bcol*lsd1;
   float d     = df(pos);  
   vec3 nor    = normal(pos);
   float fre   = 1.0+dot(nor, rd);
@@ -292,10 +291,10 @@ vec3 render(vec3 ro, vec3 rd) {
   col += spe0*bcol*bs*sha0;
   col += gcol;
 
-  return col;
+  return vec4(col,1.0);
 }
 
-vec3 effect(vec2 p) {
+vec4 effect(vec2 p) {
   const vec3 cam  = 5.0*vec3(1.0, 0.5, 1.0);
   const vec3 dcam = normalize(vec3(0.0) - cam);
   const vec3 ro = cam;
@@ -309,8 +308,7 @@ vec3 effect(vec2 p) {
   vec4 q = createQuaternion(normalize(vec3(1.0,sin(0.33*a),sin(0.707*a))), a);
   //vec4 q = createQuaternion(normalize(cam.zxy), time);
   g_rot = rotationFromQuaternion(q);
-  vec3 col = render(ro, rd);
-  return col;
+  return render(ro, rd);
 }
 
 // License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
@@ -329,11 +327,13 @@ void main() {
   vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
   vec2 p = -1.0 + 2.0*q;
   p.x *= RESOLUTION.x/RESOLUTION.y;
-  vec3 col = effect(p);
-  col = aces_approx(col);
-  col = sqrt(col);
-  
-  fragColor = vec4(col, 1.0);
+  vec4 col = effect(p);
+  col.xyz = aces_approx(col.xyz);
+  // Transparency won't be handled properly during sixeling
+  col.xyz *= col.w;
+  col.w   = col.w > 0.25 ? 1.0:0.0;
+  col.xyz = sqrt(col.xyz);
+  fragColor = col;
 }
 )SHADER";
 }
