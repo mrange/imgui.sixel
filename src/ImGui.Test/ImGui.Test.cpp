@@ -950,6 +950,7 @@ int main() {
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
     // END: Intentionally ignore return values from ImGui
 
+    glFinish();
     glReadBuffer(GL_BACK);
     if (viewport__width > 0 && viewport__height > 0) {
       // Make sure the number of rows in the buffer is divisible by 6
