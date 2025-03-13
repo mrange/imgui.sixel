@@ -43,7 +43,7 @@
 
 #define USE_BACKGROUND_WRITER_THREAD
 #define USE_SSE
-
+#define USE_DOUBLE_BUFFERING
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -191,8 +191,12 @@ namespace {
   std::size_t viewport__height      = desired__height;
 
   // Hide cursor, clear screen
-  //std::u8string const buffer__prelude    = u8"\x1B[2J\x1B[?25l";
-  std::u8string const buffer__prelude    = u8"\x1B[?25l";
+  std::u8string const buffer__prelude     = u8"\x1B[2J\x1B[?25l";
+  //std::u8string const buffer__prelude    = u8"\x1B[?25l";
+  std::u8string const disable_DECPCCM     = u8"\x1B[?64l";
+  std::u8string const enable_DECPCCM      = u8"\x1B[?64h";
+  std::u8string const move_to_page_1      = u8"\x1B[1 P";
+  std::u8string const move_to_page_2      = u8"\x1B[2 P";
   // goto top, start sixel image
   std::u8string const sixel__prelude     = u8"\x1B[H\x1BP7;1;q";
   // Sixel image done
@@ -446,10 +450,6 @@ namespace {
       }
       assert(ptr__output == &sixel_pixels.front()+total_size);
     }
-
-    buffer.clear();
-
-    append(buffer, buffer__prelude, ticks);
 
     append(buffer, sixel__prelude, ticks);
 
@@ -950,10 +950,7 @@ int main() {
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
     // END: Intentionally ignore return values from ImGui
 
-    auto result__swap_buffers = SwapBuffers(hdc);
-    assert(result__swap_buffers);
-
-    glReadBuffer(GL_FRONT);
+    glReadBuffer(GL_BACK);
     if (viewport__width > 0 && viewport__height > 0) {
       // Make sure the number of rows in the buffer is divisible by 6
       std::size_t buffer_height  = ((viewport__height+5)/6)*6;
@@ -975,16 +972,35 @@ int main() {
     
       memset(&ticks, 0, sizeof(ticks));
 
+      auto & buffer             = buffer_selector ? buffer0       : buffer1;
+
+      buffer.clear();
+
+#ifdef USE_DOUBLE_BUFFERING
+      auto const & move_to_page = buffer_selector ? move_to_page_1: move_to_page_2;
+      append(buffer, disable_DECPCCM, ticks);
+      append(buffer, move_to_page, ticks);
+#endif
+      append(buffer, buffer__prelude, ticks);
+
       write_pixel_as_sixels(
-          hstdout
-        , viewport__width
-        , buffer_height
-        , pixels
-        , sixel_pixels
-        , buffer_selector ? buffer0 : buffer1
-        , ticks
-        );
+            hstdout
+          , viewport__width
+          , buffer_height
+          , pixels
+          , sixel_pixels
+          , buffer
+          , ticks
+          );
+
+#ifdef USE_DOUBLE_BUFFERING
+      append(buffer, enable_DECPCCM, ticks);
+#endif
+
       buffer_selector = !buffer_selector;
+
+      auto result__swap_buffers = SwapBuffers(hdc);
+      assert(result__swap_buffers);
     }
   }
 
